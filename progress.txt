@@ -5,22 +5,18 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- All imports verified; smoke tests pass for ApiResponse, PaginatedResponse, CheerVoteRequest, WSMessage, SSEEvent
-- Updated .docs/agent-file-map.md, .docs/business-overview.md
 
-## P1-06-Repos — 全部 Repository：泛型 CRUD 基类 + 5 个具体 Repo
-- Created `app/repositories/__init__.py` — re-exports all 6 repository classes
-- Created `app/repositories/base.py` — BaseRepository[T] generic CRUD:
-  - get_by_id (raises NotFoundError), get_by_id_optional (returns None)
-  - get_all(page, page_size, filters dict, order_by with - prefix for desc) → (items, total)
-  - create(data dict) → entity (IntegrityError → ValidationError)
-  - update(entity_id, data dict) → entity (partial update)
-  - delete(entity_id) → None
-- Created `app/repositories/team_repo.py` — TeamRepository: get_by_code, get_by_group (ordered by fifa_ranking)
-- Created `app/repositories/match_repo.py` — MatchRepository: get_by_date, get_by_stage, get_by_status (all paginated), get_live_matches, get_bracket_matches, get_by_group_label, get_by_team_code
-- Created `app/repositories/venue_repo.py` — VenueRepository: base CRUD only
-- Created `app/repositories/group_repo.py` — GroupRepository: get_by_group_label (sorted points desc, GD desc, GF desc), get_group_matches
-- Created `app/repositories/match_event_repo.py` — MatchEventRepository: get_by_match (ordered by minute asc)
-- All repos accept AsyncSession at construction, no business logic, pure data access
 - Smoke tests passed: all imports, CRUD operations (create/read/update/delete), pagination, filtering, NotFoundError handling
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+
+## P1-07-TeamVenue — Team + Venue Service & Controller
+- Created `app/services/__init__.py` — re-exports TeamService, VenueService
+- Created `app/services/team_service.py` — TeamService with get_all_teams (paginated, group filter, lang-aware), get_team_by_code (lang-aware), get_teams_by_group
+- Created `app/services/venue_service.py` — VenueService with get_all_venues (paginated, ordered by country)
+- Created `app/controllers/__init__.py` — re-exports team_router, venue_router
+- Created `app/controllers/team_controller.py` — GET /api/teams (page/page_size/group/lang), GET /api/teams/{code} (lang)
+- Created `app/controllers/venue_controller.py` — GET /api/venues (page/page_size)
+- All responses wrapped in ApiResponse[T] with PaginatedResponse for list endpoints
+- ?lang=zh support: promotes name_zh into name field for Chinese display
+- Controllers use FastAPI Depends(_get_db) for session injection (to be centralised in P1-11)
 - Updated .docs/agent-file-map.md, .docs/agent-api-reference.md

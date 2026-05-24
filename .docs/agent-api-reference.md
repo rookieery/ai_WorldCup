@@ -2,10 +2,31 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: FOUNDATION IN PROGRESS
+## Status: SERVICES + CONTROLLERS PARTIAL
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, and repositories are implemented.
-Routes and services are not yet built.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, and **Team + Venue services/controllers** are implemented.
+Match, Group, Bracket, Cheer services/controllers are not yet built.
+
+## Service Layer
+
+All services receive an `AsyncSession` at construction; they delegate to repositories and return plain dicts (validated through Pydantic VOs).
+
+| Service | Methods | Notes |
+|---------|---------|-------|
+| `TeamService` | `get_all_teams(page, page_size, group, lang)`, `get_team_by_code(code, lang)`, `get_teams_by_group(group_label, lang)` | Supports `lang="zh"` to promote `name_zh` into `name` field |
+| `VenueService` | `get_all_venues(page, page_size)` | Returns venues with timezone info |
+
+## Controller Layer
+
+Controllers use FastAPI `APIRouter` with `Depends(_get_db)` for session injection. All responses wrapped in `ApiResponse[T]`.
+
+| Controller | Routes | Query Params |
+|-----------|--------|-------------|
+| `team_controller` | `GET /api/teams` | `page`, `page_size`, `group` (A-L), `lang` (en/zh) |
+| `team_controller` | `GET /api/teams/{code}` | `lang` (en/zh) |
+| `venue_controller` | `GET /api/venues` | `page`, `page_size` |
+
+> Note: Session DI is currently inline `_get_db()` in each controller. P1-11 will centralise into `app/dependencies.py`.
 
 ## Repository Layer
 

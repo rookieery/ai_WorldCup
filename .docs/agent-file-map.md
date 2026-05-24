@@ -108,6 +108,14 @@ football-server/
 │   │   ├── venue_repo.py        # VenueRepository: inherits base CRUD only
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
+│   ├── services/
+│   │   ├── __init__.py          # Re-exports TeamService, VenueService
+│   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
+│   │   └── venue_service.py     # VenueService: get_all_venues (paginated)
+│   ├── controllers/
+│   │   ├── __init__.py          # Re-exports team_router, venue_router
+│   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (?lang=zh support)
+│   │   └── venue_controller.py  # GET /api/venues (paginated, with timezone info)
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes
