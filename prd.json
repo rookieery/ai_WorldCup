@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-16-SeedEntry",
-      "title": "种子数据入口脚本 + 淘汰赛对阵生成器 + 集成验证",
-      "description": "数据初始化编排与验证任务。\n\n1. 创建 `scripts/generate_bracket.py`：生成淘汰赛对阵树\n   - 定义 R32→R16→QF→SF→3rd/Final 的晋级关系\n   - 预建静态对阵框架，仅确定小组排名后填入具体队伍\n   - 正确设置 next_match_id 链和 position 序号\n2. 创建 `scripts/seed_data.py`：一键初始化入口\n   - 按顺序调用：seed_venues → seed_teams → seed_matches → generate_bracket\n   - 同时初始化 48 条 group_standings 记录（全 0）\n   - 执行完毕后打印统计摘要\n3. 集成验证：运行 seed_data.py 后，通过 API 验证\n   - GET /api/matches?date=2026-06-11 返回开幕日比赛\n   - GET /api/groups/A 返回 A 组积分 + 赛程\n   - GET /api/bracket 返回完整淘汰赛结构",
-      "passes": true
-    },
-    {
       "id": "P1-17-Types",
       "title": "前端：提取共享 TypeScript 类型定义",
       "description": "前端类型安全基础任务。\n\n1. 创建 `football-web/lib/types/` 目录结构\n2. 创建 `football-web/lib/types/team.ts`：提取 Team interface（name, code, flag, fifaRanking?）\n3. 创建 `football-web/lib/types/match.ts`：提取 Match, MatchEvent, MatchQueryParams interface\n4. 创建 `football-web/lib/types/bracket.ts`：提取 BracketMatch, BracketTeam, BracketRound, BracketTree interface\n5. 创建 `football-web/lib/types/ai.ts`：提取 Message, TeamAnalysis, TeamStats, SSEEvent interface\n6. 创建 `football-web/lib/types/api.ts`：定义 ApiResponse<T>, PaginatedResponse<T> 通用类型\n7. 创建 `football-web/lib/types/index.ts`：统一导出\n8. 修改现有 4 个组件文件（match-cards-grid, tournament-bracket, ai-copilot-panel, page.tsx），将内联类型替换为从共享模块导入\n\n严禁使用 any 类型",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-18-ApiClient",

@@ -2,25 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { Trophy, Zap } from "lucide-react"
-
-interface Team {
-  name: string
-  code: string
-  flag: string
-  score?: number
-  isWinner?: boolean
-  color?: string
-}
-
-interface BracketMatch {
-  id: string
-  round: "QF" | "SF" | "F"
-  team1: Team
-  team2: Team
-  status: "upcoming" | "live" | "completed"
-  venue?: string
-  time?: string
-}
+import type { BracketMatch, BracketTeam, BracketRoundName } from "@/lib/types"
 
 const bracketData: BracketMatch[] = [
   // Quarter Finals
@@ -165,7 +147,7 @@ function BracketCard({ match }: { match: BracketMatch }) {
   )
 }
 
-function TeamRow({ team, isCompleted }: { team: Team; isCompleted: boolean }) {
+function TeamRow({ team, isCompleted }: { team: BracketTeam; isCompleted: boolean }) {
   return (
     <div
       className={cn(

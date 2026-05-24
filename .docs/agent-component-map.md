@@ -29,9 +29,9 @@
 ### `match-cards-grid.tsx` — `MatchCardsGrid`
 - **Props**: `selectedDate` (not yet used for filtering)
 - **Data**: Hardcoded `Match[]` array (4 sample matches)
-- **Sub-components**: `MatchCard`, `CityIcon`
+- **Sub-components**: `MatchCard`, `CityIconComponent`
 - **Features**: Live score display, Big Match badge, activity bar, Fan Cheer Meter (hover expand)
-- **Types defined**: `Team`, `Match` (inline, not shared)
+- **Types imported**: `Match`, `CityIcon` from `@/lib/types`
 - **Dependencies**: `cn` utility, `lucide-react` icons
 - **Lines**: ~432
 
@@ -40,7 +40,7 @@
 - **Sub-components**: `BracketCard`, `TeamRow`, `ConnectorLine`
 - **UI**: Three-column grid with SVG connector lines, gradient glow effects
 - **Note**: Currently only QF→SF→F, needs expansion to R32→R16→QF→SF→3rd→F
-- **Types defined**: `Team`, `BracketMatch` (inline, not shared)
+- **Types imported**: `BracketMatch`, `BracketTeam`, `BracketRoundName` from `@/lib/types`
 - **Dependencies**: `cn` utility, `Trophy`/`Zap` icons
 - **Lines**: ~438
 
@@ -50,7 +50,7 @@
 - **Data**: Hardcoded initial messages + `brazilFranceAnalysis`
 - **AI Simulation**: 2s timeout returns fixed string (no real API call)
 - **Features**: Quick prompts, chat messages, radar chart analysis, streaming indicator
-- **Types defined**: `Message`, `TeamAnalysis` (inline, not shared)
+- **Types imported**: `Message`, `TeamAnalysis`, `TeamStats` from `@/lib/types`
 - **Dependencies**: `Input`, `Button` (shadcn), `cn`, `lucide-react`
 - **Lines**: ~437
 
@@ -66,7 +66,15 @@
 
 ## Type Definitions
 
-**Problem**: Types (`Team`, `Match`, `BracketMatch`, `Message`, `TeamAnalysis`) are defined inline in each component file and not shared. These should be extracted to a shared types module when backend integration begins.
+Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import with `import type { ... } from "@/lib/types"`.
+
+| Module | Types | Purpose |
+|--------|-------|---------|
+| `lib/types/team.ts` | `Team`, `TeamDetail`, `TeamStanding` | Team base shape, API detail, group standings row |
+| `lib/types/match.ts` | `Match`, `MatchStatus`, `CityIcon`, `MatchEvent`, `MatchEventType`, `MatchQueryParams` | Match card data, event timeline, API query filters |
+| `lib/types/bracket.ts` | `BracketTeam`, `BracketMatch`, `BracketRound`, `BracketTree`, `BracketRoundName`, `BracketMatchStatus` | Knockout bracket tree (R32→F) |
+| `lib/types/ai.ts` | `Message`, `MessageRole`, `MessageType`, `TeamAnalysis`, `TeamAnalysisSide`, `TeamStats`, `SSEEvent`, `SSEEventType` | AI chat messages, analysis payload, SSE streaming |
+| `lib/types/api.ts` | `ApiResponse<T>`, `PaginatedResponse<T>`, `ApiError` | Standard API envelope types |
 
 ## CSS Architecture (`app/globals.css`)
 

@@ -7,9 +7,12 @@ import { MatchCardsGrid } from "@/components/dashboard/match-cards-grid"
 import { TournamentBracket } from "@/components/dashboard/tournament-bracket"
 import { AICopilotPanel } from "@/components/dashboard/ai-copilot-panel"
 
+type TimezoneOption = "local" | "host"
+type ViewMode = "timeline" | "bracket"
+
 export default function WorldCupDashboard() {
-  const [timezone, setTimezone] = useState<"local" | "host">("local")
-  const [viewMode, setViewMode] = useState<"timeline" | "bracket">("bracket")
+  const [timezone, setTimezone] = useState<TimezoneOption>("local")
+  const [viewMode, setViewMode] = useState<ViewMode>("bracket")
   const [selectedDate, setSelectedDate] = useState("Jun 14")
 
   return (

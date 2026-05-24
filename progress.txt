@@ -15,26 +15,23 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - Idempotent: 104 skipped on second run
-  - Verified: 104 matches, correct linkage, TBD team, all assertions pass
 
-## P1-16-SeedEntry — Seed Data Entry + Bracket Generator + Integration Verification
-- Created `scripts/generate_bracket.py`:
-  - BRACKET_LINKS: 30 winner-path links (R32→R16→QF→SF→F)
-  - R32_QUALIFICATION: 16 group-position mappings for TBD team context
-  - generate_bracket(session): verifies/enforces all next_match_id + position links
-  - Idempotent: re-runs verify existing links, correct drift
-  - CLI entry: python -m scripts.generate_bracket
-- Created `scripts/seed_data.py`:
-  - One-click orchestrator: seed_venues→seed_teams→seed_matches→generate_bracket→init_group_standings
-  - _init_group_standings: creates 48 zero-initialized records (4 per group × 12 groups)
-  - Formatted summary table with timing
-  - Fully idempotent
-- Updated `app/services/bracket_service.py`:
-  - Added _R32_GROUP_MAP for TBD team from_group/from_position enrichment
-  - Updated _infer_tbd_context: R32 matches now show "1st Group A" etc.
-- Integration verification:
-  - GET /api/matches?date=2026-06-11 → 2 opening-day matches
-  - GET /api/groups/A → 4 standings (all zeros) + 6 matches
   - GET /api/bracket → 32 matches across 6 rounds with from_group context
   - DB state: 49 teams, 17 venues, 104 matches, 48 standings, 30 bracket links
+
+## P1-17-Types — 前端：提取共享 TypeScript 类型定义 [PASS]
+- Created football-web/lib/types/ directory with 7 files:
+  - team.ts: Team, TeamDetail, TeamStanding
+  - match.ts: Match, MatchStatus, CityIcon, MatchEvent, MatchEventType, MatchQueryParams
+  - bracket.ts: BracketTeam (extends Team), BracketMatch, BracketRound, BracketTree, BracketRoundName, BracketMatchStatus
+  - ai.ts: Message, TeamAnalysis, TeamAnalysisSide, TeamStats, SSEEvent, SSEEventType
+  - api.ts: ApiResponse<T>, PaginatedResponse<T>, ApiError
+  - index.ts: Unified type-only re-exports
+  - AGENTS.md: Architecture notes for future agents
+- Updated 4 component files to use shared imports:
+  - match-cards-grid.tsx: Removed inline Team/Match, imports from @/lib/types
+  - tournament-bracket.tsx: Removed inline Team/BracketMatch, imports BracketMatch/BracketTeam/BracketRoundName
+  - ai-copilot-panel.tsx: Removed inline Message/TeamAnalysis, imports Message/TeamAnalysis/TeamStats
+  - page.tsx: Extracted TimezoneOption/ViewMode local types
+- Build passes (npm run build)
+- Zero `any` types used

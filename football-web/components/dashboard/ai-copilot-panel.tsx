@@ -5,6 +5,7 @@ import { Send, Sparkles, Bot, User, Zap, Hexagon, TrendingUp, Shield, Target, Fo
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import type { Message, TeamAnalysis, TeamStats } from "@/lib/types"
 
 const quickPrompts = [
   { label: "Who plays tomorrow?", icon: "📅" },
@@ -12,31 +13,6 @@ const quickPrompts = [
   { label: "Top scorers so far", icon: "⚽" },
   { label: "Bracket predictions", icon: "🏆" },
 ]
-
-interface Message {
-  id: number
-  role: "user" | "assistant"
-  content: string
-  type?: "text" | "analysis"
-  analysisData?: TeamAnalysis
-}
-
-interface TeamAnalysis {
-  team1: {
-    name: string
-    flag: string
-    stats: { attack: number; defense: number; possession: number; setpieces: number; form: number }
-    winProbability: number
-  }
-  team2: {
-    name: string
-    flag: string
-    stats: { attack: number; defense: number; possession: number; setpieces: number; form: number }
-    winProbability: number
-  }
-  drawProbability: number
-  keyInsights: string[]
-}
 
 const brazilFranceAnalysis: TeamAnalysis = {
   team1: {
@@ -84,7 +60,7 @@ const initialMessages: Message[] = [
 ]
 
 // Mini Radar Chart Component
-function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defense: number; possession: number; setpieces: number; form: number }; color: string; label: string }) {
+function MiniRadarChart({ stats, color, label }: { stats: TeamStats; color: string; label: string }) {
   const centerX = 60
   const centerY = 60
   const radius = 45

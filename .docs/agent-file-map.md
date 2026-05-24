@@ -41,7 +41,14 @@ football-web/
 │   ├── use-mobile.ts         # Mobile breakpoint hook
 │   └── use-toast.ts          # Toast hook
 ├── lib/
-│   └── utils.ts              # cn() utility (clsx + tailwind-merge)
+│   ├── utils.ts              # cn() utility (clsx + tailwind-merge)
+│   └── types/                # Shared TypeScript type definitions
+│       ├── index.ts          # Unified re-exports
+│       ├── team.ts           # Team, TeamDetail, TeamStanding
+│       ├── match.ts          # Match, MatchStatus, MatchEvent, MatchQueryParams, CityIcon
+│       ├── bracket.ts        # BracketTeam, BracketMatch, BracketRound, BracketTree, BracketRoundName
+│       ├── ai.ts             # Message, TeamAnalysis, TeamStats, SSEEvent
+│       └── api.ts            # ApiResponse<T>, PaginatedResponse<T>, ApiError
 ├── styles/
 │   └── globals.css           # Duplicate/alternate globals (check relevance)
 ├── package.json              # Dependencies (next 16, recharts, date-fns, zod, etc.)

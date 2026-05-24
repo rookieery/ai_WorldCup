@@ -13,31 +13,7 @@ import {
   Activity,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-interface Team {
-  name: string
-  code: string
-  flag: string
-}
-
-interface Match {
-  id: number
-  team1: Team
-  team2: Team
-  localTime: string
-  hostTime: string
-  venue: string
-  hostCity: string
-  cityIcon: "palm" | "skyscraper" | "landmark" | "cactus"
-  stage: string
-  status: "upcoming" | "live" | "finished"
-  score1?: number
-  score2?: number
-  cheerTeam1: number
-  cheerTeam2: number
-  isBigMatch: boolean
-  activityLevel: number
-}
+import type { Match, CityIcon } from "@/lib/types"
 
 const matches: Match[] = [
   {
@@ -110,7 +86,7 @@ const matches: Match[] = [
   },
 ]
 
-const CityIcon = ({ type }: { type: string }) => {
+const CityIconComponent = ({ type }: { type: CityIcon }) => {
   switch (type) {
     case "palm":
       return <Palmtree className="h-3 w-3" />
@@ -284,7 +260,7 @@ function MatchCard({ match }: MatchCardProps) {
             {/* Host City Time with Icon */}
             <div className="flex items-center gap-2 text-sm">
               <div className="text-[#00F0FF]">
-                <CityIcon type={match.cityIcon} />
+                <CityIconComponent type={match.cityIcon} />
               </div>
               <span className="text-muted-foreground">{match.hostTime}</span>
               <span className="text-[10px] text-muted-foreground">{match.hostCity}</span>
