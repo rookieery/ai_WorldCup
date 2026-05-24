@@ -109,13 +109,15 @@ football-server/
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   ├── services/
-│   │   ├── __init__.py          # Re-exports TeamService, VenueService
+│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
-│   │   └── venue_service.py     # VenueService: get_all_venues (paginated)
+│   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
+│   │   └── match_service.py     # MatchService: get_matches (multi-filter), get_match_by_id (with events), get_live_matches; timezone conversion (local_time, host_time)
 │   ├── controllers/
-│   │   ├── __init__.py          # Re-exports team_router, venue_router
+│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (?lang=zh support)
-│   │   └── venue_controller.py  # GET /api/venues (paginated, with timezone info)
+│   │   ├── venue_controller.py  # GET /api/venues (paginated, with timezone info)
+│   │   └── match_controller.py  # GET /api/matches (multi-filter), GET /api/matches/live, GET /api/matches/:id (with events)
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes

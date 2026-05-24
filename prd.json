@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-07-TeamVenue",
-      "title": "Team + Venue Service 与 Controller",
-      "description": "队伍和场馆的业务层 + 路由层任务。\n\n1. 创建 `app/services/__init__.py`\n2. 创建 `app/services/team_service.py`：TeamService，方法包括 get_all_teams、get_team_by_code、get_teams_by_group。注入 TeamRepository\n3. 创建 `app/services/venue_service.py`：VenueService，方法包括 get_all_venues。注入 VenueRepository\n4. 创建 `app/controllers/__init__.py`\n5. 创建 `app/controllers/team_controller.py`：GET /api/teams（全部队伍）、GET /api/teams/:code（队伍详情）\n6. 创建 `app/controllers/venue_controller.py`：GET /api/venues（全部场馆，含时区信息）\n\nController 仅做参数解析和调用 Service，返回统一 ApiResponse 包装。支持 ?lang=zh 查询参数切换中英文字段",
-      "passes": true
-    },
-    {
       "id": "P1-08-Match",
       "title": "Match Service 与 Controller（比赛查询 + 过滤）",
       "description": "比赛核心业务 + 路由任务。\n\n1. 创建 `app/services/match_service.py`：MatchService，方法包括 get_matches（按 date/stage/group/team/status 过滤）、get_match_by_id（含 events）、get_live_matches。注入 MatchRepository + MatchEventRepository\n2. 创建 `app/controllers/match_controller.py`：\n   - GET /api/matches — 支持 query params: date, stage, group, team, status\n   - GET /api/matches/live — 当前进行中比赛\n   - GET /api/matches/:id — 单场详情（含 match_events）\n\n过滤逻辑放在 Service 层，Controller 仅解析 MatchQueryParams 并传递。时区转换：根据请求的 timezone 参数，将 kickoff_utc 转换为 localTime 和 hostTime",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-09-Group",

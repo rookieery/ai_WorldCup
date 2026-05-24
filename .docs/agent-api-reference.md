@@ -4,8 +4,8 @@
 
 ## Status: SERVICES + CONTROLLERS PARTIAL
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, and **Team + Venue services/controllers** are implemented.
-Match, Group, Bracket, Cheer services/controllers are not yet built.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, and **Team + Venue + Match services/controllers** are implemented.
+Group, Bracket, Cheer services/controllers are not yet built.
 
 ## Service Layer
 
@@ -15,6 +15,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 |---------|---------|-------|
 | `TeamService` | `get_all_teams(page, page_size, group, lang)`, `get_team_by_code(code, lang)`, `get_teams_by_group(group_label, lang)` | Supports `lang="zh"` to promote `name_zh` into `name` field |
 | `VenueService` | `get_all_venues(page, page_size)` | Returns venues with timezone info |
+| `MatchService` | `get_matches(params, timezone_name, lang, page, page_size)`, `get_match_by_id(match_id, timezone_name, lang)`, `get_live_matches(timezone_name, lang)` | Multi-filter support (date/stage/group/team/status) with secondary in-memory filtering; timezone conversion via `zoneinfo` adds `local_time` and `host_time` fields |
 
 ## Controller Layer
 
@@ -25,6 +26,9 @@ Controllers use FastAPI `APIRouter` with `Depends(_get_db)` for session injectio
 | `team_controller` | `GET /api/teams` | `page`, `page_size`, `group` (A-L), `lang` (en/zh) |
 | `team_controller` | `GET /api/teams/{code}` | `lang` (en/zh) |
 | `venue_controller` | `GET /api/venues` | `page`, `page_size` |
+| `match_controller` | `GET /api/matches` | `date` (YYYY-MM-DD), `stage`, `group` (A-L), `team` (code), `status`, `timezone` (IANA), `lang`, `page`, `page_size` |
+| `match_controller` | `GET /api/matches/live` | `timezone` (IANA), `lang` |
+| `match_controller` | `GET /api/matches/{id}` | `timezone` (IANA), `lang` |
 
 > Note: Session DI is currently inline `_get_db()` in each controller. P1-11 will centralise into `app/dependencies.py`.
 

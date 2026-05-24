@@ -64,6 +64,12 @@ class MatchResponse(BaseModel):
     round: str = ""
     match_day: Optional[int] = None
     kickoff_utc: datetime
+    local_time: Optional[str] = Field(
+        default=None, description="Kickoff in user's requested timezone (HH:MM)"
+    )
+    host_time: Optional[str] = Field(
+        default=None, description="Kickoff in venue's local timezone (HH:MM)"
+    )
     status: str
     home_score: Optional[int] = None
     away_score: Optional[int] = None

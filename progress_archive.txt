@@ -75,3 +75,14 @@
 - Created `app/repositories/group_repo.py` — GroupRepository: get_by_group_label (sorted points desc, GD desc, GF desc), get_group_matches
 - Created `app/repositories/match_event_repo.py` — MatchEventRepository: get_by_match (ordered by minute asc)
 - All repos accept AsyncSession at construction, no business logic, pure data access
+- Smoke tests passed: all imports, CRUD operations (create/read/update/delete), pagination, filtering, NotFoundError handling
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+## P1-07-TeamVenue — Team + Venue Service & Controller
+- Created `app/services/__init__.py` — re-exports TeamService, VenueService
+- Created `app/services/team_service.py` — TeamService with get_all_teams (paginated, group filter, lang-aware), get_team_by_code (lang-aware), get_teams_by_group
+- Created `app/services/venue_service.py` — VenueService with get_all_venues (paginated, ordered by country)
+- Created `app/controllers/__init__.py` — re-exports team_router, venue_router
+- Created `app/controllers/team_controller.py` — GET /api/teams (page/page_size/group/lang), GET /api/teams/{code} (lang)
+- Created `app/controllers/venue_controller.py` — GET /api/venues (page/page_size)
+- All responses wrapped in ApiResponse[T] with PaginatedResponse for list endpoints
+- ?lang=zh support: promotes name_zh into name field for Chinese display
