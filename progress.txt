@@ -2,17 +2,20 @@
 Started: Sat May 24 00:00:00     2026
 
 
-  - Verified: all imports succeed, exception hierarchy assertions pass, middleware registration with FastAPI works
-  - Updated .docs/agent-file-map.md, .docs/business-overview.md, .docs/agent-api-reference.md
 
-## P1-03-Models — 全部 ORM 模型：Base + Team + Venue + Match + GroupStanding + MatchEvent ✅ DONE
-  - Created `app/models/base.py`: DeclarativeBase + TimestampMixin (created_at, updated_at with server_default func.now())
-  - Created `app/models/team.py`: Team model (id, name UNIQUE, name_zh, code UNIQUE, flag, fifa_ranking, group_label, confederation, world_cup_appearances) + relationships to Match (home/away) and GroupStanding
-  - Created `app/models/venue.py`: Venue model (id, name, city, country, timezone, utc_offset, capacity) + relationship to Match
-  - Created `app/models/match.py`: Match model (id, external_id UNIQUE, home/away_team_id FK, venue_id FK, stage, group_label, round, match_day, kickoff_utc, status, home/away_score, is_big_match, activity_level, next_match_id FK self-ref, position) + relationships to Team, Venue, MatchEvent, next_match
-  - Created `app/models/group_standing.py`: GroupStanding model (id, team_id FK UNIQUE, group_label, played, won, drawn, lost, goals_for, goals_against, goal_difference, points, position) + relationship to Team
-  - Created `app/models/match_event.py`: MatchEvent model (id, match_id FK, event_type, minute, team_side, player_name) + relationship to Match
-  - Created `app/models/__init__.py`: Unified re-exports of all models + Base + TimestampMixin
-  - Verification: All 5 tables created successfully in in-memory SQLite (teams, venues, matches, group_standings, match_events)
   - Verification: Frontend build (npm run build) passes with no regressions
   - Updated .docs/agent-file-map.md, .docs/business-overview.md, .docs/agent-api-reference.md with model schema documentation
+## P1-04-Alembic — Alembic 数据库迁移配置 + 初始迁移脚本
+- Status: **PASSED**
+- Branch: `feature/world-cup`
+- Files created:
+  - `football-server/alembic.ini` — Alembic config with logging, DB URL placeholder (overridden in env.py)
+  - `football-server/alembic/env.py` — Async migration runner, reads DATABASE_URL from app.config.settings, render_as_batch=True for SQLite
+  - `football-server/alembic/script.py.mako` — Standard Alembic migration template
+  - `football-server/alembic/versions/001_initial_schema.py` — Initial migration: teams, venues, group_standings, matches, match_events (5 tables + all FK relationships)
+- Verification:
+  - `alembic upgrade head` successfully creates all 5 tables (+ alembic_version tracking table)
+  - `alembic downgrade base` successfully drops all application tables
+  - Re-upgrade from base works cleanly
+  - Frontend build (`npm run build`) passes with no regressions
+  - Updated .docs/agent-file-map.md, .docs/business-overview.md

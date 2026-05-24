@@ -13,6 +13,12 @@
         "title": "异常层级 + 全局错误处理中间件 + CORS",
         "description": "后端基础中间件任务。\n\n1. 创建 `app/exceptions/__init__.py` 和 `app/exceptions/exceptions.py`，定义异常层级：AppException(BaseException)、NotFoundError、ValidationError、BusinessError、ExternalServiceError\n2. 创建 `app/middleware/__init__.py` 和 `app/middleware/error_handler.py`，实现全局异常处理器，将自定义异常统一转换为 ApiResponse 格式 `{code, data, message}`，未捕获异常返回 500\n3. 创建 `app/middleware/cors.py`，配置 CORS 中间件，允许来自前端的跨域请求，origins 从 config 加载\n4. 创建 `app/middleware/logging.py`，实现请求日志中间件，记录 method/path/status/duration（使用标准 logging，禁止 print）",
         "passes": true
+      },
+      {
+        "id": "P1-03-Models",
+        "title": "全部 ORM 模型：Base + Team + Venue + Match + GroupStanding + MatchEvent",
+        "description": "数据库模型层任务。\n\n1. 创建 `app/models/__init__.py`，统一导出所有模型\n2. 创建 `app/models/base.py`：DeclarativeBase + TimestampMixin（created_at, updated_at 自动时间戳）+ Base 声明\n3. 创建 `app/models/team.py`：Team 模型（id, name, name_zh, code, flag, fifa_ranking, group_label, confederation, world_cup_appearances），name 和 code 设 UNIQUE\n4. 创建 `app/models/venue.py`：Venue 模型（id, name, city, country, timezone, utc_offset, capacity）\n5. 创建 `app/models/match.py`：Match 模型（id, external_id UNIQUE, home/away_team_id FK, venue_id FK, stage, group_label, round, match_day, kickoff_utc, status, home/away_score, is_big_match, activity_level, next_match_id FK nullable, position），与 Team 和 Venue 建立 relationship\n6. 创建 `app/models/group_standing.py`：GroupStanding 模型（team_id FK UNIQUE, group_label, played, won, drawn, lost, goals_for, goals_against, goal_difference, points, position）\n7. 创建 `app/models/match_event.py`：MatchEvent 模型（id, match_id FK, event_type, minute, team_side, player_name），与 Match 建立 relationship\n\n所有模型必须使用 Type Hints（Mapped[int], Mapped[str] 等），遵循 SQLAlchemy 2.0 声明式风格",
+        "passes": true
       }
     ]
   }

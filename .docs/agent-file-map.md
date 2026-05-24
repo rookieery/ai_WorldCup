@@ -73,8 +73,14 @@ skills/
 ```
 football-server/
 ├── pyproject.toml               # Project metadata + all core dependencies
+├── alembic.ini                  # Alembic config (DB URL from app.config, logging)
 ├── .env.example                 # Environment variable templates
 ├── .gitignore                   # Python/venv/db ignore rules
+├── alembic/
+│   ├── env.py                   # Async migration runner (reads settings.DATABASE_URL)
+│   ├── script.py.mako           # Migration script template
+│   └── versions/
+│       └── 001_initial_schema.py  # Initial migration: 5 tables + FK relationships
 ├── app/
 │   ├── __init__.py              # Package init (empty)
 │   ├── config.py                # Pydantic Settings: all env vars with defaults

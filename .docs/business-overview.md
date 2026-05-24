@@ -12,7 +12,7 @@ Real-time FIFA World Cup 2026 dashboard for global football fans. Features match
 |--------|--------|
 | Frontend UI | Complete visual shell (all components built) |
 | Data Source | 100% hardcoded in components |
-| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) |
+| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) + Alembic migrations |
 | State Management | Local `useState` only, no global store |
 | Routing | Single `/` route, no navigation |
 | AI Service | Simulated (2s timeout, fixed response) |
@@ -136,6 +136,13 @@ Relationships:
   Match 1:N MatchEvent (events, cascade delete)
   Match self-ref next_match (bracket linkage)
 ```
+
+### Database Migrations (Alembic)
+- **Config**: `alembic.ini` + `alembic/env.py` (async mode via aiosqlite)
+- **DB URL**: Dynamically resolved from `app.config.settings.DATABASE_URL`
+- **Batch mode**: `render_as_batch=True` for SQLite ALTER TABLE support
+- **Initial migration** (`001_initial_schema.py`): Creates teams, venues, group_standings, matches, match_events with all FK constraints
+- **Commands**: `alembic upgrade head` / `alembic downgrade base`
 
 ## Key Implementation Gaps
 
