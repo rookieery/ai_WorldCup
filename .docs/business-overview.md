@@ -196,7 +196,7 @@ All response models use `from_attributes = True` for seamless ORM → VO convers
 1. **No API integration** — all data hardcoded (schemas layer ready)
 2. **No global state** — Zustand recommended
 3. **No routing** — single page only
-4. **Bracket incomplete** — only QF→SF→F, needs R32→R16→QF→SF→3rd→F
+4. **Bracket incomplete** — only QF→SF→F, needs R32→R16→QF→SF→3rd→F (backend BracketService+Controller now implemented; frontend still uses QF→SF→F)
 5. **Types not shared** — duplicated across components
 6. **Date filtering missing** — `selectedDate` passed but not used
 7. **Group standings missing** — entire UI section not built

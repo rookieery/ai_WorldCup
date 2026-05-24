@@ -4,8 +4,8 @@
 
 ## Status: SERVICES + CONTROLLERS PARTIAL
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, and **Team + Venue + Match + Group services/controllers** are implemented.
-Bracket, Cheer services/controllers are not yet built.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, and **Team + Venue + Match + Group + Bracket services/controllers** are implemented.
+Cheer services/controllers are not yet built.
 
 ## Service Layer
 
@@ -17,6 +17,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `VenueService` | `get_all_venues(page, page_size)` | Returns venues with timezone info |
 | `MatchService` | `get_matches(params, timezone_name, lang, page, page_size)`, `get_match_by_id(match_id, timezone_name, lang)`, `get_live_matches(timezone_name, lang)` | Multi-filter support (date/stage/group/team/status) with secondary in-memory filtering; timezone conversion via `zoneinfo` adds `local_time` and `host_time` fields |
 | `GroupService` | `get_all_groups(lang)`, `get_group_detail(group_label, timezone_name, lang)` | Returns all 12 groups standings overview or single group detail with standings + matches; standings sorted by points desc, GD desc, GF desc; lang-aware (promotes `name_zh`); validates group label A-L |
+| `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams carry from_group/from_position context; predictions endpoint returns placeholder for Phase 3 AI integration |
 
 ## Controller Layer
 
@@ -32,6 +33,8 @@ Controllers use FastAPI `APIRouter` with `Depends(_get_db)` for session injectio
 | `match_controller` | `GET /api/matches/{id}` | `timezone` (IANA), `lang` |
 | `group_controller` | `GET /api/groups` | `lang` (en/zh) |
 | `group_controller` | `GET /api/groups/{group}` | `timezone` (IANA), `lang` (en/zh) |
+| `bracket_controller` | `GET /api/bracket` | `timezone` (IANA), `lang` (en/zh) |
+| `bracket_controller` | `GET /api/bracket/predictions` | — |
 
 > Note: Session DI is currently inline `_get_db()` in each controller. P1-11 will centralise into `app/dependencies.py`.
 

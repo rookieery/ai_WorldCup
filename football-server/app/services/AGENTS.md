@@ -24,6 +24,14 @@
 - `get_all_groups(lang)` → `list[dict]` — iterates A-L, returns each group with standings
 - `get_group_detail(group_label, timezone_name, lang)` → `dict` — standings + matches; validates A-L
 
+### BracketService
+- `get_full_bracket(lang, timezone_name)` → `dict` — full knockout tree (R32→R16→QF→SF→3rd→F), grouped by round, sorted by position
+- `get_bracket_by_round(round_name, lang, timezone_name)` → `dict` — single round query; validates round name
+- `get_predictions()` → `dict` — returns TBD placeholder; Phase 3 AI integration
+- Uses `MatchRepository.get_bracket_matches()` for data access
+- TBD teams detected by code starting with "TBD"; from_group/from_position context ready for P1-16 populate
+- Supports en/zh lang and timezone conversion like other services
+
 ## Language Handling Pattern
 - All services accept `lang="en"` (default) or `lang="zh"`.
 - When `lang == "zh"`, the helper `_apply_team_lang()` promotes `name_zh` into the `name` field.

@@ -8,12 +8,20 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Updated services/__init__.py and controllers/__init__.py to export new classes.
-- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
 
-## P1-09-Group — Group Service & Controller (COMPLETED)
-- Created `app/services/group_service.py`: GroupService with `get_all_groups()` (12 groups overview) and `get_group_detail()` (standings + matches per group)
-- Created `app/controllers/group_controller.py`: GET /api/groups (all groups), GET /api/groups/{group} (single group A-L)
-- Updated `services/__init__.py` and `controllers/__init__.py` to export GroupService and group_router
 - Updated `.docs/agent-file-map.md` and `.docs/agent-api-reference.md`
 - Created AGENTS.md in services/ and controllers/ directories
+
+## P1-10-Bracket — Bracket Service & Controller (完整淘汰赛对阵图)
+- Created `app/services/bracket_service.py` — BracketService with:
+  - `get_full_bracket()`: returns R32→R16→QF→SF→3rd→F tree, grouped by round, sorted by position
+  - `get_bracket_by_round()`: single round query with validation
+  - `get_predictions()`: TBD placeholder for Phase 3 AI integration
+  - TBD team detection via code prefix, with from_group/from_position context ready for P1-16
+  - lang (en/zh) and timezone conversion support
+- Created `app/controllers/bracket_controller.py`:
+  - `GET /api/bracket` — full knockout bracket tree with timezone + lang support
+  - `GET /api/bracket/predictions` — AI predictions placeholder
+- Updated `app/services/__init__.py` and `app/controllers/__init__.py` to export new modules
+- Synced `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
+- Updated `AGENTS.md` in both services/ and controllers/ directories

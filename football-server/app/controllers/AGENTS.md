@@ -28,6 +28,10 @@
 - `GET /api/groups` — all 12 groups with standings overview
 - `GET /api/groups/{group}` — single group detail (A-L) with standings + matches
 
+### bracket_controller (`/api/bracket`)
+- `GET /api/bracket` — full knockout bracket tree (R32→R16→QF→SF→3rd→F), grouped by round
+- `GET /api/bracket/predictions` — AI bracket predictions (returns TBD placeholder for Phase 3)
+
 ## Common Query Params
 - `lang`: `en` (default) or `zh` — controls name language
 - `timezone`: IANA timezone string — adds `local_time` field to match data

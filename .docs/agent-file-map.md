@@ -109,17 +109,19 @@ football-server/
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   ├── services/
-│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService
+│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
 │   │   ├── match_service.py     # MatchService: get_matches (multi-filter), get_match_by_id (with events), get_live_matches; timezone conversion (local_time, host_time)
-│   │   └── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware
+│   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware
+│   │   └── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); lang + timezone aware
 │   ├── controllers/
-│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router
+│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (?lang=zh support)
 │   │   ├── venue_controller.py  # GET /api/venues (paginated, with timezone info)
 │   │   ├── match_controller.py  # GET /api/matches (multi-filter), GET /api/matches/live, GET /api/matches/:id (with events)
-│   │   └── group_controller.py  # GET /api/groups (all 12 groups), GET /api/groups/:group (standings + matches)
+│   │   ├── group_controller.py  # GET /api/groups (all 12 groups), GET /api/groups/:group (standings + matches)
+│   │   └── bracket_controller.py # GET /api/bracket (full knockout tree), GET /api/bracket/predictions (TBD)
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes
