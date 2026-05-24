@@ -12,7 +12,7 @@ Real-time FIFA World Cup 2026 dashboard for global football fans. Features match
 |--------|--------|
 | Frontend UI | Complete visual shell (all components built) |
 | Data Source | 100% hardcoded in components |
-| Backend API | Scaffold complete (pyproject.toml, config.py, .env.example) |
+| Backend API | Scaffold + exceptions + middleware (error handler, CORS, logging) |
 | State Management | Local `useState` only, no global store |
 | Routing | Single `/` route, no navigation |
 | AI Service | Simulated (2s timeout, fixed response) |
@@ -99,6 +99,25 @@ page.tsx (state owner)
 | 3rd Place | 1 match |
 | Final | 1 match |
 | **Total** | **104 matches** |
+
+## Backend Architecture (Implemented)
+
+### Exception Hierarchy
+```
+AppException (base, code=500)
+├── NotFoundError (code=404)
+├── ValidationError (code=422)
+├── BusinessError (code=400)
+└── ExternalServiceError (code=502)
+```
+
+### Middleware Stack
+- **ErrorHandlerMiddleware**: Catches all exceptions → unified `{code, data, message}` JSON response
+- **CORS Middleware**: Origins from `settings.CORS_ORIGINS` (env-configurable)
+- **LoggingMiddleware**: Logs `method path → status (duration_ms)` for every request
+
+### Unified API Response Format
+All API responses (success and error) follow: `{"code": int, "data": T | null, "message": str}`
 
 ## Key Implementation Gaps
 

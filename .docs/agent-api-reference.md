@@ -2,9 +2,25 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: NOT YET IMPLEMENTED
+## Status: FOUNDATION IN PROGRESS
 
-The `football-server/` directory is empty. All frontend data is hardcoded.
+Backend scaffold, exception hierarchy, and middleware are implemented.
+Routes, services, and data models are not yet built.
+
+## Unified Response Envelope
+
+All endpoints return responses wrapped in:
+
+```json
+{
+  "code": 200,
+  "data": <T | null>,
+  "message": "success"
+}
+```
+
+Error responses follow the same shape with appropriate HTTP status codes.
+Exception mapping: `NotFoundError→404`, `ValidationError→422`, `BusinessError→400`, `ExternalServiceError→502`, unhandled→500.
 
 ## Planned API Structure
 

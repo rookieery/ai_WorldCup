@@ -1,0 +1,12 @@
+---
+## P1-01-Scaffold — 后端项目脚手架：依赖管理 + 环境配置 + 目录骨架
+- Status: **PASSED**
+- Branch: `feature/world-cup`
+- Files created:
+  - `football-server/pyproject.toml` — project metadata + 10 core dependencies
+  - `football-server/.env.example` — 8 environment variable templates with defaults
+  - `football-server/.gitignore` — Python/venv/db exclusions
+  - `football-server/app/__init__.py` — empty package init
+  - `football-server/app/config.py` — Pydantic Settings class (Settings) with all env vars
+- Verification:
+  - `pip install -e .` installed all dependencies successfully

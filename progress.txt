@@ -1,18 +1,15 @@
 # Ralph Progress Log
 Started: Sat May 24 00:00:00     2026
----
 
-## P1-01-Scaffold — 后端项目脚手架：依赖管理 + 环境配置 + 目录骨架
-- Status: **PASSED**
-- Branch: `feature/world-cup`
-- Files created:
-  - `football-server/pyproject.toml` — project metadata + 10 core dependencies
-  - `football-server/.env.example` — 8 environment variable templates with defaults
-  - `football-server/.gitignore` — Python/venv/db exclusions
-  - `football-server/app/__init__.py` — empty package init
-  - `football-server/app/config.py` — Pydantic Settings class (Settings) with all env vars
-- Verification:
-  - `pip install -e .` installed all dependencies successfully
   - `from app.config import settings` imports and returns correct defaults
   - Frontend build (`npm run build`) passes with no regressions
 
+## P1-02-Exceptions — 异常层级 + 全局错误处理中间件 + CORS ✅ DONE
+  - Created `app/exceptions/exceptions.py`: AppException hierarchy (AppException → NotFoundError/404, ValidationError/422, BusinessError/400, ExternalServiceError/502)
+  - Created `app/exceptions/__init__.py`: re-exports all exception classes
+  - Created `app/middleware/error_handler.py`: ErrorHandlerMiddleware catches AppException → unified `{code, data, message}` JSON; unhandled → 500
+  - Created `app/middleware/cors.py`: add_cors_middleware() registers CORSMiddleware with origins from settings.CORS_ORIGINS
+  - Created `app/middleware/logging.py`: LoggingMiddleware logs `method path → status (duration_ms)` via stdlib logging
+  - Created `app/middleware/__init__.py`: re-exports all middleware
+  - Verified: all imports succeed, exception hierarchy assertions pass, middleware registration with FastAPI works
+  - Updated .docs/agent-file-map.md, .docs/business-overview.md, .docs/agent-api-reference.md

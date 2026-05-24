@@ -77,6 +77,14 @@ football-server/
 ├── .gitignore                   # Python/venv/db ignore rules
 ├── app/
 │   ├── __init__.py              # Package init (empty)
-│   └── config.py                # Pydantic Settings: all env vars with defaults
+│   ├── config.py                # Pydantic Settings: all env vars with defaults
+│   ├── exceptions/
+│   │   ├── __init__.py          # Re-exports all exception classes
+│   │   └── exceptions.py        # AppException hierarchy (NotFound, Validation, Business, ExternalService)
+│   └── middleware/
+│       ├── __init__.py          # Re-exports all middleware classes
+│       ├── error_handler.py     # Global exception → ApiResponse {code, data, message} middleware
+│       ├── cors.py              # CORS middleware (origins from config)
+│       └── logging.py           # Request logging middleware (method/path/status/duration)
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```
