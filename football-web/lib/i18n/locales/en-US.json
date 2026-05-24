@@ -74,6 +74,27 @@
     "dataRefreshed": "Data refreshed: Just now",
     "fifaBrand": "FIFA World Cup 2026™"
   },
+  "groups": {
+    "title": "Group Standings",
+    "subtitle": "Overview of 12 group rankings",
+    "groupLabel": "Group",
+    "position": "Pos",
+    "team": "Team",
+    "played": "P",
+    "won": "W",
+    "drawn": "D",
+    "lost": "L",
+    "goalsFor": "GF",
+    "goalsAgainst": "GA",
+    "goalDiff": "GD",
+    "points": "Pts",
+    "viewDetail": "View Detail",
+    "groupMatches": "Group Matches",
+    "backToGroups": "Back to Groups",
+    "noGroups": "No group data available",
+    "errorLoading": "Failed to load group data",
+    "qualified": "Qualified"
+  },
   "common": {
     "weekdayMon": "Mon",
     "weekdayTue": "Tue",

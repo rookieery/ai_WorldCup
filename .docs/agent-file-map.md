@@ -26,13 +26,18 @@ ai_WorldCup/
 football-web/
 ├── app/
 │   ├── layout.tsx            # Root layout (dark theme, Geist fonts, Analytics)
-│   ├── page.tsx              # Single-page dashboard (all state lives here)
-│   └── globals.css           # CSS variables, animations, glassmorphism utilities
+│   ├── page.tsx              # Single-page dashboard (all state lives here, Groups quick-entry link)
+│   ├── globals.css           # CSS variables, animations, glassmorphism utilities
+│   └── groups/
+│       ├── page.tsx          # Groups overview page (all 12 groups standings grid)
+│       └── [group]/
+│           └── page.tsx      # Single group detail page (standings + match list)
 ├── components/
 │   ├── dashboard/
 │   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
 │   │   ├── date-timeline.tsx # Horizontal date picker (Jun 11–Jul 19)
 │   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter
+│   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
 │   │   ├── tournament-bracket.tsx # Knockout bracket (QF→SF→F, SVG connectors)
 │   │   └── ai-copilot-panel.tsx   # AI chat sidebar (messages, radar chart, analysis)
 │   ├── theme-provider.tsx    # next-themes wrapper (unused in layout currently)

@@ -76,6 +76,27 @@ export interface LocaleMessages {
     dataRefreshed: string
     fifaBrand: string
   }
+  groups: {
+    title: string
+    subtitle: string
+    groupLabel: string
+    position: string
+    team: string
+    played: string
+    won: string
+    drawn: string
+    lost: string
+    goalsFor: string
+    goalsAgainst: string
+    goalDiff: string
+    points: string
+    viewDetail: string
+    groupMatches: string
+    backToGroups: string
+    noGroups: string
+    errorLoading: string
+    qualified: string
+  }
   common: {
     weekdayMon: string
     weekdayTue: string

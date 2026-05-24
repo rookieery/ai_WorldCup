@@ -9,6 +9,7 @@
 - **State**: `timezone`, `viewMode`, `selectedDate` (all `useState`)
 - **Layout**: Header → Main (Timeline|Bracket) + AI Sidebar → Footer
 - **Props flow**: State drilled directly to child components
+- **Features**: Groups quick-entry link (Trophy icon → `/groups`) in Timeline view
 
 ## Dashboard Components (`components/dashboard/`)
 
@@ -41,6 +42,15 @@
 - **Types imported**: `Match`, `CityIcon` from `@/lib/types`, `MatchApiItem` from API module
 - **Dependencies**: `cn` utility, `lucide-react` icons, `getMatches` + `apiMatchToUi` from API
 - **Lines**: ~430
+
+### `group-standings.tsx` — `GroupStandings`
+- **Data**: Fetched from API via `getGroups()` — all 12 groups (A-L) with standings
+- **Sub-components**: `GroupCard` (per-group standings card)
+- **Features**: 12-group grid (responsive: 1→4 cols), qualified zone highlight (top 2), group color coding (A-L cycle), link to group detail page
+- **UI**: Glass-card with color-coded header, shadcn Table, qualified indicator bar
+- **i18n**: Uses `useTranslation()` for all visible text; locale-aware team names (zh-CN → name_zh)
+- **Dependencies**: `cn` utility, `lucide-react` icons, `getGroups` from API, `Table` components from shadcn
+- **Lines**: ~307
 
 ### `tournament-bracket.tsx` — `TournamentBracket`
 - **Data**: Hardcoded `BracketMatch[]` (QF×4 + SF×2 + Final×1)
@@ -88,8 +98,8 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 ### Locale Files
 | File | Language | Keys |
 |------|----------|------|
-| `locales/zh-CN.json` | 简体中文 | 83 keys, 6 namespaces |
-| `locales/en-US.json` | English | 83 keys, 6 namespaces |
+| `locales/zh-CN.json` | 简体中文 | 101 keys, 7 namespaces |
+| `locales/en-US.json` | English | 101 keys, 7 namespaces |
 
 ### Namespaces
 | Namespace | Keys | Purpose |
@@ -100,6 +110,7 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 | `bracket` | 9 | Knockout bracket labels |
 | `ai` | 20 | AI copilot panel labels |
 | `footer` | 4 | Footer status bar labels |
+| `groups` | 18 | Group standings labels (title, table columns, navigation, states) |
 | `common` | 22 | Weekdays, months, generic messages |
 
 ### Usage Pattern

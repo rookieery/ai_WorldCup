@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { Trophy } from "lucide-react"
 import { Header } from "@/components/dashboard/header"
 import { DateTimeline } from "@/components/dashboard/date-timeline"
 import { MatchCardsGrid } from "@/components/dashboard/match-cards-grid"
@@ -81,6 +83,20 @@ export default function WorldCupDashboard() {
                   selectedDate={selectedDate}
                   onDateSelect={setSelectedDate}
                 />
+              </div>
+
+              {/* Groups Quick Entry */}
+              <div className="px-6 pt-4">
+                <Link
+                  href="/groups"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl glass-card border border-glass-border hover:border-primary/30 transition-all text-sm font-medium text-foreground hover:text-primary group/entry"
+                >
+                  <Trophy className="h-4 w-4 text-primary" />
+                  <span>{t("groups.title")}</span>
+                  <span className="text-[10px] text-muted-foreground group-hover/entry:text-primary/60 transition-colors">
+                    A-L
+                  </span>
+                </Link>
               </div>
 
               {/* Match Cards */}

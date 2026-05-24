@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-21-DateFilter",
-      "title": "前端：日期-比赛联动过滤 + 动态数据加载",
-      "description": "Timeline 核心交互任务。\n\n1. 修改 `football-web/components/dashboard/date-timeline.tsx`：\n   - 从 API 获取有比赛的日期列表，仅在有比赛的日期显示圆点指示器\n   - 根据实际赛程数据标注每个日期的阶段标签（Group/R32/QF/SF/Final）\n   - 打开页面时自动定位到今日，若今日无比赛则选中最近有比赛的日期\n2. 修改 `football-web/components/dashboard/match-cards-grid.tsx`：\n   - 替换硬编码的 4 场比赛为 API 调用：getMatches({ date: selectedDate })\n   - 实现 selectedDate 驱动的过滤：点击日期 → 重新请求该日比赛 → 更新卡片列表\n   - 无比赛日期显示空状态提示\n   - 时区切换联动更新所有卡片的时间显示\n3. 将两个组件中的所有硬编码文案替换为 t() 调用",
-      "passes": true
-    },
-    {
       "id": "P1-22-GroupView",
       "title": "前端：小组积分榜组件 + 页面",
       "description": "新增核心功能页面任务。\n\n1. 创建 `football-web/components/dashboard/group-standings.tsx`：\n   - 展示 12 个小组（A-L）的积分排名表\n   - 每个小组卡片：组名 + 4 队排名表（位置、国旗、队名、赛/胜/平/负、进球/失球、净胜球、积分）\n   - 响应式布局：桌面端 3-4 列网格，移动端 1 列\n   - 赛博朋克风格：glass-card + 阶段颜色编码\n2. 创建 `football-web/app/groups/page.tsx`：小组积分总览页\n3. 创建 `football-web/app/groups/[group]/page.tsx`：单组详情页（积分榜 + 该组赛程列表）\n4. 调用 getGroups() / getGroupDetail(group) API 获取数据\n5. 在首页 Timeline 视图中添加小组积分快捷入口\n\n所有文案使用 t() 国际化",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-23-FullBracket",

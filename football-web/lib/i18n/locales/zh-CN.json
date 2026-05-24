@@ -74,6 +74,27 @@
     "dataRefreshed": "数据已刷新：刚刚",
     "fifaBrand": "2026 FIFA 世界杯™"
   },
+  "groups": {
+    "title": "小组积分榜",
+    "subtitle": "12 个小组积分排名总览",
+    "groupLabel": "小组",
+    "position": "排名",
+    "team": "球队",
+    "played": "赛",
+    "won": "胜",
+    "drawn": "平",
+    "lost": "负",
+    "goalsFor": "进球",
+    "goalsAgainst": "失球",
+    "goalDiff": "净胜球",
+    "points": "积分",
+    "viewDetail": "查看详情",
+    "groupMatches": "小组赛程",
+    "backToGroups": "返回小组总览",
+    "noGroups": "暂无小组数据",
+    "errorLoading": "加载小组数据失败",
+    "qualified": "晋级区"
+  },
   "common": {
     "weekdayMon": "周一",
     "weekdayTue": "周二",

@@ -231,3 +231,30 @@
 - **Files modified**:
   - `app/layout.tsx` — Wrapped children with I18nProvider
 - **Namespaces**: header, timeline, match, bracket, ai, footer, common
+- **Features**: Auto-detect browser language, localStorage persistence, dot-notation key lookup, key-as-fallback
+- **Build**: Passes clean (next build ✓)
+## P1-20-LangSwitch — Header 语言切换控件
+- **Date**: 2026-05-24
+- **Files modified**:
+  - `football-web/components/dashboard/header.tsx` — Added language switch (Globe icon + shadcn Select dropdown), replaced all hardcoded text with t() calls, changed timezone icon from Globe to Clock for semantic clarity
+  - `football-web/lib/i18n/types.ts` — Added `langZh` and `langEn` fields to header namespace
+  - `football-web/lib/i18n/locales/en-US.json` — Added `header.langZh` ("中文") and `header.langEn` ("English") keys
+  - `football-web/lib/i18n/locales/zh-CN.json` — Added `header.langZh` ("中文") and `header.langEn` ("English") keys
+  - `.docs/agent-component-map.md` — Updated Header component docs, i18n namespace key counts
+  - `.docs/agent-file-map.md` — Updated Header description and locale key counts
+- **Build**: Passes clean (next build ✓)
+- **Notes**: Language switch uses I18nProvider context via useTranslation() hook; no new deps needed (shadcn Select already available)
+## P1-21-DateFilter — Date-Match Linked Filtering + Dynamic Data Loading
+- **Status**: COMPLETE
+- **Build**: Passes clean (next build ✓)
+- **Backend Changes**:
+  - Added `get_match_dates()` to `MatchRepository` — queries distinct match dates with primary stage (highest precedence wins)
+  - Added `get_match_dates()` to `MatchService` — returns `[{date, stage}]`
+  - Added `GET /api/matches/dates` endpoint to `match_controller.py`
+- **Frontend Changes**:
+  - `date-timeline.tsx`: Replaced hardcoded 40-day array with dynamic API fetch via `getMatchDates()`. Auto-selects today or nearest future match date. i18n labels for months/weekdays. Loading skeleton.
+  - `match-cards-grid.tsx`: Replaced hardcoded 4-match array with dynamic API fetch via `getMatches({ date })`. Added timezone prop, loading/error/empty states. Added `apiMatchToUi()` converter and `MatchApiItem` type. All text uses `t()`.
+  - `page.tsx`: Updated `selectedDate` initial state to empty string (populated by DateTimeline). Passes `timezone` prop to MatchCardsGrid. Footer text uses `t()`.
+  - `lib/types/match.ts`: Added `MatchDateInfo` type
+  - `lib/api/matches.ts`: Added `getMatchDates()`, `apiMatchToUi()`, `MatchApiItem` type, `inferCityIcon()` helper
+  - `lib/i18n/locales/{en-US,zh-CN}.json`: Added `match.noMatches`, `match.today`, `match.errorLoading` keys
