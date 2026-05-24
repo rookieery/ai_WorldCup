@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-04-Alembic",
-      "title": "Alembic 数据库迁移配置 + 初始迁移脚本",
-      "description": "数据库迁移基础设施任务。\n\n1. 创建 `football-server/alembic.ini`，配置 sqlalchemy.url 指向 SQLite 文件（从 config 读取）\n2. 创建 `football-server/alembic/env.py`，配置 async 模式（使用 async with connectable.connect()），引入 Base.metadata 作为 target_metadata\n3. 创建 `football-server/alembic/script.py.mako` 模板\n4. 创建 `alembic/versions/001_initial_schema.py` 初始迁移脚本，包含 teams、venues、matches、group_standings、match_events 五张表及外键关系\n\n验收：`alembic upgrade head` 成功创建所有表",
-      "passes": true
-    },
-    {
       "id": "P1-05-Schemas",
       "title": "全部 Pydantic Schema：Common + 7 组实体 DTO/VO",
       "description": "请求/响应数据校验层任务。\n\n1. 创建 `app/schemas/__init__.py`\n2. 创建 `app/schemas/common.py`：ApiResponse[T] 泛型响应（code: int, data: T, message: str）、PaginatedResponse[T]（items, total, page, page_size）\n3. 创建 `app/schemas/team_schema.py`：TeamCreate/TeamUpdate/TeamResponse/TeamListResponse\n4. 创建 `app/schemas/match_schema.py`：MatchQueryParams（date, stage, group, team, status 过滤参数）、MatchResponse、MatchDetailResponse（含 match_events）\n5. 创建 `app/schemas/venue_schema.py`：VenueResponse\n6. 创建 `app/schemas/group_schema.py`：GroupStandingResponse、GroupDetailResponse（standings + matches）\n7. 创建 `app/schemas/bracket_schema.py`：BracketTeamResponse、BracketMatchResponse、BracketRoundResponse、BracketTreeResponse（rounds 列表）\n8. 创建 `app/schemas/cheer_schema.py`：CheerResponse（home/away 计数）、CheerVoteRequest（side: home/away）\n9. 创建 `app/schemas/ai_schema.py`：ChatRequest（messages + context + lang）、SSEEvent（type: thinking/answer/analysis/done）、TeamAnalysisResponse\n10. 创建 `app/schemas/ws_schema.py`：WSEventType 枚举、WSMessage（event + payload）\n\n严格区分 DTO（请求）和 VO（响应），响应模型使用 from_attributes=True",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-06-Repos",

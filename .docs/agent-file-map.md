@@ -92,13 +92,24 @@ football-server/
 │   │   ├── error_handler.py     # Global exception → ApiResponse {code, data, message} middleware
 │   │   ├── cors.py              # CORS middleware (origins from config)
 │   │   └── logging.py           # Request logging middleware (method/path/status/duration)
-│   └── models/
-│       ├── __init__.py          # Re-exports all model classes + Base
-│       ├── base.py              # DeclarativeBase + TimestampMixin (created_at, updated_at)
-│       ├── team.py              # Team model (48 teams, code/name UNIQUE)
-│       ├── venue.py             # Venue model (16 stadiums with timezone info)
-│       ├── match.py             # Match model (104 fixtures, FK→Team/Venue/self)
-│       ├── group_standing.py    # GroupStanding model (48 rows, FK→Team UNIQUE)
-│       └── match_event.py       # MatchEvent model (goals/cards/subs, FK→Match)
+│   ├── models/
+│   │   ├── __init__.py          # Re-exports all model classes + Base
+│   │   ├── base.py              # DeclarativeBase + TimestampMixin (created_at, updated_at)
+│   │   ├── team.py              # Team model (48 teams, code/name UNIQUE)
+│   │   ├── venue.py             # Venue model (16 stadiums with timezone info)
+│   │   ├── match.py             # Match model (104 fixtures, FK→Team/Venue/self)
+│   │   ├── group_standing.py    # GroupStanding model (48 rows, FK→Team UNIQUE)
+│   │   └── match_event.py       # MatchEvent model (goals/cards/subs, FK→Match)
+│   └── schemas/
+│       ├── __init__.py          # Re-exports all schema classes
+│       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes
+│       ├── team_schema.py       # TeamCreate/TeamUpdate DTOs + TeamResponse/TeamListResponse VOs
+│       ├── match_schema.py      # MatchQueryParams DTO + MatchResponse/MatchDetailResponse/MatchEventResponse VOs
+│       ├── venue_schema.py      # VenueResponse VO
+│       ├── group_schema.py      # GroupStandingResponse + GroupDetailResponse VOs
+│       ├── bracket_schema.py    # BracketTeam/Match/Round/TreeResponse VOs (TBD support)
+│       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
+│       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VOs
+│       └── ws_schema.py         # WSEventType enum + WSMessage VO
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```

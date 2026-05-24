@@ -3,19 +3,22 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - Verification: Frontend build (npm run build) passes with no regressions
-  - Updated .docs/agent-file-map.md, .docs/business-overview.md, .docs/agent-api-reference.md with model schema documentation
-## P1-04-Alembic — Alembic 数据库迁移配置 + 初始迁移脚本
-- Status: **PASSED**
-- Branch: `feature/world-cup`
-- Files created:
-  - `football-server/alembic.ini` — Alembic config with logging, DB URL placeholder (overridden in env.py)
-  - `football-server/alembic/env.py` — Async migration runner, reads DATABASE_URL from app.config.settings, render_as_batch=True for SQLite
-  - `football-server/alembic/script.py.mako` — Standard Alembic migration template
-  - `football-server/alembic/versions/001_initial_schema.py` — Initial migration: teams, venues, group_standings, matches, match_events (5 tables + all FK relationships)
-- Verification:
-  - `alembic upgrade head` successfully creates all 5 tables (+ alembic_version tracking table)
-  - `alembic downgrade base` successfully drops all application tables
-  - Re-upgrade from base works cleanly
+
   - Frontend build (`npm run build`) passes with no regressions
   - Updated .docs/agent-file-map.md, .docs/business-overview.md
+
+## P1-05-Schemas — All Pydantic Schemas (Common + 7 Entity DTO/VO)
+- Created `app/schemas/` package with 10 files:
+  - `common.py`: ApiResponse[T] + PaginatedResponse[T] generic response envelopes
+  - `team_schema.py`: TeamCreate/TeamUpdate (DTOs) + TeamResponse/TeamListResponse (VOs)
+  - `match_schema.py`: MatchQueryParams (DTO) + MatchResponse/MatchDetailResponse/MatchEventResponse (VOs)
+  - `venue_schema.py`: VenueResponse (VO)
+  - `group_schema.py`: GroupStandingResponse + GroupDetailResponse (VOs)
+  - `bracket_schema.py`: BracketTeamResponse/BracketMatchResponse/BracketRoundResponse/BracketTreeResponse (VOs)
+  - `cheer_schema.py`: CheerVoteRequest (DTO) + CheerResponse (VO)
+  - `ai_schema.py`: ChatRequest (DTO) + SSEEvent + TeamAnalysisResponse (VOs)
+  - `ws_schema.py`: WSEventType enum + WSMessage (VO)
+  - `__init__.py`: Re-exports all 24 schema classes
+- All response models use `from_attributes = True` for ORM conversion
+- All imports verified; smoke tests pass for ApiResponse, PaginatedResponse, CheerVoteRequest, WSMessage, SSEEvent
+- Updated .docs/agent-file-map.md, .docs/business-overview.md

@@ -12,7 +12,7 @@ Real-time FIFA World Cup 2026 dashboard for global football fans. Features match
 |--------|--------|
 | Frontend UI | Complete visual shell (all components built) |
 | Data Source | 100% hardcoded in components |
-| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) + Alembic migrations |
+| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) + Pydantic schemas (8 modules) + Alembic migrations |
 | State Management | Local `useState` only, no global store |
 | Routing | Single `/` route, no navigation |
 | AI Service | Simulated (2s timeout, fixed response) |
@@ -137,6 +137,53 @@ Relationships:
   Match self-ref next_match (bracket linkage)
 ```
 
+### Pydantic Schemas (Request/Response Validation)
+```
+common.py
+├── ApiResponse[T]           # {code: int, data: T | null, message: str}
+└── PaginatedResponse[T]     # {items: List[T], total, page, page_size}
+
+team_schema.py
+├── TeamCreate (DTO)         # name, name_zh, code, flag, fifa_ranking, group_label, confederation, world_cup_appearances
+├── TeamUpdate (DTO)         # All fields optional
+├── TeamResponse (VO)        # Full team data
+└── TeamListResponse (VO)    # Minimal team data for lists/dropdowns
+
+match_schema.py
+├── MatchQueryParams (DTO)   # date, stage, group, team, status filters
+├── MatchEventResponse (VO)  # event_type, minute, team_side, player_name
+├── MatchResponse (VO)       # Nested TeamListResponse + VenueResponse
+└── MatchDetailResponse (VO) # Extends MatchResponse + events list
+
+venue_schema.py
+└── VenueResponse (VO)       # name, city, country, timezone, utc_offset, capacity
+
+group_schema.py
+├── GroupStandingResponse (VO) # team + stats (played/won/drawn/lost/GF/GA/GD/pts/pos)
+└── GroupDetailResponse (VO)   # group_label + standings + matches
+
+bracket_schema.py
+├── BracketTeamResponse (VO)   # Team slot (supports TBD with from_group/from_position)
+├── BracketMatchResponse (VO)  # home/away BracketTeam + stage + status
+├── BracketRoundResponse (VO)  # round_name + matches list
+└── BracketTreeResponse (VO)   # rounds list (full knockout tree)
+
+cheer_schema.py
+├── CheerVoteRequest (DTO)   # side: "home" | "away"
+└── CheerResponse (VO)       # match_id, home count, away count
+
+ai_schema.py
+├── ChatRequest (DTO)        # messages + context + lang
+├── SSEEvent (VO)            # type: thinking/answer/analysis/done/error + content/data
+└── TeamAnalysisResponse (VO) # radar dimensions + win_probability + insights
+
+ws_schema.py
+├── WSEventType (Enum)       # score_update, match_start, match_end, activity_update, cheer_update, bracket_update
+└── WSMessage (VO)           # event + payload dict
+```
+
+All response models use `from_attributes = True` for seamless ORM → VO conversion.
+
 ### Database Migrations (Alembic)
 - **Config**: `alembic.ini` + `alembic/env.py` (async mode via aiosqlite)
 - **DB URL**: Dynamically resolved from `app.config.settings.DATABASE_URL`
@@ -146,7 +193,7 @@ Relationships:
 
 ## Key Implementation Gaps
 
-1. **No API integration** — all data hardcoded
+1. **No API integration** — all data hardcoded (schemas layer ready)
 2. **No global state** — Zustand recommended
 3. **No routing** — single page only
 4. **Bracket incomplete** — only QF→SF→F, needs R32→R16→QF→SF→3rd→F
