@@ -31,7 +31,10 @@
     "matchActivity": "Match Activity",
     "fanSupport": "Fan Support Meter",
     "castVote": "Cast Your Vote!",
-    "cheer": "Cheer"
+    "cheer": "Cheer",
+    "noMatches": "No matches on this date",
+    "today": "Today",
+    "errorLoading": "Failed to load matches"
   },
   "bracket": {
     "knockoutStage": "Knockout Stage",

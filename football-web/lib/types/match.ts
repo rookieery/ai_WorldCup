@@ -47,3 +47,9 @@ export interface MatchQueryParams {
   teamCode?: string
   live?: boolean
 }
+
+/** A single match-date entry returned by GET /api/matches/dates. */
+export interface MatchDateInfo {
+  date: string   // ISO-8601 date string, e.g. "2026-06-11"
+  stage: string  // Primary stage: "group", "R32", "R16", "QF", "SF", "3rd", "F"
+}

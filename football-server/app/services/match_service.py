@@ -33,6 +33,14 @@ class MatchService:
 
     # ── public methods ─────────────────────────────────────────────────────
 
+    async def get_match_dates(self) -> list[dict]:
+        """Return all distinct match dates with their primary stage label.
+
+        Each item contains ``date`` (ISO-8601) and ``stage``.
+        """
+        rows = await self._match_repo.get_match_dates()
+        return [{"date": d.isoformat(), "stage": s} for d, s in rows]
+
     async def get_matches(
         self,
         *,

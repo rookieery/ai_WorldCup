@@ -22,20 +22,25 @@
 
 ### `date-timeline.tsx` — `DateTimeline`
 - **Props**: `selectedDate`, `onDateSelect`
-- **Data**: Hardcoded 40-day array (Jun 11–Jul 19) with stage labels
+- **Data**: Fetched from API via `getMatchDates()` — dynamic match dates with stage labels
+- **Auto-select**: On mount, selects today or nearest future match date
+- **Auto-scroll**: Scrolls selected date into view on first render
 - **UI**: Horizontal scroll with arrow nav, stage-colored date pills
 - **Stage colors**: Group=lime, R32/R16=cyan, QF/SF=magenta, 3rd/Final=gold
-- **Dependencies**: `Button` (shadcn), `cn` utility
-- **Lines**: ~167
+- **i18n**: Uses `useTranslation()` for month/weekday labels and loading text
+- **Dependencies**: `Button` (shadcn), `cn` utility, `getMatchDates` from API
+- **Lines**: ~210
 
 ### `match-cards-grid.tsx` — `MatchCardsGrid`
-- **Props**: `selectedDate` (not yet used for filtering)
-- **Data**: Hardcoded `Match[]` array (4 sample matches)
-- **Sub-components**: `MatchCard`, `CityIconComponent`
-- **Features**: Live score display, Big Match badge, activity bar, Fan Cheer Meter (hover expand)
-- **Types imported**: `Match`, `CityIcon` from `@/lib/types`
-- **Dependencies**: `cn` utility, `lucide-react` icons
-- **Lines**: ~432
+- **Props**: `selectedDate`, `timezone` ("local" | "host")
+- **Data**: Fetched from API via `getMatches({ date, timezone })` — dynamic, date-driven
+- **Sub-components**: `MatchCard`, `CityIconComponent`, `EmptyState`
+- **Features**: Live score display, Big Match badge, activity bar, Fan Cheer Meter (hover expand), loading/error/empty states
+- **API mapping**: `apiMatchToUi()` converts backend `MatchApiItem` → frontend `Match` type
+- **i18n**: Uses `useTranslation()` for all visible text
+- **Types imported**: `Match`, `CityIcon` from `@/lib/types`, `MatchApiItem` from API module
+- **Dependencies**: `cn` utility, `lucide-react` icons, `getMatches` + `apiMatchToUi` from API
+- **Lines**: ~430
 
 ### `tournament-bracket.tsx` — `TournamentBracket`
 - **Data**: Hardcoded `BracketMatch[]` (QF×4 + SF×2 + Final×1)
@@ -123,7 +128,7 @@ function MyComponent() {
 ### API Modules (`lib/api/`)
 | Module | Functions | Backend Endpoints |
 |--------|-----------|-------------------|
-| `matches.ts` | `getMatches(params)`, `getMatchById(id, opts)`, `getLiveMatches(opts)` | `GET /api/matches`, `GET /api/matches/:id`, `GET /api/matches/live` |
+| `matches.ts` | `getMatchDates()`, `getMatches(params)`, `getMatchById(id, opts)`, `getLiveMatches(opts)`, `apiMatchToUi(item)` | `GET /api/matches/dates`, `GET /api/matches`, `GET /api/matches/:id`, `GET /api/matches/live` |
 | `bracket.ts` | `getBracket(opts)` | `GET /api/bracket` |
 | `teams.ts` | `getTeams(params)`, `getTeamByCode(code)` | `GET /api/teams`, `GET /api/teams/:code` |
 | `groups.ts` | `getGroups()`, `getGroupDetail(group, opts)` | `GET /api/groups`, `GET /api/groups/:group` |

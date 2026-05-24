@@ -31,7 +31,10 @@
     "matchActivity": "比赛活跃度",
     "fanSupport": "球迷支持度",
     "castVote": "投出你的一票！",
-    "cheer": "助威"
+    "cheer": "助威",
+    "noMatches": "该日期暂无比赛",
+    "today": "今天",
+    "errorLoading": "加载比赛数据失败"
   },
   "bracket": {
     "knockoutStage": "淘汰赛阶段",

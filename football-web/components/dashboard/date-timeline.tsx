@@ -1,73 +1,162 @@
 "use client"
 
-import { useRef } from "react"
+import { useEffect, useRef, useCallback, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/lib/i18n"
+import { getMatchDates } from "@/lib/api/matches"
+import type { MatchDateInfo } from "@/lib/types"
 
-const dates = [
-  { date: "Jun 11", day: "Wed", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 12", day: "Thu", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 13", day: "Fri", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 14", day: "Sat", isToday: true, hasMatches: true, stage: "Group" },
-  { date: "Jun 15", day: "Sun", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 16", day: "Mon", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 17", day: "Tue", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 18", day: "Wed", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 19", day: "Thu", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 20", day: "Fri", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 21", day: "Sat", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 22", day: "Sun", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 23", day: "Mon", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 24", day: "Tue", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 25", day: "Wed", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 26", day: "Thu", isToday: false, hasMatches: true, stage: "Group" },
-  { date: "Jun 27", day: "Fri", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jun 28", day: "Sat", isToday: false, hasMatches: true, stage: "R32" },
-  { date: "Jun 29", day: "Sun", isToday: false, hasMatches: true, stage: "R32" },
-  { date: "Jun 30", day: "Mon", isToday: false, hasMatches: true, stage: "R32" },
-  { date: "Jul 01", day: "Tue", isToday: false, hasMatches: true, stage: "R32" },
-  { date: "Jul 02", day: "Wed", isToday: false, hasMatches: true, stage: "R16" },
-  { date: "Jul 03", day: "Thu", isToday: false, hasMatches: true, stage: "R16" },
-  { date: "Jul 04", day: "Fri", isToday: false, hasMatches: true, stage: "R16" },
-  { date: "Jul 05", day: "Sat", isToday: false, hasMatches: true, stage: "R16" },
-  { date: "Jul 06", day: "Sun", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 07", day: "Mon", isToday: false, hasMatches: true, stage: "QF" },
-  { date: "Jul 08", day: "Tue", isToday: false, hasMatches: true, stage: "QF" },
-  { date: "Jul 09", day: "Wed", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 10", day: "Thu", isToday: false, hasMatches: true, stage: "SF" },
-  { date: "Jul 11", day: "Fri", isToday: false, hasMatches: true, stage: "SF" },
-  { date: "Jul 12", day: "Sat", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 13", day: "Sun", isToday: false, hasMatches: true, stage: "3rd" },
-  { date: "Jul 14", day: "Mon", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 15", day: "Tue", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 16", day: "Wed", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 17", day: "Thu", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 18", day: "Fri", isToday: false, hasMatches: false, stage: "Rest" },
-  { date: "Jul 19", day: "Sat", isToday: false, hasMatches: true, stage: "Final" },
-]
+/** Map a backend stage value to its i18n key. */
+function stageKey(stage: string): string {
+  const map: Record<string, string> = {
+    group: "timeline.stageGroup",
+    R32: "timeline.stageR32",
+    R16: "timeline.stageR16",
+    QF: "timeline.stageQF",
+    SF: "timeline.stageSF",
+    "3rd": "timeline.stage3rd",
+    F: "timeline.stageFinal",
+  }
+  return map[stage] ?? "timeline.stageRest"
+}
+
+/** Display-friendly short stage label (always English abbreviation for compactness). */
+function stageAbbr(stage: string): string {
+  const map: Record<string, string> = {
+    group: "Group",
+    R32: "R32",
+    R16: "R16",
+    QF: "QF",
+    SF: "SF",
+    "3rd": "3rd",
+    F: "Final",
+  }
+  return map[stage] ?? "Rest"
+}
 
 interface DateTimelineProps {
   selectedDate: string
   onDateSelect: (date: string) => void
 }
 
-export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+interface DateItem {
+  isoDate: string      // "2026-06-11"
+  label: string        // "Jun 11"
+  dayOfWeek: string    // "Wed"
+  stage: string        // backend stage key
+  isToday: boolean
+}
 
-  const scroll = (direction: "left" | "right") => {
+const WEEKDAY_KEYS = [
+  "common.weekdaySun",
+  "common.weekdayMon",
+  "common.weekdayTue",
+  "common.weekdayWed",
+  "common.weekdayThu",
+  "common.weekdayFri",
+  "common.weekdaySat",
+]
+
+const MONTH_KEYS = [
+  "common.monthJan", "common.monthFeb", "common.monthMar", "common.monthApr",
+  "common.monthMay", "common.monthJun", "common.monthJul", "common.monthAug",
+  "common.monthSep", "common.monthOct", "common.monthNov", "common.monthDec",
+]
+
+function formatDateLabel(d: Date, t: (k: string) => string): string {
+  const month = t(MONTH_KEYS[d.getMonth()])
+  return `${month} ${d.getDate()}`
+}
+
+function formatDayOfWeek(d: Date, t: (k: string) => string): string {
+  return t(WEEKDAY_KEYS[d.getDay()])
+}
+
+export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) {
+  const { t } = useTranslation()
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [dates, setDates] = useState<DateItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // ── Fetch match dates from API ──────────────────────────────────────────
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchDates() {
+      setLoading(true)
+      try {
+        const raw: MatchDateInfo[] = await getMatchDates()
+        if (cancelled) return
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        const items: DateItem[] = raw.map((entry) => {
+          const d = new Date(entry.date + "T00:00:00")
+          const isToday = d.getTime() === today.getTime()
+          return {
+            isoDate: entry.date,
+            label: formatDateLabel(d, t),
+            dayOfWeek: formatDayOfWeek(d, t),
+            stage: entry.stage,
+            isToday,
+          }
+        })
+
+        setDates(items)
+
+        // Auto-select today, or the nearest future date with matches
+        const todayItem = items.find((i) => i.isToday)
+        if (todayItem) {
+          onDateSelect(todayItem.isoDate)
+        } else {
+          const nearestFuture = items.find((i) => {
+            const d = new Date(i.isoDate + "T00:00:00")
+            return d.getTime() >= today.getTime()
+          })
+          if (nearestFuture) {
+            onDateSelect(nearestFuture.isoDate)
+          } else if (items.length > 0) {
+            onDateSelect(items[items.length - 1].isoDate)
+          }
+        }
+      } catch {
+        // Silently fail — dates remain empty, grid shows empty state
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    fetchDates()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Scroll to selected / today on first render ─────────────────────────
+  useEffect(() => {
+    if (dates.length === 0) return
+    const idx = dates.findIndex((d) => d.isoDate === selectedDate)
+    if (idx >= 0 && scrollRef.current) {
+      const child = scrollRef.current.children[idx] as HTMLElement | undefined
+      if (child) {
+        child.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })
+      }
+    }
+  }, [dates, selectedDate])
+
+  const scroll = useCallback((direction: "left" | "right") => {
     if (scrollRef.current) {
       const scrollAmount = direction === "left" ? -300 : 300
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" })
     }
-  }
+  }, [])
 
-  const getStageColor = (stage: string, isSelected: boolean, isToday: boolean) => {
-    if (isSelected) {
-      return "bg-[#CCFF00]/20 text-[#CCFF00] border-[#CCFF00]/30"
-    }
+  const getStageColor = useCallback((stage: string, isSelected: boolean) => {
+    if (isSelected) return "bg-[#CCFF00]/20 text-[#CCFF00] border-[#CCFF00]/30"
     switch (stage) {
-      case "Group":
+      case "group":
         return "bg-[#CCFF00]/10 text-[#CCFF00]/80"
       case "R32":
       case "R16":
@@ -76,11 +165,19 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
       case "SF":
         return "bg-[#FF00E5]/10 text-[#FF00E5]/80"
       case "3rd":
-      case "Final":
+      case "F":
         return "bg-[#FFD700]/10 text-[#FFD700]/80"
       default:
         return "bg-muted text-muted-foreground"
     }
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-6">
+        <span className="text-sm text-muted-foreground animate-pulse">{t("common.loading")}</span>
+      </div>
+    )
   }
 
   return (
@@ -110,11 +207,11 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
         className="flex gap-2 overflow-x-auto scrollbar-hide px-14 py-3"
       >
         {dates.map((item) => {
-          const isSelected = selectedDate === item.date
+          const isSelected = selectedDate === item.isoDate
           return (
             <button
-              key={item.date}
-              onClick={() => onDateSelect(item.date)}
+              key={item.isoDate}
+              onClick={() => onDateSelect(item.isoDate)}
               className={cn(
                 "flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl min-w-[85px] transition-all duration-300 border",
                 isSelected
@@ -127,10 +224,10 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
               <span
                 className={cn(
                   "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
-                  getStageColor(item.stage, isSelected, item.isToday)
+                  getStageColor(item.stage, isSelected)
                 )}
               >
-                {item.stage}
+                {stageAbbr(item.stage)}
               </span>
               <span
                 className={cn(
@@ -142,21 +239,20 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
                       : "text-foreground"
                 )}
               >
-                {item.date}
+                {item.label}
               </span>
-              <span className="text-[10px] text-muted-foreground">{item.day}</span>
-              {item.hasMatches && (
-                <div
-                  className={cn(
-                    "w-1.5 h-1.5 rounded-full mt-0.5",
-                    isSelected
-                      ? "bg-[#CCFF00]"
-                      : item.isToday
-                        ? "bg-[#00F0FF]"
-                        : "bg-muted-foreground/40"
-                  )}
-                />
-              )}
+              <span className="text-[10px] text-muted-foreground">{item.dayOfWeek}</span>
+              {/* Match dot indicator — always shown since every date has matches */}
+              <div
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full mt-0.5",
+                  isSelected
+                    ? "bg-[#CCFF00]"
+                    : item.isToday
+                      ? "bg-[#00F0FF]"
+                      : "bg-muted-foreground/40"
+                )}
+              />
             </button>
           )
         })}

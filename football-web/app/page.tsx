@@ -6,6 +6,7 @@ import { DateTimeline } from "@/components/dashboard/date-timeline"
 import { MatchCardsGrid } from "@/components/dashboard/match-cards-grid"
 import { TournamentBracket } from "@/components/dashboard/tournament-bracket"
 import { AICopilotPanel } from "@/components/dashboard/ai-copilot-panel"
+import { useTranslation } from "@/lib/i18n"
 
 type TimezoneOption = "local" | "host"
 type ViewMode = "timeline" | "bracket"
@@ -13,7 +14,8 @@ type ViewMode = "timeline" | "bracket"
 export default function WorldCupDashboard() {
   const [timezone, setTimezone] = useState<TimezoneOption>("local")
   const [viewMode, setViewMode] = useState<ViewMode>("bracket")
-  const [selectedDate, setSelectedDate] = useState("Jun 14")
+  const [selectedDate, setSelectedDate] = useState("")
+  const { t } = useTranslation()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -82,7 +84,7 @@ export default function WorldCupDashboard() {
               </div>
 
               {/* Match Cards */}
-              <MatchCardsGrid selectedDate={selectedDate} />
+              <MatchCardsGrid selectedDate={selectedDate} timezone={timezone} />
             </>
           ) : (
             /* Tournament Bracket */
@@ -104,15 +106,15 @@ export default function WorldCupDashboard() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#CCFF00] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#CCFF00]" />
             </div>
-            <span>Live Updates Active</span>
+            <span>{t("footer.liveUpdates")}</span>
           </div>
           <span className="text-border">|</span>
-          <span>48 Teams &bull; 16 Host Cities &bull; 104 Matches</span>
+          <span>{t("footer.teamsCitiesMatches")}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span>Data refreshed: Just now</span>
+          <span>{t("footer.dataRefreshed")}</span>
           <span className="text-border">|</span>
-          <span className="text-[#CCFF00] font-bold tracking-wide">FIFA World Cup 2026&trade;</span>
+          <span className="text-[#CCFF00] font-bold tracking-wide">{t("footer.fifaBrand")}</span>
         </div>
       </footer>
     </div>

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -141,6 +141,41 @@ class MatchRepository(BaseRepository[Match]):
             stmt.order_by(self.model.kickoff_utc.asc()).offset(offset).limit(page_size)
         )
         return result.unique().scalars().all(), total
+
+    async def get_match_dates(self) -> List[Tuple[date, str]]:
+        """Return distinct match dates with their primary stage label.
+
+        Returns a list of ``(match_date, stage)`` tuples ordered by date.
+        When a date has multiple stages the one with highest precedence wins
+        (Final > SF > QF > R16 > R32 > group).
+        """
+        stage_order = ["group", "R32", "R16", "QF", "SF", "3rd", "F"]
+        stmt = (
+            select(
+                func.date(self.model.kickoff_utc).label("match_date"),
+                self.model.stage,
+                func.count().label("cnt"),
+            )
+            .group_by(
+                func.date(self.model.kickoff_utc),
+                self.model.stage,
+            )
+            .order_by(func.date(self.model.kickoff_utc).asc())
+        )
+        rows = (await self.session.execute(stmt)).all()
+
+        # Merge rows per date — keep highest-precedence stage
+        date_map: Dict[date, str] = {}
+        for match_date, stage, _cnt in rows:
+            if match_date not in date_map:
+                date_map[match_date] = stage
+            else:
+                existing_idx = stage_order.index(date_map[match_date]) if date_map[match_date] in stage_order else -1
+                new_idx = stage_order.index(stage) if stage in stage_order else -1
+                if new_idx > existing_idx:
+                    date_map[match_date] = stage
+
+        return sorted(date_map.items())
 
     async def get_by_team_code(
         self,

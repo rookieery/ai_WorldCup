@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   MapPin,
   Clock,
@@ -11,80 +11,13 @@ import {
   Landmark,
   Sun,
   Activity,
+  Inbox,
+  RefreshCw,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/lib/i18n"
+import { getMatches, apiMatchToUi } from "@/lib/api/matches"
 import type { Match, CityIcon } from "@/lib/types"
-
-const matches: Match[] = [
-  {
-    id: 1,
-    team1: { name: "Mexico", code: "MEX", flag: "🇲🇽" },
-    team2: { name: "Canada", code: "CAN", flag: "🇨🇦" },
-    localTime: "3:00 PM",
-    hostTime: "12:00 PM",
-    venue: "Azteca Stadium",
-    hostCity: "Mexico City",
-    cityIcon: "landmark",
-    stage: "Group A",
-    status: "live",
-    score1: 2,
-    score2: 1,
-    cheerTeam1: 72,
-    cheerTeam2: 28,
-    isBigMatch: false,
-    activityLevel: 85,
-  },
-  {
-    id: 2,
-    team1: { name: "Brazil", code: "BRA", flag: "🇧🇷" },
-    team2: { name: "France", code: "FRA", flag: "🇫🇷" },
-    localTime: "6:00 PM",
-    hostTime: "3:00 PM",
-    venue: "SoFi Stadium",
-    hostCity: "Los Angeles",
-    cityIcon: "palm",
-    stage: "Quarter Final",
-    status: "upcoming",
-    cheerTeam1: 54,
-    cheerTeam2: 46,
-    isBigMatch: true,
-    activityLevel: 95,
-  },
-  {
-    id: 3,
-    team1: { name: "USA", code: "USA", flag: "🇺🇸" },
-    team2: { name: "England", code: "ENG", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
-    localTime: "9:00 PM",
-    hostTime: "6:00 PM",
-    venue: "MetLife Stadium",
-    hostCity: "New York",
-    cityIcon: "skyscraper",
-    stage: "Group B",
-    status: "upcoming",
-    cheerTeam1: 61,
-    cheerTeam2: 39,
-    isBigMatch: false,
-    activityLevel: 72,
-  },
-  {
-    id: 4,
-    team1: { name: "Argentina", code: "ARG", flag: "🇦🇷" },
-    team2: { name: "Germany", code: "GER", flag: "🇩🇪" },
-    localTime: "12:00 PM",
-    hostTime: "11:00 AM",
-    venue: "AT&T Stadium",
-    hostCity: "Dallas",
-    cityIcon: "cactus",
-    stage: "Group C",
-    status: "finished",
-    score1: 3,
-    score2: 2,
-    cheerTeam1: 67,
-    cheerTeam2: 33,
-    isBigMatch: false,
-    activityLevel: 45,
-  },
-]
 
 const CityIconComponent = ({ type }: { type: CityIcon }) => {
   switch (type) {
@@ -109,6 +42,7 @@ function MatchCard({ match }: MatchCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [localCheer1, setLocalCheer1] = useState(match.cheerTeam1)
   const [localCheer2, setLocalCheer2] = useState(match.cheerTeam2)
+  const { t } = useTranslation()
 
   const handleCheer = (team: 1 | 2) => {
     if (team === 1) {
@@ -182,7 +116,7 @@ function MatchCard({ match }: MatchCardProps) {
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00F0FF]" />
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#00F0FF]">
-                LIVE
+                {t("match.live")}
               </span>
             </div>
           )}
@@ -190,13 +124,13 @@ function MatchCard({ match }: MatchCardProps) {
           {isBigMatch && !isLive && (
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFD700] flex items-center gap-1">
               <Flame className="h-3 w-3" />
-              BIG MATCH
+              {t("match.bigMatch")}
             </span>
           )}
 
           {isFinished && (
             <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              FT
+              {t("match.ft")}
             </span>
           )}
         </div>
@@ -229,7 +163,7 @@ function MatchCard({ match }: MatchCardProps) {
                 <span>{match.score2}</span>
               </div>
             ) : (
-              <span className="text-2xl font-bold text-muted-foreground/40">vs</span>
+              <span className="text-2xl font-bold text-muted-foreground/40">{t("match.vs")}</span>
             )}
           </div>
 
@@ -252,7 +186,7 @@ function MatchCard({ match }: MatchCardProps) {
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-3.5 w-3.5 text-[#CCFF00]" />
               <span className="text-foreground font-medium">{match.localTime}</span>
-              <span className="text-[10px] text-muted-foreground uppercase">Local</span>
+              <span className="text-[10px] text-muted-foreground uppercase">{t("match.local")}</span>
             </div>
 
             <div className="h-4 w-px bg-border" />
@@ -279,7 +213,7 @@ function MatchCard({ match }: MatchCardProps) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1.5">
                 <Activity className="h-3 w-3 text-[#00F0FF]" />
-                Match Activity
+                {t("match.matchActivity")}
               </span>
               <span className="text-[10px] font-bold text-[#00F0FF]">{match.activityLevel}%</span>
             </div>
@@ -302,9 +236,9 @@ function MatchCard({ match }: MatchCardProps) {
           <div className="pt-3 border-t border-glass-border">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-                Fan Support Meter
+                {t("match.fanSupport")}
               </span>
-              <span className="text-[10px] text-[#FF00E5] font-medium">Cast Your Vote!</span>
+              <span className="text-[10px] text-[#FF00E5] font-medium">{t("match.castVote")}</span>
             </div>
 
             {/* Cheer Bar */}
@@ -331,7 +265,7 @@ function MatchCard({ match }: MatchCardProps) {
                 className="cheer-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 hover:bg-[#CCFF00]/20 hover:border-[#CCFF00]/50 transition-all text-[#CCFF00]"
               >
                 <Flame className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Cheer {match.team1.code}</span>
+                <span className="text-xs font-medium">{t("match.cheer")} {match.team1.code}</span>
               </button>
 
               <button
@@ -339,7 +273,7 @@ function MatchCard({ match }: MatchCardProps) {
                 className="cheer-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-all text-[#00F0FF]"
               >
                 <Heart className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Cheer {match.team2.code}</span>
+                <span className="text-xs font-medium">{t("match.cheer")} {match.team2.code}</span>
               </button>
             </div>
           </div>
@@ -364,44 +298,107 @@ function MatchCard({ match }: MatchCardProps) {
   )
 }
 
-interface MatchCardsGridProps {
-  selectedDate: string
+/** Empty state shown when no matches exist for a given date. */
+function EmptyState() {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-secondary/30 border border-glass-border flex items-center justify-center mb-4">
+        <Inbox className="h-8 w-8 text-muted-foreground/40" />
+      </div>
+      <p className="text-muted-foreground text-sm">{t("match.noMatches")}</p>
+    </div>
+  )
 }
 
-export function MatchCardsGrid({ selectedDate }: MatchCardsGridProps) {
+interface MatchCardsGridProps {
+  selectedDate: string
+  timezone: "local" | "host"
+}
+
+export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) {
+  const { t } = useTranslation()
+  const [matches, setMatches] = useState<Match[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  const fetchMatches = useCallback(async () => {
+    if (!selectedDate) return
+    setLoading(true)
+    setError(false)
+    try {
+      const tzName = timezone === "host" ? undefined : Intl.DateTimeFormat().resolvedOptions().timeZone
+      const res = await getMatches({ date: selectedDate, timezone: tzName, pageSize: 50 })
+      setMatches(res.items.map(apiMatchToUi))
+    } catch {
+      setError(true)
+      setMatches([])
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedDate, timezone])
+
+  useEffect(() => {
+    fetchMatches()
+  }, [fetchMatches])
+
   return (
     <div className="flex-1 p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Matches</h2>
-          <p className="text-sm text-muted-foreground">{selectedDate}, 2026</p>
+          <h2 className="text-xl font-bold text-foreground">{t("match.title")}</h2>
+          <p className="text-sm text-muted-foreground">{selectedDate}</p>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-[#00F0FF] animate-pulse" />
-            <span>Live</span>
+            <span>{t("match.live")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
-            <span>Big Match</span>
+            <span>{t("match.bigMatch")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-[#CCFF00]" />
-            <span>Upcoming</span>
+            <span>{t("match.upcoming")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-muted-foreground/50" />
-            <span>Finished</span>
+            <span>{t("match.finished")}</span>
           </div>
         </div>
       </div>
 
-      {/* Match Cards Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        {matches.map((match) => (
-          <MatchCard key={match.id} match={match} />
-        ))}
-      </div>
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <span className="text-sm text-muted-foreground animate-pulse">{t("common.loading")}</span>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-secondary/30 border border-glass-border flex items-center justify-center mb-4">
+            <RefreshCw className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+          <p className="text-muted-foreground text-sm mb-3">{t("match.errorLoading")}</p>
+          <button
+            onClick={fetchMatches}
+            className="text-xs text-[#00F0FF] hover:underline"
+          >
+            {t("common.retry")}
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && matches.length === 0 && <EmptyState />}
+
+      {!loading && !error && matches.length > 0 && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          {matches.map((match) => (
+            <MatchCard key={match.id} match={match} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

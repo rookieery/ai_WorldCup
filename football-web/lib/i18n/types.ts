@@ -34,6 +34,9 @@ export interface LocaleMessages {
     fanSupport: string
     castVote: string
     cheer: string
+    noMatches: string
+    today: string
+    errorLoading: string
   }
   bracket: {
     knockoutStage: string

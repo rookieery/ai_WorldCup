@@ -10,7 +10,7 @@ import type { Match, Team, BracketMatch, Message, ApiResponse } from "@/lib/type
 
 ## Architecture
 - `team.ts` → base `Team` (name/code/flag), extended by `BracketTeam` in bracket.ts
-- `match.ts` → `Match` uses `Team` from team.ts; `MatchQueryParams` for API filtering
+- `match.ts` → `Match` uses `Team` from team.ts; `MatchQueryParams` for API filtering; `MatchDateInfo` for date-stage pairs from `GET /api/matches/dates`
 - `bracket.ts` → `BracketTeam extends Team` with score/winner/fromGroup fields; `BracketTree` is the top-level bracket container
 - `ai.ts` → `Message` for chat; `TeamAnalysis` for analysis payload; `SSEEvent` for streaming
 - `api.ts` → `ApiResponse<T>` standard envelope matching backend `app/schemas/common.py`

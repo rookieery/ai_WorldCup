@@ -17,6 +17,7 @@ export type {
   MatchEventType,
   MatchQueryParams,
   CityIcon,
+  MatchDateInfo,
 } from "./match"
 
 export type {

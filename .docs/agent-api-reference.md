@@ -33,7 +33,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 |---------|---------|-------|
 | `TeamService` | `get_all_teams(page, page_size, group, lang)`, `get_team_by_code(code, lang)`, `get_teams_by_group(group_label, lang)` | Supports `lang="zh"` to promote `name_zh` into `name` field |
 | `VenueService` | `get_all_venues(page, page_size)` | Returns venues with timezone info |
-| `MatchService` | `get_matches(params, timezone_name, lang, page, page_size)`, `get_match_by_id(match_id, timezone_name, lang)`, `get_live_matches(timezone_name, lang)` | Multi-filter support (date/stage/group/team/status) with secondary in-memory filtering; timezone conversion via `zoneinfo` adds `local_time` and `host_time` fields |
+| `MatchService` | `get_match_dates()`, `get_matches(params, timezone_name, lang, page, page_size)`, `get_match_by_id(match_id, timezone_name, lang)`, `get_live_matches(timezone_name, lang)` | Multi-filter support (date/stage/group/team/status) with secondary in-memory filtering; timezone conversion via `zoneinfo` adds `local_time` and `host_time` fields; `get_match_dates` returns distinct dates with primary stage label |
 | `GroupService` | `get_all_groups(lang)`, `get_group_detail(group_label, timezone_name, lang)` | Returns all 12 groups standings overview or single group detail with standings + matches; standings sorted by points desc, GD desc, GF desc; lang-aware (promotes `name_zh`); validates group label A-L |
 | `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams in R32 matches carry `from_group`/`from_position` context (e.g. "1st Group A"); predictions endpoint returns placeholder for Phase 3 AI integration |
 
@@ -47,6 +47,7 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 | `team_controller` | `GET /api/teams/{code}` | `lang` (en/zh) |
 | `venue_controller` | `GET /api/venues` | `page`, `page_size` |
 | `match_controller` | `GET /api/matches` | `date` (YYYY-MM-DD), `stage`, `group` (A-L), `team` (code), `status`, `timezone` (IANA), `lang`, `page`, `page_size` |
+| `match_controller` | `GET /api/matches/dates` | — |
 | `match_controller` | `GET /api/matches/live` | `timezone` (IANA), `lang` |
 | `match_controller` | `GET /api/matches/{id}` | `timezone` (IANA), `lang` |
 | `group_controller` | `GET /api/groups` | `lang` (en/zh) |
@@ -68,7 +69,7 @@ Each repo receives an `AsyncSession` at construction; callers control the sessio
 | Repository | Extra Methods | Notes |
 |-----------|---------------|-------|
 | `TeamRepository` | `get_by_code(code)`, `get_by_group(group_label)` | Raises `NotFoundError` on missing code |
-| `MatchRepository` | `get_by_date(date)`, `get_by_stage(stage)`, `get_by_status(status)`, `get_live_matches()`, `get_bracket_matches()`, `get_by_group_label(group)`, `get_by_team_code(code)` | All paginated except `get_live_matches` / `get_bracket_matches` |
+| `MatchRepository` | `get_by_date(date)`, `get_by_stage(stage)`, `get_by_status(status)`, `get_live_matches()`, `get_bracket_matches()`, `get_by_group_label(group)`, `get_by_team_code(code)`, `get_match_dates()` | All paginated except `get_live_matches` / `get_bracket_matches` / `get_match_dates` |
 | `VenueRepository` | — (base CRUD only) | |
 | `GroupRepository` | `get_by_group_label(group)` (sorted: pts desc, GD desc, GF desc), `get_group_matches(group)` | Returns both standings and matches for a group |
 | `MatchEventRepository` | `get_by_match(match_id)` (sorted by minute asc) | |
@@ -110,6 +111,7 @@ Exception mapping: `NotFoundError→404`, `ValidationError→422`, `BusinessErro
 /api
 ├── /matches
 │   ├── GET /                    # Match list (filter: date, stage, group, team, status)
+│   ├── GET /dates               # All match dates with stage labels
 │   ├── GET /:id                 # Single match detail
 │   └── GET /live                # Current live matches
 ├── /bracket

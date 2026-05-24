@@ -1,4 +1,4 @@
-"""Match API routes — GET /api/matches, GET /api/matches/live, GET /api/matches/:id."""
+"""Match API routes — GET /api/matches, GET /api/matches/dates, GET /api/matches/live, GET /api/matches/:id."""
 
 from __future__ import annotations
 
@@ -49,6 +49,15 @@ async def list_matches(
     )
     paginated = PaginatedResponse(items=items, total=total, page=page, page_size=page_size)
     return ApiResponse(data=paginated)
+
+
+@router.get("/dates", summary="Get all match dates with stage labels")
+async def get_match_dates(
+    svc: MatchService = Depends(get_match_service),
+) -> ApiResponse:
+    """Return all dates that have matches, with their primary stage label."""
+    dates = await svc.get_match_dates()
+    return ApiResponse(data=dates)
 
 
 @router.get("/live", summary="Get live matches")
