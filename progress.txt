@@ -14,15 +14,27 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - Verified: 16 venues inserted (first run), all skipped (second run)
-  - USA 11 + Canada 2 + Mexico 3 venues with IANA timezones, UTC offsets, capacities
 
-- [P1-15-SeedMatches] Seed script: 104 matches (72 group + 32 knockout)
-  - Created `scripts/seed_matches.py`
-  - 72 group-stage matches parsed from markdown via MarkdownParser
-  - External IDs: A_M1..A_M6, B_M1..B_M6, ..., L_M1..L_M6
-  - 32 knockout matches (R32x16, R16x8, QFx4, SFx2, 3RDx1, Fx1) with TBD placeholder team
-  - Bracket linkage: 30 links (R32→R16, R16→QF, QF→SF, SF→Final)
-  - Venue assignment: opening match at Estadio Azteca, round-robin for group stage, predefined for QF/SF/3rd/Final
   - Idempotent: 104 skipped on second run
   - Verified: 104 matches, correct linkage, TBD team, all assertions pass
+
+## P1-16-SeedEntry — Seed Data Entry + Bracket Generator + Integration Verification
+- Created `scripts/generate_bracket.py`:
+  - BRACKET_LINKS: 30 winner-path links (R32→R16→QF→SF→F)
+  - R32_QUALIFICATION: 16 group-position mappings for TBD team context
+  - generate_bracket(session): verifies/enforces all next_match_id + position links
+  - Idempotent: re-runs verify existing links, correct drift
+  - CLI entry: python -m scripts.generate_bracket
+- Created `scripts/seed_data.py`:
+  - One-click orchestrator: seed_venues→seed_teams→seed_matches→generate_bracket→init_group_standings
+  - _init_group_standings: creates 48 zero-initialized records (4 per group × 12 groups)
+  - Formatted summary table with timing
+  - Fully idempotent
+- Updated `app/services/bracket_service.py`:
+  - Added _R32_GROUP_MAP for TBD team from_group/from_position enrichment
+  - Updated _infer_tbd_context: R32 matches now show "1st Group A" etc.
+- Integration verification:
+  - GET /api/matches?date=2026-06-11 → 2 opening-day matches
+  - GET /api/groups/A → 4 standings (all zeros) + 6 matches
+  - GET /api/bracket → 32 matches across 6 rounds with from_group context
+  - DB state: 49 teams, 17 venues, 104 matches, 48 standings, 30 bracket links

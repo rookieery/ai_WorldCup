@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-15-SeedMatches",
-      "title": "种子数据脚本：104 场比赛（72 小组赛 + 32 淘汰赛）",
-      "description": "比赛数据初始化任务。\n\n1. 创建 `scripts/seed_matches.py`：插入 104 场比赛\n   - 72 场小组赛：使用 markdown_parser 解析 data/2026_FIFA_World_Cup_Group_Stage.md，提取每场比赛的队伍、时间、场馆\n   - 每场小组赛 external_id 格式：A_M1（A 组第 1 场）\n   - 32 场淘汰赛：使用 generate_bracket 生成对阵框架（队伍为 TBD）\n   - 淘汰赛 external_id 格式：R32_01, R16_01, QF_01, SF_01, 3RD_01, F_01\n   - status 默认 upcoming，score 默认 NULL\n   - 正确设置 next_match_id 和 position",
-      "passes": true
-    },
-    {
       "id": "P1-16-SeedEntry",
       "title": "种子数据入口脚本 + 淘汰赛对阵生成器 + 集成验证",
       "description": "数据初始化编排与验证任务。\n\n1. 创建 `scripts/generate_bracket.py`：生成淘汰赛对阵树\n   - 定义 R32→R16→QF→SF→3rd/Final 的晋级关系\n   - 预建静态对阵框架，仅确定小组排名后填入具体队伍\n   - 正确设置 next_match_id 链和 position 序号\n2. 创建 `scripts/seed_data.py`：一键初始化入口\n   - 按顺序调用：seed_venues → seed_teams → seed_matches → generate_bracket\n   - 同时初始化 48 条 group_standings 记录（全 0）\n   - 执行完毕后打印统计摘要\n3. 集成验证：运行 seed_data.py 后，通过 API 验证\n   - GET /api/matches?date=2026-06-11 返回开幕日比赛\n   - GET /api/groups/A 返回 A 组积分 + 赛程\n   - GET /api/bracket 返回完整淘汰赛结构",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-17-Types",

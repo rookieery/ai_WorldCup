@@ -142,6 +142,8 @@ football-server/
 │       └── ws_schema.py         # WSEventType enum + WSMessage VO
 ├── scripts/                     # Database seeding scripts
 │   ├── __init__.py              # Package init
+│   ├── seed_data.py             # One-click init orchestrator (seed_venues→teams→matches→bracket→standings)
+│   ├── generate_bracket.py      # Bracket tree verification + R32 group qualification mapping
 │   ├── seed_teams.py            # Seed 48 teams (idempotent upsert by code)
 │   ├── team_data.py             # 48-team roster data (bilingual, FIFA rankings, confederations)
 │   ├── seed_venues.py           # Seed 16 venues (idempotent upsert by name)

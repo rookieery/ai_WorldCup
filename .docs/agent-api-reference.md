@@ -2,10 +2,11 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, and **utility modules (utils/)** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, and **seed data pipeline** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
+Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Cheer services/controllers are not yet built.
 
 ## Utility Layer
@@ -29,7 +30,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `VenueService` | `get_all_venues(page, page_size)` | Returns venues with timezone info |
 | `MatchService` | `get_matches(params, timezone_name, lang, page, page_size)`, `get_match_by_id(match_id, timezone_name, lang)`, `get_live_matches(timezone_name, lang)` | Multi-filter support (date/stage/group/team/status) with secondary in-memory filtering; timezone conversion via `zoneinfo` adds `local_time` and `host_time` fields |
 | `GroupService` | `get_all_groups(lang)`, `get_group_detail(group_label, timezone_name, lang)` | Returns all 12 groups standings overview or single group detail with standings + matches; standings sorted by points desc, GD desc, GF desc; lang-aware (promotes `name_zh`); validates group label A-L |
-| `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams carry from_group/from_position context; predictions endpoint returns placeholder for Phase 3 AI integration |
+| `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams in R32 matches carry `from_group`/`from_position` context (e.g. "1st Group A"); predictions endpoint returns placeholder for Phase 3 AI integration |
 
 ## Controller Layer
 

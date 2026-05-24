@@ -196,25 +196,53 @@ def _build_team_vo(match: object, side: str, *, lang: str = "en") -> dict:
     return vo
 
 
+# ── R32 group qualification mapping ──────────────────────────────────────
+# Maps each R32 external_id to (home_group, home_pos, away_group, away_pos).
+# Mirrors the data defined in scripts/generate_bracket.py::R32_QUALIFICATION.
+
+_R32_GROUP_MAP: dict[str, tuple[str, int, str, int]] = {
+    "R32_01": ("A", 1, "B", 2),
+    "R32_02": ("C", 1, "D", 2),
+    "R32_03": ("E", 1, "F", 2),
+    "R32_04": ("G", 1, "H", 2),
+    "R32_05": ("I", 1, "J", 2),
+    "R32_06": ("K", 1, "L", 2),
+    "R32_07": ("B", 1, "A", 2),
+    "R32_08": ("D", 1, "C", 2),
+    "R32_09": ("F", 1, "E", 2),
+    "R32_10": ("H", 1, "G", 2),
+    "R32_11": ("J", 1, "I", 2),
+    "R32_12": ("L", 1, "K", 2),
+    "R32_13": ("C", 3, "F", 3),
+    "R32_14": ("E", 3, "H", 3),
+    "R32_15": ("A", 3, "D", 3),
+    "R32_16": ("B", 3, "G", 3),
+}
+
+
 def _infer_tbd_context(match: object, side: str, vo: dict) -> None:
-    """Attempt to populate ``from_group`` and ``from_position`` for a TBD team.
+    """Populate ``from_group`` and ``from_position`` for a TBD team.
 
-    The bracket seeding convention encodes qualifying info in
-    ``external_id`` (e.g. ``R32_01``) and the ``position`` field determines
-    the home/away slot in the next match.  For R32 matches, the qualifying
-    position can be derived from the match ordering within the stage.
-
-    NOTE: Once ``scripts/generate_bracket.py`` is implemented (P1-16), the
-    bracket matches will store richer qualifying metadata.  Until then we
-    return basic context from the match data available.
+    For R32 matches, looks up the group qualification mapping to show
+    context like "1st Group A".  For later knockout rounds (R16+) the
+    participants come from previous round winners; for the 3rd-place
+    match they come from SF losers.
     """
-    # Placeholder: in a fully seeded bracket, we would look up the
-    # originating group match or standing.  For now we set generic context.
     stage = match.stage
+
     if stage == "R32":
-        # Round of 32 teams come from group standings (1st/2nd/3rd).
-        # Exact mapping depends on the official FIFA draw; leave generic.
-        pass
-    elif stage in ("R16", "QF", "SF", "3rd", "F"):
-        # Later rounds come from previous round winners.
+        ext_id = match.external_id
+        qual = _R32_GROUP_MAP.get(ext_id)
+        if qual is None:
+            return
+        home_group, home_pos, away_group, away_pos = qual
+        if side == "home":
+            vo["from_group"] = home_group
+            vo["from_position"] = home_pos
+        else:
+            vo["from_group"] = away_group
+            vo["from_position"] = away_pos
+
+    elif stage == "3rd":
+        # 3rd-place match participants are SF losers.
         pass
