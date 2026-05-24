@@ -4,21 +4,23 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - Frontend build (`npm run build`) passes with no regressions
-  - Updated .docs/agent-file-map.md, .docs/business-overview.md
 
-## P1-05-Schemas — All Pydantic Schemas (Common + 7 Entity DTO/VO)
-- Created `app/schemas/` package with 10 files:
-  - `common.py`: ApiResponse[T] + PaginatedResponse[T] generic response envelopes
-  - `team_schema.py`: TeamCreate/TeamUpdate (DTOs) + TeamResponse/TeamListResponse (VOs)
-  - `match_schema.py`: MatchQueryParams (DTO) + MatchResponse/MatchDetailResponse/MatchEventResponse (VOs)
-  - `venue_schema.py`: VenueResponse (VO)
-  - `group_schema.py`: GroupStandingResponse + GroupDetailResponse (VOs)
-  - `bracket_schema.py`: BracketTeamResponse/BracketMatchResponse/BracketRoundResponse/BracketTreeResponse (VOs)
-  - `cheer_schema.py`: CheerVoteRequest (DTO) + CheerResponse (VO)
-  - `ai_schema.py`: ChatRequest (DTO) + SSEEvent + TeamAnalysisResponse (VOs)
-  - `ws_schema.py`: WSEventType enum + WSMessage (VO)
-  - `__init__.py`: Re-exports all 24 schema classes
-- All response models use `from_attributes = True` for ORM conversion
 - All imports verified; smoke tests pass for ApiResponse, PaginatedResponse, CheerVoteRequest, WSMessage, SSEEvent
 - Updated .docs/agent-file-map.md, .docs/business-overview.md
+
+## P1-06-Repos — 全部 Repository：泛型 CRUD 基类 + 5 个具体 Repo
+- Created `app/repositories/__init__.py` — re-exports all 6 repository classes
+- Created `app/repositories/base.py` — BaseRepository[T] generic CRUD:
+  - get_by_id (raises NotFoundError), get_by_id_optional (returns None)
+  - get_all(page, page_size, filters dict, order_by with - prefix for desc) → (items, total)
+  - create(data dict) → entity (IntegrityError → ValidationError)
+  - update(entity_id, data dict) → entity (partial update)
+  - delete(entity_id) → None
+- Created `app/repositories/team_repo.py` — TeamRepository: get_by_code, get_by_group (ordered by fifa_ranking)
+- Created `app/repositories/match_repo.py` — MatchRepository: get_by_date, get_by_stage, get_by_status (all paginated), get_live_matches, get_bracket_matches, get_by_group_label, get_by_team_code
+- Created `app/repositories/venue_repo.py` — VenueRepository: base CRUD only
+- Created `app/repositories/group_repo.py` — GroupRepository: get_by_group_label (sorted points desc, GD desc, GF desc), get_group_matches
+- Created `app/repositories/match_event_repo.py` — MatchEventRepository: get_by_match (ordered by minute asc)
+- All repos accept AsyncSession at construction, no business logic, pure data access
+- Smoke tests passed: all imports, CRUD operations (create/read/update/delete), pagination, filtering, NotFoundError handling
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md

@@ -100,6 +100,14 @@ football-server/
 │   │   ├── match.py             # Match model (104 fixtures, FK→Team/Venue/self)
 │   │   ├── group_standing.py    # GroupStanding model (48 rows, FK→Team UNIQUE)
 │   │   └── match_event.py       # MatchEvent model (goals/cards/subs, FK→Match)
+│   ├── repositories/
+│   │   ├── __init__.py          # Re-exports all repository classes
+│   │   ├── base.py              # BaseRepository[T] generic CRUD (get_by_id, get_all, create, update, delete)
+│   │   ├── team_repo.py         # TeamRepository: get_by_code, get_by_group
+│   │   ├── match_repo.py        # MatchRepository: get_by_date, get_by_stage, get_by_status, get_live_matches, get_bracket_matches, get_by_group_label, get_by_team_code
+│   │   ├── venue_repo.py        # VenueRepository: inherits base CRUD only
+│   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
+│   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes

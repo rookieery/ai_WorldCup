@@ -4,8 +4,23 @@
 
 ## Status: FOUNDATION IN PROGRESS
 
-Backend scaffold, exception hierarchy, middleware, and ORM models are implemented.
-Routes, services, repositories, and schemas are not yet built.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, and repositories are implemented.
+Routes and services are not yet built.
+
+## Repository Layer
+
+All repos inherit from `BaseRepository[T]` (generic CRUD with pagination).
+Each repo receives an `AsyncSession` at construction; callers control the session lifecycle.
+
+| Repository | Extra Methods | Notes |
+|-----------|---------------|-------|
+| `TeamRepository` | `get_by_code(code)`, `get_by_group(group_label)` | Raises `NotFoundError` on missing code |
+| `MatchRepository` | `get_by_date(date)`, `get_by_stage(stage)`, `get_by_status(status)`, `get_live_matches()`, `get_bracket_matches()`, `get_by_group_label(group)`, `get_by_team_code(code)` | All paginated except `get_live_matches` / `get_bracket_matches` |
+| `VenueRepository` | — (base CRUD only) | |
+| `GroupRepository` | `get_by_group_label(group)` (sorted: pts desc, GD desc, GF desc), `get_group_matches(group)` | Returns both standings and matches for a group |
+| `MatchEventRepository` | `get_by_match(match_id)` (sorted by minute asc) | |
+
+**BaseRepository[T] methods**: `get_by_id`, `get_by_id_optional`, `get_all(page, page_size, filters, order_by)`, `create(data)`, `update(entity_id, data)`, `delete(entity_id)`
 
 ## Database Schema (5 tables)
 

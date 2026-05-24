@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-05-Schemas",
-      "title": "全部 Pydantic Schema：Common + 7 组实体 DTO/VO",
-      "description": "请求/响应数据校验层任务。\n\n1. 创建 `app/schemas/__init__.py`\n2. 创建 `app/schemas/common.py`：ApiResponse[T] 泛型响应（code: int, data: T, message: str）、PaginatedResponse[T]（items, total, page, page_size）\n3. 创建 `app/schemas/team_schema.py`：TeamCreate/TeamUpdate/TeamResponse/TeamListResponse\n4. 创建 `app/schemas/match_schema.py`：MatchQueryParams（date, stage, group, team, status 过滤参数）、MatchResponse、MatchDetailResponse（含 match_events）\n5. 创建 `app/schemas/venue_schema.py`：VenueResponse\n6. 创建 `app/schemas/group_schema.py`：GroupStandingResponse、GroupDetailResponse（standings + matches）\n7. 创建 `app/schemas/bracket_schema.py`：BracketTeamResponse、BracketMatchResponse、BracketRoundResponse、BracketTreeResponse（rounds 列表）\n8. 创建 `app/schemas/cheer_schema.py`：CheerResponse（home/away 计数）、CheerVoteRequest（side: home/away）\n9. 创建 `app/schemas/ai_schema.py`：ChatRequest（messages + context + lang）、SSEEvent（type: thinking/answer/analysis/done）、TeamAnalysisResponse\n10. 创建 `app/schemas/ws_schema.py`：WSEventType 枚举、WSMessage（event + payload）\n\n严格区分 DTO（请求）和 VO（响应），响应模型使用 from_attributes=True",
-      "passes": true
-    },
-    {
       "id": "P1-06-Repos",
       "title": "全部 Repository：泛型 CRUD 基类 + 5 个具体 Repo",
       "description": "数据访问层任务。\n\n1. 创建 `app/repositories/__init__.py`\n2. 创建 `app/repositories/base.py`：泛型 BaseRepository[T]，接收 AsyncSession，提供 get_by_id、get_all（分页+过滤）、create、update、delete 方法，全部使用 async/await\n3. 创建 `app/repositories/team_repo.py`：TeamRepository(BaseRepository[Team])，增加 get_by_code、get_by_group 方法\n4. 创建 `app/repositories/match_repo.py`：MatchRepository(BaseRepository[Match])，增加 get_by_date、get_by_stage、get_by_status、get_live_matches、get_bracket_matches 方法\n5. 创建 `app/repositories/venue_repo.py`：VenueRepository(BaseRepository[Venue])\n6. 创建 `app/repositories/group_repo.py`：GroupRepository(BaseRepository[GroupStanding])，增加 get_by_group_label（返回该组全部排名）、get_group_matches 方法\n7. 创建 `app/repositories/match_event_repo.py`：MatchEventRepository(BaseRepository[MatchEvent])，增加 get_by_match 方法\n\n严禁在 Repository 层包含业务逻辑，仅封装数据库查询",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-07-TeamVenue",
