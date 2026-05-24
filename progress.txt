@@ -12,25 +12,13 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- **Verification**: Parser correctly extracts 72 matches (12 groups × 6), dates 2026-06-11 to 2026-06-27, handles None FIFA rankings for playoff qualifiers
-- **Docs Updated**: agent-file-map.md, agent-api-reference.md, services/AGENTS.md, utils/AGENTS.md
 
-## P1-13-SeedTeams — 种子数据脚本：48 支参赛队伍（含中英文名）
-- **Status**: COMPLETED (passes: true)
-- **Files Created**:
-  - `football-server/scripts/__init__.py` — Package init
-  - `football-server/scripts/seed_teams.py` — Seed script with idempotent upsert logic (108 lines)
-  - `football-server/scripts/team_data.py` — 48-team data module (509 lines)
-- **Data**: 48 teams across 12 groups (A-L), 4 teams per group
-  - Bilingual names (name + name_zh), 3-letter codes, emoji flags
-  - FIFA rankings (2025-11-19 release), 6 playoff qualifiers with ranking=0
-  - Confederation distribution: UEFA 16, CAF 10, AFC 9, CONMEBOL 6, CONCACAF 6, OFC 1
-  - World Cup historical appearances
-- **Verification**:
-  - Script inserts 48 teams on first run, skips all on re-run (idempotent)
-  - API endpoint GET /api/teams returns all 48 teams with correct structure
-  - Data cross-referenced against data/2026_FIFA_World_Cup_Group_Stage.md
-  - All FIFA rankings, group assignments, and team rosters verified
-- **Architecture**: Data separated from logic to stay under 600-line hard limit
   - `team_data.py`: pure data declaration (TEAMS list)
   - `seed_teams.py`: async upsert logic + CLI entry point
+
+## P1-14-SeedVenues — completed 2026-05-24
+- `venue_data.py`: pure data declaration (VENUES list, 16 stadiums)
+- `seed_venues.py`: async upsert logic + CLI entry point
+  - Idempotent: matched by venue `name` field
+  - Verified: 16 venues inserted (first run), all skipped (second run)
+  - USA 11 + Canada 2 + Mexico 3 venues with IANA timezones, UTC offsets, capacities

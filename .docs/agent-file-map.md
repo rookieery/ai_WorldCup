@@ -143,6 +143,8 @@ football-server/
 ├── scripts/                     # Database seeding scripts
 │   ├── __init__.py              # Package init
 │   ├── seed_teams.py            # Seed 48 teams (idempotent upsert by code)
-│   └── team_data.py             # 48-team roster data (bilingual, FIFA rankings, confederations)
+│   ├── team_data.py             # 48-team roster data (bilingual, FIFA rankings, confederations)
+│   ├── seed_venues.py           # Seed 16 venues (idempotent upsert by name)
+│   └── venue_data.py            # 16-venue roster data (city, country, IANA timezone, capacity)
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```

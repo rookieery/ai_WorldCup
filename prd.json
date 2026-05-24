@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-13-SeedTeams",
-      "title": "种子数据脚本：48 支参赛队伍（含中英文名）",
-      "description": "数据初始化任务。\n\n1. 创建 `scripts/__init__.py`\n2. 创建 `scripts/seed_teams.py`：插入 48 支参赛队伍\n   - 包含完整的 48 队中英文映射表（name + name_zh）\n   - 每支队伍包含：name, name_zh, code（三字码）, flag（emoji）, fifa_ranking, group_label（A-L）, confederation, world_cup_appearances\n   - 使用 asyncio.run + async session 执行插入\n   - 支持幂等执行（已存在则跳过或更新）\n\n数据来源：参考 data/2026_FIFA_World_Cup_Group_Stage.md 中的分组信息和网络 FIFA 排名数据",
-      "passes": true
-    },
-    {
       "id": "P1-14-SeedVenues",
       "title": "种子数据脚本：16 座主办城市场馆",
       "description": "场馆数据初始化任务。\n\n1. 创建 `scripts/seed_venues.py`：插入 16 座主办城市场馆\n   - 美国 11 座：MetLife Stadium (East Rutherford), AT&T Stadium (Arlington), SoFi Stadium (Inglewood) 等\n   - 加拿大 2 座：BMO Field (Toronto), BC Place (Vancouver)\n   - 墨西哥 3 座：Estadio Azteca (Mexico City), Estadio BBVA (Monterrey), Estadio Akron (Guadalajara)\n   - 每座场馆包含：name, city, country, timezone（IANA 格式）, utc_offset, capacity\n   - 支持幂等执行",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-15-SeedMatches",
