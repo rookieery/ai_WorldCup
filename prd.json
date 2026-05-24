@@ -5,7 +5,7 @@
       "id": "P1-09-Group",
       "title": "Group Service 与 Controller（小组积分 + 赛程）",
       "description": "小组积分业务 + 路由任务。\n\n1. 创建 `app/services/group_service.py`：GroupService，方法包括 get_all_groups（12 组积分概览）、get_group_detail（单组积分榜 + 该组赛程列表）。注入 GroupRepository + MatchRepository\n2. 创建 `app/controllers/group_controller.py`：\n   - GET /api/groups — 全部 12 组积分排名\n   - GET /api/groups/:group — 单组详情（A-L），返回 standings + matches\n\n积分榜按 points desc, goal_difference desc 排序。响应中的队伍信息包含中英文名",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-10-Bracket",

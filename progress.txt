@@ -10,3 +10,10 @@ Started: Sat May 24 00:00:00     2026
 
 - Updated services/__init__.py and controllers/__init__.py to export new classes.
 - Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+
+## P1-09-Group — Group Service & Controller (COMPLETED)
+- Created `app/services/group_service.py`: GroupService with `get_all_groups()` (12 groups overview) and `get_group_detail()` (standings + matches per group)
+- Created `app/controllers/group_controller.py`: GET /api/groups (all groups), GET /api/groups/{group} (single group A-L)
+- Updated `services/__init__.py` and `controllers/__init__.py` to export GroupService and group_router
+- Updated `.docs/agent-file-map.md` and `.docs/agent-api-reference.md`
+- Created AGENTS.md in services/ and controllers/ directories
