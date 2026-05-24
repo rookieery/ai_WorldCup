@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-12-Utils",
-      "title": "工具模块：Markdown 解析器 + 时区转换",
-      "description": "后端工具函数任务。\n\n1. 创建 `app/utils/__init__.py`\n2. 创建 `app/utils/markdown_parser.py`：解析 data/2026_FIFA_World_Cup_Group_Stage.md 文件，提取比赛信息（队伍、日期、时间、场馆、小组），返回结构化数据。处理中文字符编码边界情况\n3. 创建 `app/utils/timezone.py`：时区转换工具函数\n   - utc_to_local(utc_dt, target_tz)：UTC 时间转目标时区\n   - get_host_city_time(utc_dt, venue_timezone)：获取主办城市当地时间\n   - 使用 zoneinfo 标准库，无需额外依赖\n\n验收：markdown_parser 能正确解析 data/ 下的赛程文件，提取出 72 场小组赛数据",
-      "passes": true
-    },
-    {
       "id": "P1-13-SeedTeams",
       "title": "种子数据脚本：48 支参赛队伍（含中英文名）",
       "description": "数据初始化任务。\n\n1. 创建 `scripts/__init__.py`\n2. 创建 `scripts/seed_teams.py`：插入 48 支参赛队伍\n   - 包含完整的 48 队中英文映射表（name + name_zh）\n   - 每支队伍包含：name, name_zh, code（三字码）, flag（emoji）, fifa_ranking, group_label（A-L）, confederation, world_cup_appearances\n   - 使用 asyncio.run + async session 执行插入\n   - 支持幂等执行（已存在则跳过或更新）\n\n数据来源：参考 data/2026_FIFA_World_Cup_Group_Stage.md 中的分组信息和网络 FIFA 排名数据",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-14-SeedVenues",

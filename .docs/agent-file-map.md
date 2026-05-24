@@ -140,5 +140,9 @@ football-server/
 │       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VOs
 │       └── ws_schema.py         # WSEventType enum + WSMessage VO
+├── scripts/                     # Database seeding scripts
+│   ├── __init__.py              # Package init
+│   ├── seed_teams.py            # Seed 48 teams (idempotent upsert by code)
+│   └── team_data.py             # 48-team roster data (bilingual, FIFA rankings, confederations)
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```

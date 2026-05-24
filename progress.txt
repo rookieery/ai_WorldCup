@@ -11,20 +11,26 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Updated `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
-- Updated `AGENTS.md` in controllers/ directory
 
-## P1-12-Utils — 工具模块：Markdown 解析器 + 时区转换
-- **Status**: ✅ COMPLETE
-- **Files Created**:
-  - `football-server/app/utils/__init__.py` — Re-exports MarkdownParser, utc_to_local, get_host_city_time
-  - `football-server/app/utils/markdown_parser.py` — MarkdownParser class + ParsedMatch dataclass (parses 72 group-stage matches from markdown)
-  - `football-server/app/utils/timezone.py` — utc_to_local(), get_host_city_time(), convert_datetime() using zoneinfo stdlib
-  - `football-server/app/utils/AGENTS.md` — Documentation for utils module
-- **Files Modified**:
-  - `football-server/app/services/match_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
-  - `football-server/app/services/group_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
-  - `football-server/app/services/bracket_service.py` — Replaced local _utc_to_local/ZoneInfo with shared app.utils.timezone import
-  - `football-server/pyproject.toml` — Added tzdata dependency (needed on Windows for zoneinfo)
 - **Verification**: Parser correctly extracts 72 matches (12 groups × 6), dates 2026-06-11 to 2026-06-27, handles None FIFA rankings for playoff qualifiers
 - **Docs Updated**: agent-file-map.md, agent-api-reference.md, services/AGENTS.md, utils/AGENTS.md
+
+## P1-13-SeedTeams — 种子数据脚本：48 支参赛队伍（含中英文名）
+- **Status**: COMPLETED (passes: true)
+- **Files Created**:
+  - `football-server/scripts/__init__.py` — Package init
+  - `football-server/scripts/seed_teams.py` — Seed script with idempotent upsert logic (108 lines)
+  - `football-server/scripts/team_data.py` — 48-team data module (509 lines)
+- **Data**: 48 teams across 12 groups (A-L), 4 teams per group
+  - Bilingual names (name + name_zh), 3-letter codes, emoji flags
+  - FIFA rankings (2025-11-19 release), 6 playoff qualifiers with ranking=0
+  - Confederation distribution: UEFA 16, CAF 10, AFC 9, CONMEBOL 6, CONCACAF 6, OFC 1
+  - World Cup historical appearances
+- **Verification**:
+  - Script inserts 48 teams on first run, skips all on re-run (idempotent)
+  - API endpoint GET /api/teams returns all 48 teams with correct structure
+  - Data cross-referenced against data/2026_FIFA_World_Cup_Group_Stage.md
+  - All FIFA rankings, group assignments, and team rosters verified
+- **Architecture**: Data separated from logic to stay under 600-line hard limit
+  - `team_data.py`: pure data declaration (TEAMS list)
+  - `seed_teams.py`: async upsert logic + CLI entry point
