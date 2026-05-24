@@ -36,12 +36,13 @@ while IFS= read -r f; do
   # Skip non-business files
   case "$f" in
     *.d.ts|*.config.*|*node_modules*|*dist*|*.next*) continue ;;
+    *__pycache__*|*.pyc|.venv/*|*.egg-info*) continue ;;
     .docs/*|.claude/*|.git/*) continue ;;
   esac
 
-  # Only check business code files
+  # Only check business code files (frontend + backend)
   case "$f" in
-    *.tsx|*.ts|*.jsx|*.js)
+    *.tsx|*.ts|*.jsx|*.js|*.py)
       if [ -f "$f" ]; then
         lines=$(wc -l < "$f")
         lines=$((lines))
