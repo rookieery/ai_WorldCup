@@ -145,6 +145,7 @@ football-server/
 │   ├── seed_teams.py            # Seed 48 teams (idempotent upsert by code)
 │   ├── team_data.py             # 48-team roster data (bilingual, FIFA rankings, confederations)
 │   ├── seed_venues.py           # Seed 16 venues (idempotent upsert by name)
-│   └── venue_data.py            # 16-venue roster data (city, country, IANA timezone, capacity)
+│   ├── venue_data.py            # 16-venue roster data (city, country, IANA timezone, capacity)
+│   └── seed_matches.py          # Seed 104 matches (72 group + 32 knockout, bracket linkage, TBD placeholder team)
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```

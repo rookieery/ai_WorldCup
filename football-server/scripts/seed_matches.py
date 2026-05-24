@@ -1,0 +1,411 @@
+"""Seed script: insert all 104 matches (72 group stage + 32 knockout) for the
+2026 FIFA World Cup.
+
+Supports idempotent execution -- existing matches (matched by ``external_id``)
+are updated in-place rather than causing duplicate-key errors.
+
+Usage::
+
+    cd football-server
+    python -m scripts.seed_matches
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from collections import defaultdict
+from datetime import date, datetime
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.config import settings
+from app.utils.markdown_parser import MarkdownParser
+
+logger = logging.getLogger(__name__)
+
+# ── Kickoff time slots (UTC hours) per match-day density ───────────────────────
+
+_SLOTS: dict[int, list[int]] = {
+    2: [18, 21],
+    4: [13, 16, 19, 22],
+    6: [12, 15, 17, 19, 21, 23],
+    8: [12, 14, 16, 17, 19, 20, 22, 23],
+}
+
+# ── Knockout schedule definitions ──────────────────────────────────────────────
+
+_KNOCKOUT_DEFS: list[dict[str, Any]] = [
+    # Round of 32 — 16 matches (4 days x 4/day)
+    {"ext": "R32_01", "stage": "R32", "d": date(2026, 6, 28), "h": 13},
+    {"ext": "R32_02", "stage": "R32", "d": date(2026, 6, 28), "h": 16},
+    {"ext": "R32_03", "stage": "R32", "d": date(2026, 6, 28), "h": 19},
+    {"ext": "R32_04", "stage": "R32", "d": date(2026, 6, 28), "h": 22},
+    {"ext": "R32_05", "stage": "R32", "d": date(2026, 6, 29), "h": 13},
+    {"ext": "R32_06", "stage": "R32", "d": date(2026, 6, 29), "h": 16},
+    {"ext": "R32_07", "stage": "R32", "d": date(2026, 6, 29), "h": 19},
+    {"ext": "R32_08", "stage": "R32", "d": date(2026, 6, 29), "h": 22},
+    {"ext": "R32_09", "stage": "R32", "d": date(2026, 6, 30), "h": 13},
+    {"ext": "R32_10", "stage": "R32", "d": date(2026, 6, 30), "h": 16},
+    {"ext": "R32_11", "stage": "R32", "d": date(2026, 6, 30), "h": 19},
+    {"ext": "R32_12", "stage": "R32", "d": date(2026, 6, 30), "h": 22},
+    {"ext": "R32_13", "stage": "R32", "d": date(2026, 7, 1), "h": 13},
+    {"ext": "R32_14", "stage": "R32", "d": date(2026, 7, 1), "h": 16},
+    {"ext": "R32_15", "stage": "R32", "d": date(2026, 7, 1), "h": 19},
+    {"ext": "R32_16", "stage": "R32", "d": date(2026, 7, 1), "h": 22},
+    # Round of 16 — 8 matches (4 days x 2/day)
+    {"ext": "R16_01", "stage": "R16", "d": date(2026, 7, 4), "h": 18},
+    {"ext": "R16_02", "stage": "R16", "d": date(2026, 7, 4), "h": 21},
+    {"ext": "R16_03", "stage": "R16", "d": date(2026, 7, 5), "h": 18},
+    {"ext": "R16_04", "stage": "R16", "d": date(2026, 7, 5), "h": 21},
+    {"ext": "R16_05", "stage": "R16", "d": date(2026, 7, 7), "h": 18},
+    {"ext": "R16_06", "stage": "R16", "d": date(2026, 7, 7), "h": 21},
+    {"ext": "R16_07", "stage": "R16", "d": date(2026, 7, 8), "h": 18},
+    {"ext": "R16_08", "stage": "R16", "d": date(2026, 7, 8), "h": 21},
+    # Quarter-finals — 4 matches (2 days x 2/day)
+    {"ext": "QF_01", "stage": "QF", "d": date(2026, 7, 10), "h": 18},
+    {"ext": "QF_02", "stage": "QF", "d": date(2026, 7, 10), "h": 21},
+    {"ext": "QF_03", "stage": "QF", "d": date(2026, 7, 11), "h": 18},
+    {"ext": "QF_04", "stage": "QF", "d": date(2026, 7, 11), "h": 21},
+    # Semi-finals — 2 matches
+    {"ext": "SF_01", "stage": "SF", "d": date(2026, 7, 14), "h": 20},
+    {"ext": "SF_02", "stage": "SF", "d": date(2026, 7, 15), "h": 20},
+    # Third-place match — 1 match
+    {"ext": "3RD_01", "stage": "3rd", "d": date(2026, 7, 18), "h": 20},
+    # Final — 1 match
+    {"ext": "F_01", "stage": "F", "d": date(2026, 7, 19), "h": 19},
+]
+
+_ROUND_NAMES: dict[str, str] = {
+    "R32": "Round of 32",
+    "R16": "Round of 16",
+    "QF": "Quarter-finals",
+    "SF": "Semi-finals",
+    "3rd": "Third-place match",
+    "F": "Final",
+}
+
+# Venue overrides for high-profile knockout matches (keyed by external_id).
+_VENUE_OVERRIDES: dict[str, str] = {
+    "QF_01": "Mercedes-Benz Stadium",
+    "QF_02": "Lincoln Financial Field",
+    "QF_03": "NRG Stadium",
+    "QF_04": "Lumen Field",
+    "SF_01": "AT&T Stadium",
+    "SF_02": "SoFi Stadium",
+    "3RD_01": "Hard Rock Stadium",
+    "F_01": "MetLife Stadium",
+}
+
+# ── Bracket linkage: (source_ext_id, target_ext_id, position) ─────────────────
+
+_BRACKET_LINKS: list[tuple[str, str, int]] = [
+    # R32 -> R16
+    ("R32_01", "R16_01", 1), ("R32_02", "R16_01", 2),
+    ("R32_03", "R16_02", 1), ("R32_04", "R16_02", 2),
+    ("R32_05", "R16_03", 1), ("R32_06", "R16_03", 2),
+    ("R32_07", "R16_04", 1), ("R32_08", "R16_04", 2),
+    ("R32_09", "R16_05", 1), ("R32_10", "R16_05", 2),
+    ("R32_11", "R16_06", 1), ("R32_12", "R16_06", 2),
+    ("R32_13", "R16_07", 1), ("R32_14", "R16_07", 2),
+    ("R32_15", "R16_08", 1), ("R32_16", "R16_08", 2),
+    # R16 -> QF
+    ("R16_01", "QF_01", 1), ("R16_02", "QF_01", 2),
+    ("R16_03", "QF_02", 1), ("R16_04", "QF_02", 2),
+    ("R16_05", "QF_03", 1), ("R16_06", "QF_03", 2),
+    ("R16_07", "QF_04", 1), ("R16_08", "QF_04", 2),
+    # QF -> SF
+    ("QF_01", "SF_01", 1), ("QF_02", "SF_01", 2),
+    ("QF_03", "SF_02", 1), ("QF_04", "SF_02", 2),
+    # SF -> Final
+    ("SF_01", "F_01", 1), ("SF_02", "F_01", 2),
+]
+
+
+# ── Helper functions ───────────────────────────────────────────────────────────
+
+
+def _kickoff_hours(match_count: int) -> list[int]:
+    """Return UTC kickoff hours for *match_count* matches on one day."""
+    key = min(k for k in _SLOTS if k >= match_count)
+    return _SLOTS[key][:match_count]
+
+
+async def _ensure_tbd_team(session: AsyncSession) -> int:
+    """Return the ID of the TBD placeholder team, creating it if absent."""
+    from app.models.team import Team
+
+    stmt = select(Team).where(Team.code == "TBD")
+    result = await session.execute(stmt)
+    team = result.unique().scalar_one_or_none()
+    if team is not None:
+        return team.id
+
+    team = Team(
+        name="TBD",
+        name_zh="待定",
+        code="TBD",
+        flag="🏳️",
+        fifa_ranking=0,
+        group_label="X",
+        confederation="",
+        world_cup_appearances=0,
+    )
+    session.add(team)
+    await session.flush()
+    logger.info("Created TBD placeholder team (id=%d)", team.id)
+    return team.id
+
+
+async def _upsert_match(
+    session: AsyncSession,
+    ext_id: str,
+    data: dict[str, Any],
+    inserted: int,
+    updated: int,
+    skipped: int,
+) -> tuple[int, int, int]:
+    """Insert a new match or update an existing one matched by *ext_id*."""
+    from app.models.match import Match
+
+    stmt = select(Match).where(Match.external_id == ext_id)
+    result = await session.execute(stmt)
+    existing = result.unique().scalar_one_or_none()
+
+    if existing is None:
+        session.add(Match(**data))
+        return inserted + 1, updated, skipped
+
+    changed = False
+    for key, value in data.items():
+        if getattr(existing, key, None) != value:
+            setattr(existing, key, value)
+            changed = True
+    if changed:
+        return inserted, updated + 1, skipped
+    return inserted, updated, skipped + 1
+
+
+async def _link_bracket(session: AsyncSession) -> None:
+    """Wire up next_match_id and position for knockout matches."""
+    from app.models.match import Match
+
+    stages = ["R32", "R16", "QF", "SF", "3rd", "F"]
+    stmt = select(Match).where(Match.stage.in_(stages))
+    result = await session.execute(stmt)
+    matches = {m.external_id: m for m in result.unique().scalars().all()}
+
+    for src_ext, tgt_ext, pos in _BRACKET_LINKS:
+        src = matches.get(src_ext)
+        tgt = matches.get(tgt_ext)
+        if src is None or tgt is None:
+            logger.warning("Bracket link skip: %s -> %s", src_ext, tgt_ext)
+            continue
+        src.next_match_id = tgt.id
+        src.position = pos
+
+    await session.flush()
+    logger.info("Bracket linkage applied (%d links)", len(_BRACKET_LINKS))
+
+
+# ── Main seed function ─────────────────────────────────────────────────────────
+
+
+async def seed_matches(session: AsyncSession) -> dict[str, int]:
+    """Insert or update all 104 matches (72 group + 32 knockout).
+
+    Returns a summary dict with ``inserted``, ``updated``, ``skipped``,
+    ``group_stage``, and ``knockout`` counts.
+    """
+    from app.models.team import Team
+    from app.models.venue import Venue
+
+    # ── Load reference data ─────────────────────────────────────────────
+    result = await session.execute(select(Team))
+    teams = result.unique().scalars().all()
+    name_zh_to_id: dict[str, int] = {t.name_zh: t.id for t in teams}
+
+    result = await session.execute(select(Venue).order_by(Venue.id))
+    venues = list(result.unique().scalars().all())
+    venue_by_name: dict[str, int] = {v.name: v.id for v in venues}
+
+    tbd_id = await _ensure_tbd_team(session)
+
+    # ── Parse group-stage fixtures ──────────────────────────────────────
+    parser = MarkdownParser()
+    parsed = parser.parse()
+    if len(parsed) != 72:
+        raise ValueError(f"Expected 72 group-stage matches, parsed {len(parsed)}")
+
+    by_date: dict[date, list] = defaultdict(list)
+    for pm in parsed:
+        by_date[pm.match_date].append(pm)
+
+    sorted_dates = sorted(by_date.keys())
+    for d in sorted_dates:
+        by_date[d].sort(key=lambda m: (m.group_label, m.round_num))
+
+    # ── Insert group-stage matches ──────────────────────────────────────
+    inserted, updated, skipped = 0, 0, 0
+    venue_idx = 0
+    group_counter: dict[str, int] = defaultdict(int)
+
+    for d in sorted_dates:
+        day_matches = by_date[d]
+        hours = _kickoff_hours(len(day_matches))
+
+        for slot, pm in enumerate(day_matches):
+            group_counter[pm.group_label] += 1
+            ext_id = f"{pm.group_label}_M{group_counter[pm.group_label]}"
+
+            home_id = name_zh_to_id.get(pm.home_team_zh)
+            away_id = name_zh_to_id.get(pm.away_team_zh)
+            if home_id is None:
+                raise ValueError(f"Unknown home team: {pm.home_team_zh!r}")
+            if away_id is None:
+                raise ValueError(f"Unknown away team: {pm.away_team_zh!r}")
+
+            # Opening match at Estadio Azteca; others round-robin
+            if ext_id == "A_M1":
+                vid = venue_by_name.get("Estadio Azteca", venues[0].id)
+            else:
+                vid = venues[venue_idx % len(venues)].id
+                venue_idx += 1
+
+            kickoff = datetime(
+                pm.match_date.year, pm.match_date.month,
+                pm.match_date.day, hours[slot], 0,
+            )
+
+            data: dict[str, Any] = {
+                "external_id": ext_id,
+                "home_team_id": home_id,
+                "away_team_id": away_id,
+                "venue_id": vid,
+                "stage": "group",
+                "group_label": pm.group_label,
+                "round": f"Matchday {pm.round_num}",
+                "match_day": pm.round_num,
+                "kickoff_utc": kickoff,
+                "status": "upcoming",
+                "home_score": None,
+                "away_score": None,
+                "is_big_match": False,
+                "activity_level": 0,
+                "next_match_id": None,
+                "position": None,
+            }
+            inserted, updated, skipped = await _upsert_match(
+                session, ext_id, data, inserted, updated, skipped,
+            )
+
+    await session.flush()
+    logger.info(
+        "Group stage: inserted=%d, updated=%d, skipped=%d",
+        inserted, updated, skipped,
+    )
+
+    # ── Insert knockout matches ─────────────────────────────────────────
+    ko_ins, ko_upd, ko_skip = 0, 0, 0
+    ko_venue_idx = 0
+
+    for kd in _KNOCKOUT_DEFS:
+        override = _VENUE_OVERRIDES.get(kd["ext"])
+        if override and override in venue_by_name:
+            vid = venue_by_name[override]
+        else:
+            vid = venues[ko_venue_idx % len(venues)].id
+            ko_venue_idx += 1
+
+        kickoff = datetime(kd["d"].year, kd["d"].month, kd["d"].day, kd["h"], 0)
+        stage = kd["stage"]
+
+        data = {
+            "external_id": kd["ext"],
+            "home_team_id": tbd_id,
+            "away_team_id": tbd_id,
+            "venue_id": vid,
+            "stage": stage,
+            "group_label": None,
+            "round": _ROUND_NAMES.get(stage, stage),
+            "match_day": None,
+            "kickoff_utc": kickoff,
+            "status": "upcoming",
+            "home_score": None,
+            "away_score": None,
+            "is_big_match": stage in ("QF", "SF", "3rd", "F"),
+            "activity_level": 0,
+            # next_match_id / position are managed by _link_bracket
+        }
+        ko_ins, ko_upd, ko_skip = await _upsert_match(
+            session, kd["ext"], data, ko_ins, ko_upd, ko_skip,
+        )
+
+    await session.flush()
+    logger.info(
+        "Knockout: inserted=%d, updated=%d, skipped=%d",
+        ko_ins, ko_upd, ko_skip,
+    )
+
+    # ── Bracket linkage ─────────────────────────────────────────────────
+    await _link_bracket(session)
+
+    return {
+        "inserted": inserted + ko_ins,
+        "updated": updated + ko_upd,
+        "skipped": skipped + ko_skip,
+        "group_stage": inserted + updated + skipped,
+        "knockout": ko_ins + ko_upd + ko_skip,
+    }
+
+
+# ── CLI entry point ────────────────────────────────────────────────────────────
+
+
+async def run() -> None:
+    """Create an async session, run the seed, and print a summary."""
+    from app.models.base import Base
+
+    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    session_factory = sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
+    async with session_factory() as session:
+        async with session.begin():
+            result = await seed_matches(session)
+
+    await engine.dispose()
+
+    total = result["inserted"] + result["updated"] + result["skipped"]
+    logger.info(
+        "Seed complete: %d matches processed "
+        "(group=%d, knockout=%d, inserted=%d, updated=%d, skipped=%d)",
+        total,
+        result["group_stage"],
+        result["knockout"],
+        result["inserted"],
+        result["updated"],
+        result["skipped"],
+    )
+
+
+def main() -> None:
+    """CLI entry point."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
+    asyncio.run(run())
+
+
+if __name__ == "__main__":
+    main()

@@ -13,12 +13,16 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - `team_data.py`: pure data declaration (TEAMS list)
-  - `seed_teams.py`: async upsert logic + CLI entry point
 
-## P1-14-SeedVenues — completed 2026-05-24
-- `venue_data.py`: pure data declaration (VENUES list, 16 stadiums)
-- `seed_venues.py`: async upsert logic + CLI entry point
-  - Idempotent: matched by venue `name` field
   - Verified: 16 venues inserted (first run), all skipped (second run)
   - USA 11 + Canada 2 + Mexico 3 venues with IANA timezones, UTC offsets, capacities
+
+- [P1-15-SeedMatches] Seed script: 104 matches (72 group + 32 knockout)
+  - Created `scripts/seed_matches.py`
+  - 72 group-stage matches parsed from markdown via MarkdownParser
+  - External IDs: A_M1..A_M6, B_M1..B_M6, ..., L_M1..L_M6
+  - 32 knockout matches (R32x16, R16x8, QFx4, SFx2, 3RDx1, Fx1) with TBD placeholder team
+  - Bracket linkage: 30 links (R32→R16, R16→QF, QF→SF, SF→Final)
+  - Venue assignment: opening match at Estadio Azteca, round-robin for group stage, predefined for QF/SF/3rd/Final
+  - Idempotent: 104 skipped on second run
+  - Verified: 104 matches, correct linkage, TBD team, all assertions pass

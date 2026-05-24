@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-14-SeedVenues",
-      "title": "种子数据脚本：16 座主办城市场馆",
-      "description": "场馆数据初始化任务。\n\n1. 创建 `scripts/seed_venues.py`：插入 16 座主办城市场馆\n   - 美国 11 座：MetLife Stadium (East Rutherford), AT&T Stadium (Arlington), SoFi Stadium (Inglewood) 等\n   - 加拿大 2 座：BMO Field (Toronto), BC Place (Vancouver)\n   - 墨西哥 3 座：Estadio Azteca (Mexico City), Estadio BBVA (Monterrey), Estadio Akron (Guadalajara)\n   - 每座场馆包含：name, city, country, timezone（IANA 格式）, utc_offset, capacity\n   - 支持幂等执行",
-      "passes": true
-    },
-    {
       "id": "P1-15-SeedMatches",
       "title": "种子数据脚本：104 场比赛（72 小组赛 + 32 淘汰赛）",
       "description": "比赛数据初始化任务。\n\n1. 创建 `scripts/seed_matches.py`：插入 104 场比赛\n   - 72 场小组赛：使用 markdown_parser 解析 data/2026_FIFA_World_Cup_Group_Stage.md，提取每场比赛的队伍、时间、场馆\n   - 每场小组赛 external_id 格式：A_M1（A 组第 1 场）\n   - 32 场淘汰赛：使用 generate_bracket 生成对阵框架（队伍为 TBD）\n   - 淘汰赛 external_id 格式：R32_01, R16_01, QF_01, SF_01, 3RD_01, F_01\n   - status 默认 upcoming，score 默认 NULL\n   - 正确设置 next_match_id 和 position",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-16-SeedEntry",
