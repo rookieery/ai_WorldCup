@@ -10,3 +10,12 @@
   - `football-server/app/config.py` — Pydantic Settings class (Settings) with all env vars
 - Verification:
   - `pip install -e .` installed all dependencies successfully
+  - `from app.config import settings` imports and returns correct defaults
+  - Frontend build (`npm run build`) passes with no regressions
+## P1-02-Exceptions — 异常层级 + 全局错误处理中间件 + CORS ✅ DONE
+  - Created `app/exceptions/exceptions.py`: AppException hierarchy (AppException → NotFoundError/404, ValidationError/422, BusinessError/400, ExternalServiceError/502)
+  - Created `app/exceptions/__init__.py`: re-exports all exception classes
+  - Created `app/middleware/error_handler.py`: ErrorHandlerMiddleware catches AppException → unified `{code, data, message}` JSON; unhandled → 500
+  - Created `app/middleware/cors.py`: add_cors_middleware() registers CORSMiddleware with origins from settings.CORS_ORIGINS
+  - Created `app/middleware/logging.py`: LoggingMiddleware logs `method path → status (duration_ms)` via stdlib logging
+  - Created `app/middleware/__init__.py`: re-exports all middleware

@@ -7,6 +7,12 @@
         "title": "后端项目脚手架：依赖管理 + 环境配置 + 目录骨架",
         "description": "基础设施任务。\n\n1. 创建 `football-server/pyproject.toml`，声明项目元数据和全部核心依赖（fastapi>=0.115, uvicorn[standard]>=0.34, sqlalchemy[asyncio]>=2.0, aiosqlite>=0.21, alembic>=1.14, redis[hiredis]>=5.0, pydantic>=2.0, pydantic-settings>=2.0, httpx>=0.28, python-dotenv>=1.0）\n2. 创建 `football-server/.env.example`，列出所有环境变量模板（DATABASE_URL, REDIS_URL, REDIS_ENABLED, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, CORS_ORIGINS, APP_ENV）\n3. 创建 `football-server/.gitignore`（__pycache__/, .venv/, *.pyc, .env, *.db）\n4. 创建 `football-server/app/__init__.py`（空文件）\n5. 创建 `football-server/app/config.py`，使用 Pydantic Settings 定义配置类，从 .env 加载所有环境变量，提供默认值\n\n验收：`pip install -e .` 成功安装全部依赖，`from app.config import settings` 可正常导入",
         "passes": true
+      },
+      {
+        "id": "P1-02-Exceptions",
+        "title": "异常层级 + 全局错误处理中间件 + CORS",
+        "description": "后端基础中间件任务。\n\n1. 创建 `app/exceptions/__init__.py` 和 `app/exceptions/exceptions.py`，定义异常层级：AppException(BaseException)、NotFoundError、ValidationError、BusinessError、ExternalServiceError\n2. 创建 `app/middleware/__init__.py` 和 `app/middleware/error_handler.py`，实现全局异常处理器，将自定义异常统一转换为 ApiResponse 格式 `{code, data, message}`，未捕获异常返回 500\n3. 创建 `app/middleware/cors.py`，配置 CORS 中间件，允许来自前端的跨域请求，origins 从 config 加载\n4. 创建 `app/middleware/logging.py`，实现请求日志中间件，记录 method/path/status/duration（使用标准 logging，禁止 print）",
+        "passes": true
       }
     ]
   }

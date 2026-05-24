@@ -81,10 +81,18 @@ football-server/
 │   ├── exceptions/
 │   │   ├── __init__.py          # Re-exports all exception classes
 │   │   └── exceptions.py        # AppException hierarchy (NotFound, Validation, Business, ExternalService)
-│   └── middleware/
-│       ├── __init__.py          # Re-exports all middleware classes
-│       ├── error_handler.py     # Global exception → ApiResponse {code, data, message} middleware
-│       ├── cors.py              # CORS middleware (origins from config)
-│       └── logging.py           # Request logging middleware (method/path/status/duration)
+│   ├── middleware/
+│   │   ├── __init__.py          # Re-exports all middleware classes
+│   │   ├── error_handler.py     # Global exception → ApiResponse {code, data, message} middleware
+│   │   ├── cors.py              # CORS middleware (origins from config)
+│   │   └── logging.py           # Request logging middleware (method/path/status/duration)
+│   └── models/
+│       ├── __init__.py          # Re-exports all model classes + Base
+│       ├── base.py              # DeclarativeBase + TimestampMixin (created_at, updated_at)
+│       ├── team.py              # Team model (48 teams, code/name UNIQUE)
+│       ├── venue.py             # Venue model (16 stadiums with timezone info)
+│       ├── match.py             # Match model (104 fixtures, FK→Team/Venue/self)
+│       ├── group_standing.py    # GroupStanding model (48 rows, FK→Team UNIQUE)
+│       └── match_event.py       # MatchEvent model (goals/cards/subs, FK→Match)
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```

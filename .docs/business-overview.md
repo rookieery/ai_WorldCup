@@ -12,7 +12,7 @@ Real-time FIFA World Cup 2026 dashboard for global football fans. Features match
 |--------|--------|
 | Frontend UI | Complete visual shell (all components built) |
 | Data Source | 100% hardcoded in components |
-| Backend API | Scaffold + exceptions + middleware (error handler, CORS, logging) |
+| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) |
 | State Management | Local `useState` only, no global store |
 | Routing | Single `/` route, no navigation |
 | AI Service | Simulated (2s timeout, fixed response) |
@@ -118,6 +118,24 @@ AppException (base, code=500)
 
 ### Unified API Response Format
 All API responses (success and error) follow: `{"code": int, "data": T | null, "message": str}`
+
+### ORM Models (SQLAlchemy 2.0 Declarative)
+```
+Base (DeclarativeBase)
+└── TimestampMixin (created_at, updated_at)
+    ├── Team (id, name UNIQUE, name_zh, code UNIQUE, flag, fifa_ranking, group_label, confederation, world_cup_appearances)
+    ├── Venue (id, name, city, country, timezone, utc_offset, capacity)
+    ├── Match (id, external_id UNIQUE, home/away_team_id FK→Team, venue_id FK→Venue, stage, group_label, round, match_day, kickoff_utc, status, home/away_score, is_big_match, activity_level, next_match_id FK→Match(self), position)
+    ├── GroupStanding (id, team_id FK UNIQUE→Team, group_label, played, won, drawn, lost, goals_for, goals_against, goal_difference, points, position)
+    └── MatchEvent (id, match_id FK→Match, event_type, minute, team_side, player_name)
+
+Relationships:
+  Team 1:N Match (home_matches, away_matches)
+  Team 1:1 GroupStanding (standing)
+  Venue 1:N Match (matches)
+  Match 1:N MatchEvent (events, cascade delete)
+  Match self-ref next_match (bracket linkage)
+```
 
 ## Key Implementation Gaps
 

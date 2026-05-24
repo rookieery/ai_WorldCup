@@ -4,8 +4,22 @@
 
 ## Status: FOUNDATION IN PROGRESS
 
-Backend scaffold, exception hierarchy, and middleware are implemented.
-Routes, services, and data models are not yet built.
+Backend scaffold, exception hierarchy, middleware, and ORM models are implemented.
+Routes, services, repositories, and schemas are not yet built.
+
+## Database Schema (5 tables)
+
+All models use SQLAlchemy 2.0 `Mapped[]` type annotations with `mapped_column()`.
+
+| Table | PK | Unique Columns | Foreign Keys |
+|-------|----|---------------|--------------|
+| `teams` | id | name, code | — |
+| `venues` | id | — | — |
+| `matches` | id | external_id | home_team_id→teams, away_team_id→teams, venue_id→venues, next_match_id→matches(self) |
+| `group_standings` | id | team_id | team_id→teams |
+| `match_events` | id | — | match_id→matches |
+
+All tables include `TimestampMixin` columns: `created_at`, `updated_at` (auto-managed).
 
 ## Unified Response Envelope
 
