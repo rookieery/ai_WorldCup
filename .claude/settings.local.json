@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [],
+    "additionalDirectories": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if git diff --name-only HEAD | grep -qvE '^(\\.docs/|\\.claude/|CLAUDE\\.md$|tasks\\.md$|progress|prompt\\.md$|ralph\\.sh$|archive\\.js$|prd\\.json$|prd_archive\\.json$|\\.git)'; then if git diff --quiet HEAD -- .docs/; then >&2 echo '⚠️ 自动拦截：检测到业务代码已修改，但 .docs/ 未同步。请立即调用 /sync-docs 技能更新文档，完成后再结束任务。'; exit 2; fi; fi; exit 0"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-refactor-threshold.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,408 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Midnight Navy Base - Premium Dark Theme */
+  --background: #020617;
+  --background-end: #0f172a;
+  --foreground: #f1f5f9;
+  
+  /* Card with stronger glassmorphism */
+  --card: rgba(15, 23, 42, 0.6);
+  --card-foreground: #f1f5f9;
+  --popover: rgba(15, 23, 42, 0.8);
+  --popover-foreground: #f1f5f9;
+  
+  /* High-Contrast Trio - Electric Lime Primary */
+  --primary: #CCFF00;
+  --primary-foreground: #020617;
+  
+  /* Cyber Cyan Accent */
+  --accent: #00F0FF;
+  --accent-foreground: #020617;
+  
+  /* Vivid Magenta */
+  --magenta: #FF00E5;
+  --magenta-foreground: #020617;
+  
+  /* Gold for premium matches */
+  --gold: #FFD700;
+  --gold-foreground: #020617;
+  
+  --secondary: rgba(30, 41, 59, 0.8);
+  --secondary-foreground: #f1f5f9;
+  
+  --muted: rgba(51, 65, 85, 0.6);
+  --muted-foreground: #94a3b8;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #f1f5f9;
+  
+  --border: rgba(71, 85, 105, 0.3);
+  --input: rgba(30, 41, 59, 0.6);
+  --ring: #00F0FF;
+  
+  /* Chart colors with new palette */
+  --chart-1: #CCFF00;
+  --chart-2: #00F0FF;
+  --chart-3: #FF00E5;
+  --chart-4: #FFD700;
+  --chart-5: #FF6B6B;
+  
+  --radius: 0.75rem;
+  
+  /* Enhanced Glassmorphism */
+  --glass: rgba(15, 23, 42, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  
+  /* Glows */
+  --glow-lime: rgba(204, 255, 0, 0.4);
+  --glow-cyan: rgba(0, 240, 255, 0.4);
+  --glow-magenta: rgba(255, 0, 229, 0.3);
+  --glow-gold: rgba(255, 215, 0, 0.4);
+  
+  --sidebar: rgba(15, 23, 42, 0.5);
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #CCFF00;
+  --sidebar-primary-foreground: #020617;
+  --sidebar-accent: rgba(30, 41, 59, 0.8);
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: rgba(71, 85, 105, 0.3);
+  --sidebar-ring: #00F0FF;
+}
+
+.dark {
+  --background: #020617;
+  --background-end: #0f172a;
+  --foreground: #f1f5f9;
+  --card: rgba(15, 23, 42, 0.6);
+  --card-foreground: #f1f5f9;
+  --popover: rgba(15, 23, 42, 0.8);
+  --popover-foreground: #f1f5f9;
+  --primary: #CCFF00;
+  --primary-foreground: #020617;
+  --accent: #00F0FF;
+  --accent-foreground: #020617;
+  --magenta: #FF00E5;
+  --magenta-foreground: #020617;
+  --gold: #FFD700;
+  --gold-foreground: #020617;
+  --secondary: rgba(30, 41, 59, 0.8);
+  --secondary-foreground: #f1f5f9;
+  --muted: rgba(51, 65, 85, 0.6);
+  --muted-foreground: #94a3b8;
+  --destructive: #ef4444;
+  --destructive-foreground: #f1f5f9;
+  --border: rgba(71, 85, 105, 0.3);
+  --input: rgba(30, 41, 59, 0.6);
+  --ring: #00F0FF;
+  --chart-1: #CCFF00;
+  --chart-2: #00F0FF;
+  --chart-3: #FF00E5;
+  --chart-4: #FFD700;
+  --chart-5: #FF6B6B;
+  --glass: rgba(15, 23, 42, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --glow-lime: rgba(204, 255, 0, 0.4);
+  --glow-cyan: rgba(0, 240, 255, 0.4);
+  --glow-magenta: rgba(255, 0, 229, 0.3);
+  --glow-gold: rgba(255, 215, 0, 0.4);
+  --sidebar: rgba(15, 23, 42, 0.5);
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #CCFF00;
+  --sidebar-primary-foreground: #020617;
+  --sidebar-accent: rgba(30, 41, 59, 0.8);
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: rgba(71, 85, 105, 0.3);
+  --sidebar-ring: #00F0FF;
+}
+
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-background-end: var(--background-end);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-magenta: var(--magenta);
+  --color-magenta-foreground: var(--magenta-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-glass-highlight: var(--glass-highlight);
+  --color-glow-lime: var(--glow-lime);
+  --color-glow-cyan: var(--glow-cyan);
+  --color-glow-magenta: var(--glow-magenta);
+  --color-glow-gold: var(--glow-gold);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background: linear-gradient(135deg, var(--background) 0%, var(--background-end) 100%);
+    min-height: 100vh;
+  }
+}
+
+/* Custom scrollbar for cyber aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.5);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Sport-centric condensed font for scores */
+.font-score {
+  font-family: 'Geist Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* LED Display effect for live scores */
+.led-display {
+  font-family: 'Geist Mono', monospace;
+  font-weight: 800;
+  text-shadow: 
+    0 0 10px currentColor,
+    0 0 20px currentColor,
+    0 0 30px currentColor;
+}
+
+/* Glassmorphism card base */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+/* 3D Card hover transform */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(5deg) rotateY(-2deg);
+}
+
+/* Glow animations */
+@keyframes pulse-glow-lime {
+  0%, 100% {
+    box-shadow: 0 0 15px var(--glow-lime), inset 0 0 15px rgba(204, 255, 0, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 30px var(--glow-lime), inset 0 0 20px rgba(204, 255, 0, 0.1);
+  }
+}
+
+@keyframes pulse-glow-cyan {
+  0%, 100% {
+    box-shadow: 0 0 15px var(--glow-cyan), inset 0 0 15px rgba(0, 240, 255, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 35px var(--glow-cyan), inset 0 0 25px rgba(0, 240, 255, 0.1);
+  }
+}
+
+@keyframes pulse-glow-gold {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--glow-gold), inset 0 0 15px rgba(255, 215, 0, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--glow-gold), inset 0 0 25px rgba(255, 215, 0, 0.1);
+  }
+}
+
+@keyframes border-pulse-cyan {
+  0%, 100% {
+    border-color: rgba(0, 240, 255, 0.5);
+  }
+  50% {
+    border-color: rgba(0, 240, 255, 1);
+  }
+}
+
+@keyframes ambient-wave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes spin-geometric {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes activity-pulse {
+  0%, 100% {
+    transform: scaleX(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleX(1.1);
+    opacity: 1;
+  }
+}
+
+.glow-pulse-lime {
+  animation: pulse-glow-lime 2s ease-in-out infinite;
+}
+
+.glow-pulse-cyan {
+  animation: pulse-glow-cyan 1.5s ease-in-out infinite;
+}
+
+.glow-pulse-gold {
+  animation: pulse-glow-gold 3s ease-in-out infinite;
+}
+
+.border-pulse-cyan {
+  animation: border-pulse-cyan 1.5s ease-in-out infinite;
+}
+
+.ambient-wave {
+  background-size: 200% 200%;
+  animation: ambient-wave 8s ease-in-out infinite;
+}
+
+.spin-geometric {
+  animation: spin-geometric 3s linear infinite;
+}
+
+.activity-pulse {
+  animation: activity-pulse 2s ease-in-out infinite;
+}
+
+/* Mesh gradient background animations */
+@keyframes mesh-float-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+    opacity: 0.4;
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+    opacity: 0.25;
+  }
+}
+
+@keyframes mesh-float-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translate(-40px, 40px) scale(1.15);
+    opacity: 0.35;
+  }
+}
+
+.mesh-gradient-1 {
+  animation: mesh-float-1 15s ease-in-out infinite;
+}
+
+.mesh-gradient-2 {
+  animation: mesh-float-2 20s ease-in-out infinite;
+}
+
+/* Focus glow for inputs */
+.input-focus-glow:focus {
+  box-shadow: 
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--accent),
+    0 0 20px var(--glow-cyan);
+}
+
+/* Cheer meter animation */
+@keyframes cheer-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.cheer-btn:hover {
+  animation: cheer-pulse 0.3s ease-in-out;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
