@@ -12,7 +12,7 @@ Real-time FIFA World Cup 2026 dashboard for global football fans. Features match
 |--------|--------|
 | Frontend UI | Complete visual shell (all components built) |
 | Data Source | 100% hardcoded in components |
-| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) + Pydantic schemas (8 modules) + Alembic migrations |
+| Backend API | Scaffold + exceptions + middleware + ORM models (5 tables) + Pydantic schemas (8 modules) + Alembic migrations + **App factory (main.py) + DI (dependencies.py) + run.py entry point** |
 | State Management | Local `useState` only, no global store |
 | Routing | Single `/` route, no navigation |
 | AI Service | Simulated (2s timeout, fixed response) |

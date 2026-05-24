@@ -2,9 +2,10 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: SERVICES + CONTROLLERS PARTIAL
+## Status: APP FACTORY + DI COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, and **Team + Venue + Match + Group + Bracket services/controllers** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, and **run.py entry point** are implemented.
+`uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Cheer services/controllers are not yet built.
 
 ## Service Layer
@@ -21,7 +22,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 
 ## Controller Layer
 
-Controllers use FastAPI `APIRouter` with `Depends(_get_db)` for session injection. All responses wrapped in `ApiResponse[T]`.
+Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/dependencies.py` for DI. All responses wrapped in `ApiResponse[T]`.
 
 | Controller | Routes | Query Params |
 |-----------|--------|-------------|
@@ -36,7 +37,11 @@ Controllers use FastAPI `APIRouter` with `Depends(_get_db)` for session injectio
 | `bracket_controller` | `GET /api/bracket` | `timezone` (IANA), `lang` (en/zh) |
 | `bracket_controller` | `GET /api/bracket/predictions` | — |
 
-> Note: Session DI is currently inline `_get_db()` in each controller. P1-11 will centralise into `app/dependencies.py`.
+> Dependency injection is centralised in `app/dependencies.py`:
+> - `get_db` — yields `AsyncSession` with auto-commit/rollback
+> - `get_language` — extracts lang from query param or `Accept-Language` header
+> - `get_team_service`, `get_match_service`, `get_venue_service`, `get_group_service`, `get_bracket_service` — service factory functions
+> Engine lifecycle managed by `main.py` lifespan (init on startup, dispose on shutdown).
 
 ## Repository Layer
 

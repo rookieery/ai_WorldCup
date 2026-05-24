@@ -1,14 +1,15 @@
 # Controllers Layer — Agent Notes
 
 ## Architecture
-- All controllers use FastAPI `APIRouter` with `Depends(_get_db)` for session injection.
+- All controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/dependencies.py` for DI.
 - All responses wrapped in `ApiResponse[T]` (unified `{code, data, message}` envelope).
-- Service instances are created per-request inside the route handler.
+- Service instances are injected via DI factory functions (no manual instantiation in routes).
 
-## Session Helper
-- Each controller has an inline `_get_db()` async generator.
-- P1-11 will centralise this into `app/dependencies.py`.
-- Pattern: create engine → sessionmaker → yield session → auto-close.
+## Dependency Injection
+- Centralised in `app/dependencies.py`.
+- Each controller uses `Depends(get_<domain>_service)` instead of manual `_get_db` + `Svc(session)`.
+- Engine lifecycle managed by `app/main.py` lifespan (init on startup, dispose on shutdown).
+- `get_db` provides auto-commit/rollback session management.
 
 ## Registered Routes
 

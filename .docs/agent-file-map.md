@@ -76,6 +76,7 @@ football-server/
 ├── alembic.ini                  # Alembic config (DB URL from app.config, logging)
 ├── .env.example                 # Environment variable templates
 ├── .gitignore                   # Python/venv/db ignore rules
+├── run.py                       # Uvicorn entry point (python run.py or python run.py --prod)
 ├── alembic/
 │   ├── env.py                   # Async migration runner (reads settings.DATABASE_URL)
 │   ├── script.py.mako           # Migration script template
@@ -84,6 +85,8 @@ football-server/
 ├── app/
 │   ├── __init__.py              # Package init (empty)
 │   ├── config.py                # Pydantic Settings: all env vars with defaults
+│   ├── main.py                  # FastAPI app factory (lifespan, middleware, routers, /docs)
+│   ├── dependencies.py          # DI providers: get_db, get_*_service, get_language
 │   ├── exceptions/
 │   │   ├── __init__.py          # Re-exports all exception classes
 │   │   └── exceptions.py        # AppException hierarchy (NotFound, Validation, Business, ExternalService)
@@ -117,11 +120,11 @@ football-server/
 │   │   └── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); lang + timezone aware
 │   ├── controllers/
 │   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router
-│   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (?lang=zh support)
-│   │   ├── venue_controller.py  # GET /api/venues (paginated, with timezone info)
-│   │   ├── match_controller.py  # GET /api/matches (multi-filter), GET /api/matches/live, GET /api/matches/:id (with events)
-│   │   ├── group_controller.py  # GET /api/groups (all 12 groups), GET /api/groups/:group (standings + matches)
-│   │   └── bracket_controller.py # GET /api/bracket (full knockout tree), GET /api/bracket/predictions (TBD)
+│   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
+│   │   ├── venue_controller.py  # GET /api/venues (uses get_venue_service DI)
+│   │   ├── match_controller.py  # GET /api/matches, /live, /:id (uses get_match_service DI)
+│   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
+│   │   └── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes

@@ -49,6 +49,18 @@
         "title": "Match Service 与 Controller（比赛查询 + 过滤）",
         "description": "比赛核心业务 + 路由任务。\n\n1. 创建 `app/services/match_service.py`：MatchService，方法包括 get_matches（按 date/stage/group/team/status 过滤）、get_match_by_id（含 events）、get_live_matches。注入 MatchRepository + MatchEventRepository\n2. 创建 `app/controllers/match_controller.py`：\n   - GET /api/matches — 支持 query params: date, stage, group, team, status\n   - GET /api/matches/live — 当前进行中比赛\n   - GET /api/matches/:id — 单场详情（含 match_events）\n\n过滤逻辑放在 Service 层，Controller 仅解析 MatchQueryParams 并传递。时区转换：根据请求的 timezone 参数，将 kickoff_utc 转换为 localTime 和 hostTime",
         "passes": true
+      },
+      {
+        "id": "P1-09-Group",
+        "title": "Group Service 与 Controller（小组积分 + 赛程）",
+        "description": "小组积分业务 + 路由任务。\n\n1. 创建 `app/services/group_service.py`：GroupService，方法包括 get_all_groups（12 组积分概览）、get_group_detail（单组积分榜 + 该组赛程列表）。注入 GroupRepository + MatchRepository\n2. 创建 `app/controllers/group_controller.py`：\n   - GET /api/groups — 全部 12 组积分排名\n   - GET /api/groups/:group — 单组详情（A-L），返回 standings + matches\n\n积分榜按 points desc, goal_difference desc 排序。响应中的队伍信息包含中英文名",
+        "passes": true
+      },
+      {
+        "id": "P1-10-Bracket",
+        "title": "Bracket Service 与 Controller（完整淘汰赛对阵图）",
+        "description": "淘汰赛对阵业务 + 路由任务。\n\n1. 创建 `app/services/bracket_service.py`：BracketService，方法包括 get_full_bracket（返回 R32→R16→QF→SF→3rd→F 全结构）、get_bracket_by_round。注入 MatchRepository\n2. 创建 `app/controllers/bracket_controller.py`：\n   - GET /api/bracket — 完整淘汰赛对阵图树形结构\n   - GET /api/bracket/predictions — AI 预测淘汰赛路径（Phase 3 实际接入，当前返回 TBD）\n\n返回数据按 round 分组，每个 round 内按 position 排序。team 为 TBD 时返回 fromGroup/fromPosition 信息",
+        "passes": true
       }
     ]
   }
