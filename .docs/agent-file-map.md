@@ -43,6 +43,14 @@ football-web/
 ├── lib/
 │   ├── utils.ts              # cn() utility (clsx + tailwind-merge)
 │   ├── api-client.ts         # Core fetch wrapper: base URL, Accept-Language, ApiResponse<T> unwrapping, error handling, query-string builder
+│   ├── i18n/                 # Internationalization infrastructure
+│   │   ├── index.ts          # Barrel exports (I18nProvider, useI18n, useTranslation, types)
+│   │   ├── context.tsx       # I18nProvider (React Context: locale state, t() function, localStorage persistence)
+│   │   ├── use-translation.ts # useTranslation hook — thin wrapper exposing { t, locale, setLocale }
+│   │   ├── types.ts          # Locale union type + LocaleMessages interface (mirrors JSON shape)
+│   │   └── locales/
+│   │       ├── zh-CN.json    # Chinese translations (81 keys across 6 namespaces)
+│   │       └── en-US.json    # English translations (81 keys, full zh-CN parity)
 │   ├── api/                  # API module functions (one file per backend resource)
 │   │   ├── matches.ts        # getMatches(params), getMatchById(id), getLiveMatches()
 │   │   ├── bracket.ts        # getBracket()

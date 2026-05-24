@@ -61,6 +61,54 @@
         "title": "Bracket Service 与 Controller（完整淘汰赛对阵图）",
         "description": "淘汰赛对阵业务 + 路由任务。\n\n1. 创建 `app/services/bracket_service.py`：BracketService，方法包括 get_full_bracket（返回 R32→R16→QF→SF→3rd→F 全结构）、get_bracket_by_round。注入 MatchRepository\n2. 创建 `app/controllers/bracket_controller.py`：\n   - GET /api/bracket — 完整淘汰赛对阵图树形结构\n   - GET /api/bracket/predictions — AI 预测淘汰赛路径（Phase 3 实际接入，当前返回 TBD）\n\n返回数据按 round 分组，每个 round 内按 position 排序。team 为 TBD 时返回 fromGroup/fromPosition 信息",
         "passes": true
+      },
+      {
+        "id": "P1-11-AppFactory",
+        "title": "依赖注入模块 + FastAPI 应用工厂（main.py）",
+        "description": "应用启动和依赖注入任务。\n\n1. 创建 `app/dependencies.py`：定义依赖注入提供者\n   - get_db：创建 AsyncSession 并管理生命周期（yield + finally close）\n   - get_team_service、get_match_service 等业务层工厂函数\n   - get_language：从请求 Header/Query 提取当前语言偏好\n2. 创建 `app/main.py`：FastAPI 应用工厂\n   - 使用 lifespan 上下文管理器（启动时初始化 DB engine，关闭时清理）\n   - 注册所有 Router（match, bracket, team, group, venue, cheer）\n   - 注册 CORS + error_handler + logging 中间件\n   - 挂载 /docs OpenAPI 文档\n3. 创建 `football-server/run.py`：启动入口\n\n验收：`uvicorn app.main:app --reload` 启动成功，访问 /docs 看到 OpenAPI 文档，所有已注册路由可见",
+        "passes": true
+      },
+      {
+        "id": "P1-12-Utils",
+        "title": "工具模块：Markdown 解析器 + 时区转换",
+        "description": "后端工具函数任务。\n\n1. 创建 `app/utils/__init__.py`\n2. 创建 `app/utils/markdown_parser.py`：解析 data/2026_FIFA_World_Cup_Group_Stage.md 文件，提取比赛信息（队伍、日期、时间、场馆、小组），返回结构化数据。处理中文字符编码边界情况\n3. 创建 `app/utils/timezone.py`：时区转换工具函数\n   - utc_to_local(utc_dt, target_tz)：UTC 时间转目标时区\n   - get_host_city_time(utc_dt, venue_timezone)：获取主办城市当地时间\n   - 使用 zoneinfo 标准库，无需额外依赖\n\n验收：markdown_parser 能正确解析 data/ 下的赛程文件，提取出 72 场小组赛数据",
+        "passes": true
+      },
+      {
+        "id": "P1-13-SeedTeams",
+        "title": "种子数据脚本：48 支参赛队伍（含中英文名）",
+        "description": "数据初始化任务。\n\n1. 创建 `scripts/__init__.py`\n2. 创建 `scripts/seed_teams.py`：插入 48 支参赛队伍\n   - 包含完整的 48 队中英文映射表（name + name_zh）\n   - 每支队伍包含：name, name_zh, code（三字码）, flag（emoji）, fifa_ranking, group_label（A-L）, confederation, world_cup_appearances\n   - 使用 asyncio.run + async session 执行插入\n   - 支持幂等执行（已存在则跳过或更新）\n\n数据来源：参考 data/2026_FIFA_World_Cup_Group_Stage.md 中的分组信息和网络 FIFA 排名数据",
+        "passes": true
+      },
+      {
+        "id": "P1-14-SeedVenues",
+        "title": "种子数据脚本：16 座主办城市场馆",
+        "description": "场馆数据初始化任务。\n\n1. 创建 `scripts/seed_venues.py`：插入 16 座主办城市场馆\n   - 美国 11 座：MetLife Stadium (East Rutherford), AT&T Stadium (Arlington), SoFi Stadium (Inglewood) 等\n   - 加拿大 2 座：BMO Field (Toronto), BC Place (Vancouver)\n   - 墨西哥 3 座：Estadio Azteca (Mexico City), Estadio BBVA (Monterrey), Estadio Akron (Guadalajara)\n   - 每座场馆包含：name, city, country, timezone（IANA 格式）, utc_offset, capacity\n   - 支持幂等执行",
+        "passes": true
+      },
+      {
+        "id": "P1-15-SeedMatches",
+        "title": "种子数据脚本：104 场比赛（72 小组赛 + 32 淘汰赛）",
+        "description": "比赛数据初始化任务。\n\n1. 创建 `scripts/seed_matches.py`：插入 104 场比赛\n   - 72 场小组赛：使用 markdown_parser 解析 data/2026_FIFA_World_Cup_Group_Stage.md，提取每场比赛的队伍、时间、场馆\n   - 每场小组赛 external_id 格式：A_M1（A 组第 1 场）\n   - 32 场淘汰赛：使用 generate_bracket 生成对阵框架（队伍为 TBD）\n   - 淘汰赛 external_id 格式：R32_01, R16_01, QF_01, SF_01, 3RD_01, F_01\n   - status 默认 upcoming，score 默认 NULL\n   - 正确设置 next_match_id 和 position",
+        "passes": true
+      },
+      {
+        "id": "P1-16-SeedEntry",
+        "title": "种子数据入口脚本 + 淘汰赛对阵生成器 + 集成验证",
+        "description": "数据初始化编排与验证任务。\n\n1. 创建 `scripts/generate_bracket.py`：生成淘汰赛对阵树\n   - 定义 R32→R16→QF→SF→3rd/Final 的晋级关系\n   - 预建静态对阵框架，仅确定小组排名后填入具体队伍\n   - 正确设置 next_match_id 链和 position 序号\n2. 创建 `scripts/seed_data.py`：一键初始化入口\n   - 按顺序调用：seed_venues → seed_teams → seed_matches → generate_bracket\n   - 同时初始化 48 条 group_standings 记录（全 0）\n   - 执行完毕后打印统计摘要\n3. 集成验证：运行 seed_data.py 后，通过 API 验证\n   - GET /api/matches?date=2026-06-11 返回开幕日比赛\n   - GET /api/groups/A 返回 A 组积分 + 赛程\n   - GET /api/bracket 返回完整淘汰赛结构",
+        "passes": true
+      },
+      {
+        "id": "P1-17-Types",
+        "title": "前端：提取共享 TypeScript 类型定义",
+        "description": "前端类型安全基础任务。\n\n1. 创建 `football-web/lib/types/` 目录结构\n2. 创建 `football-web/lib/types/team.ts`：提取 Team interface（name, code, flag, fifaRanking?）\n3. 创建 `football-web/lib/types/match.ts`：提取 Match, MatchEvent, MatchQueryParams interface\n4. 创建 `football-web/lib/types/bracket.ts`：提取 BracketMatch, BracketTeam, BracketRound, BracketTree interface\n5. 创建 `football-web/lib/types/ai.ts`：提取 Message, TeamAnalysis, TeamStats, SSEEvent interface\n6. 创建 `football-web/lib/types/api.ts`：定义 ApiResponse<T>, PaginatedResponse<T> 通用类型\n7. 创建 `football-web/lib/types/index.ts`：统一导出\n8. 修改现有 4 个组件文件（match-cards-grid, tournament-bracket, ai-copilot-panel, page.tsx），将内联类型替换为从共享模块导入\n\n严禁使用 any 类型",
+        "passes": true
+      },
+      {
+        "id": "P1-18-ApiClient",
+        "title": "前端：API 客户端层（fetch 封装 + 统一错误处理）",
+        "description": "前端网络请求基础设施任务。\n\n1. 创建 `football-web/lib/api-client.ts`：\n   - 封装 fetch，统一处理 ApiResponse<T> 解包\n   - 自动附加 BASE_URL 前缀（从环境变量读取）\n   - 自动附加 Accept-Language Header（从 i18n 状态读取）\n   - 统一错误处理（网络错误、401、500 等转换为用户友好提示）\n   - 支持 query params 序列化\n2. 创建 `football-web/lib/api/matches.ts`：getMatches(params), getMatchById(id), getLiveMatches()\n3. 创建 `football-web/lib/api/bracket.ts`：getBracket()\n4. 创建 `football-web/lib/api/teams.ts`：getTeams(), getTeamByCode(code)\n5. 创建 `football-web/lib/api/groups.ts`：getGroups(), getGroupDetail(group)\n6. 创建 `football-web/lib/api/venues.ts`：getVenues()\n7. 创建 `football-web/lib/api/cheers.ts`：getCheers(matchId), postCheer(matchId, side)\n8. 添加 NEXT_PUBLIC_API_URL 环境变量到 .env.local.example",
+        "passes": true
       }
     ]
   }

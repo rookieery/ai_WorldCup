@@ -17,18 +17,23 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Build passes (npm run build)
-- Zero `any` types used
 
-## P1-18-ApiClient — 前端：API 客户端层（fetch 封装 + 统一错误处理） ✅
-- Created `football-web/lib/api-client.ts`: core fetch wrapper with NEXT_PUBLIC_API_URL base URL, Accept-Language header, ApiResponse<T> envelope unwrapping, AbortController timeout (15s), buildQueryString() utility, ApiClientError class
-- Created `football-web/lib/api/matches.ts`: getMatches(params), getMatchById(id), getLiveMatches()
-- Created `football-web/lib/api/bracket.ts`: getBracket()
-- Created `football-web/lib/api/teams.ts`: getTeams(), getTeamByCode(code)
-- Created `football-web/lib/api/groups.ts`: getGroups(), getGroupDetail(group)
-- Created `football-web/lib/api/venues.ts`: getVenues()
-- Created `football-web/lib/api/cheers.ts`: getCheers(matchId), postCheer(matchId, side)
-- Created `football-web/.env.local.example` with NEXT_PUBLIC_API_URL
-- All modules use typed interfaces matching backend Pydantic VOs
 - Language mapping: zh-CN → zh, en-US → en (matches backend lang param)
 - Build passes, TypeScript strict mode, zero `any` types
+
+## P1-19-I18n — 前端：i18n 基础设施 + 中英文翻译文件
+- **Status**: ✅ COMPLETE
+- **Approach**: Lightweight React Context (no external library needed)
+- **Files created**:
+  - `lib/i18n/context.tsx` — I18nProvider (React Context), locale detection, localStorage persistence, t() function
+  - `lib/i18n/use-translation.ts` — useTranslation hook exposing { t, locale, setLocale }
+  - `lib/i18n/types.ts` — Locale union type + LocaleMessages interface
+  - `lib/i18n/index.ts` — Barrel exports
+  - `lib/i18n/locales/zh-CN.json` — Chinese translations (81 keys, 6 namespaces)
+  - `lib/i18n/locales/en-US.json` — English translations (81 keys, full parity)
+  - `lib/i18n/AGENTS.md` — Agent notes for i18n module
+- **Files modified**:
+  - `app/layout.tsx` — Wrapped children with I18nProvider
+- **Namespaces**: header, timeline, match, bracket, ai, footer, common
+- **Features**: Auto-detect browser language, localStorage persistence, dot-notation key lookup, key-as-fallback
+- **Build**: Passes clean (next build ✓)

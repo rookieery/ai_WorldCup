@@ -111,3 +111,107 @@
   - `GET /api/bracket` — full knockout bracket tree with timezone + lang support
   - `GET /api/bracket/predictions` — AI predictions placeholder
 - Updated `app/services/__init__.py` and `app/controllers/__init__.py` to export new modules
+- Synced `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
+- Updated `AGENTS.md` in both services/ and controllers/ directories
+## P1-11-AppFactory — 依赖注入模块 + FastAPI 应用工厂
+- Created `app/dependencies.py`: centralized DI providers (get_db, get_language, get_*_service factory functions)
+- Created `app/main.py`: FastAPI app factory with lifespan (init/dispose DB engine), middleware registration (ErrorHandler → Logging → CORS), all 5 routers registered, /docs and /redoc enabled
+- Created `football-server/run.py`: uvicorn entry point with --prod flag
+- Refactored all 5 controllers (match, team, venue, group, bracket) to remove inline `_get_db` helpers and use centralized `get_*_service` DI from dependencies.py
+- Verified: `uvicorn app.main:app --reload` starts successfully, /docs returns 200 with all 10 API routes visible in OpenAPI spec
+- Updated `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
+- Updated `AGENTS.md` in controllers/ directory
+## P1-12-Utils — 工具模块：Markdown 解析器 + 时区转换
+- **Status**: ✅ COMPLETE
+- **Files Created**:
+  - `football-server/app/utils/__init__.py` — Re-exports MarkdownParser, utc_to_local, get_host_city_time
+  - `football-server/app/utils/markdown_parser.py` — MarkdownParser class + ParsedMatch dataclass (parses 72 group-stage matches from markdown)
+  - `football-server/app/utils/timezone.py` — utc_to_local(), get_host_city_time(), convert_datetime() using zoneinfo stdlib
+  - `football-server/app/utils/AGENTS.md` — Documentation for utils module
+- **Files Modified**:
+  - `football-server/app/services/match_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
+  - `football-server/app/services/group_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
+  - `football-server/app/services/bracket_service.py` — Replaced local _utc_to_local/ZoneInfo with shared app.utils.timezone import
+  - `football-server/pyproject.toml` — Added tzdata dependency (needed on Windows for zoneinfo)
+- **Verification**: Parser correctly extracts 72 matches (12 groups × 6), dates 2026-06-11 to 2026-06-27, handles None FIFA rankings for playoff qualifiers
+- **Docs Updated**: agent-file-map.md, agent-api-reference.md, services/AGENTS.md, utils/AGENTS.md
+## P1-13-SeedTeams — 种子数据脚本：48 支参赛队伍（含中英文名）
+- **Status**: COMPLETED (passes: true)
+- **Files Created**:
+  - `football-server/scripts/__init__.py` — Package init
+  - `football-server/scripts/seed_teams.py` — Seed script with idempotent upsert logic (108 lines)
+  - `football-server/scripts/team_data.py` — 48-team data module (509 lines)
+- **Data**: 48 teams across 12 groups (A-L), 4 teams per group
+  - Bilingual names (name + name_zh), 3-letter codes, emoji flags
+  - FIFA rankings (2025-11-19 release), 6 playoff qualifiers with ranking=0
+  - Confederation distribution: UEFA 16, CAF 10, AFC 9, CONMEBOL 6, CONCACAF 6, OFC 1
+  - World Cup historical appearances
+- **Verification**:
+  - Script inserts 48 teams on first run, skips all on re-run (idempotent)
+  - API endpoint GET /api/teams returns all 48 teams with correct structure
+  - Data cross-referenced against data/2026_FIFA_World_Cup_Group_Stage.md
+  - All FIFA rankings, group assignments, and team rosters verified
+- **Architecture**: Data separated from logic to stay under 600-line hard limit
+  - `team_data.py`: pure data declaration (TEAMS list)
+  - `seed_teams.py`: async upsert logic + CLI entry point
+## P1-14-SeedVenues — completed 2026-05-24
+- `venue_data.py`: pure data declaration (VENUES list, 16 stadiums)
+- `seed_venues.py`: async upsert logic + CLI entry point
+  - Idempotent: matched by venue `name` field
+  - Verified: 16 venues inserted (first run), all skipped (second run)
+  - USA 11 + Canada 2 + Mexico 3 venues with IANA timezones, UTC offsets, capacities
+- [P1-15-SeedMatches] Seed script: 104 matches (72 group + 32 knockout)
+  - Created `scripts/seed_matches.py`
+  - 72 group-stage matches parsed from markdown via MarkdownParser
+  - External IDs: A_M1..A_M6, B_M1..B_M6, ..., L_M1..L_M6
+  - 32 knockout matches (R32x16, R16x8, QFx4, SFx2, 3RDx1, Fx1) with TBD placeholder team
+  - Bracket linkage: 30 links (R32→R16, R16→QF, QF→SF, SF→Final)
+  - Venue assignment: opening match at Estadio Azteca, round-robin for group stage, predefined for QF/SF/3rd/Final
+  - Idempotent: 104 skipped on second run
+  - Verified: 104 matches, correct linkage, TBD team, all assertions pass
+## P1-16-SeedEntry — Seed Data Entry + Bracket Generator + Integration Verification
+- Created `scripts/generate_bracket.py`:
+  - BRACKET_LINKS: 30 winner-path links (R32→R16→QF→SF→F)
+  - R32_QUALIFICATION: 16 group-position mappings for TBD team context
+  - generate_bracket(session): verifies/enforces all next_match_id + position links
+  - Idempotent: re-runs verify existing links, correct drift
+  - CLI entry: python -m scripts.generate_bracket
+- Created `scripts/seed_data.py`:
+  - One-click orchestrator: seed_venues→seed_teams→seed_matches→generate_bracket→init_group_standings
+  - _init_group_standings: creates 48 zero-initialized records (4 per group × 12 groups)
+  - Formatted summary table with timing
+  - Fully idempotent
+- Updated `app/services/bracket_service.py`:
+  - Added _R32_GROUP_MAP for TBD team from_group/from_position enrichment
+  - Updated _infer_tbd_context: R32 matches now show "1st Group A" etc.
+- Integration verification:
+  - GET /api/matches?date=2026-06-11 → 2 opening-day matches
+  - GET /api/groups/A → 4 standings (all zeros) + 6 matches
+  - GET /api/bracket → 32 matches across 6 rounds with from_group context
+  - DB state: 49 teams, 17 venues, 104 matches, 48 standings, 30 bracket links
+## P1-17-Types — 前端：提取共享 TypeScript 类型定义 [PASS]
+- Created football-web/lib/types/ directory with 7 files:
+  - team.ts: Team, TeamDetail, TeamStanding
+  - match.ts: Match, MatchStatus, CityIcon, MatchEvent, MatchEventType, MatchQueryParams
+  - bracket.ts: BracketTeam (extends Team), BracketMatch, BracketRound, BracketTree, BracketRoundName, BracketMatchStatus
+  - ai.ts: Message, TeamAnalysis, TeamAnalysisSide, TeamStats, SSEEvent, SSEEventType
+  - api.ts: ApiResponse<T>, PaginatedResponse<T>, ApiError
+  - index.ts: Unified type-only re-exports
+  - AGENTS.md: Architecture notes for future agents
+- Updated 4 component files to use shared imports:
+  - match-cards-grid.tsx: Removed inline Team/Match, imports from @/lib/types
+  - tournament-bracket.tsx: Removed inline Team/BracketMatch, imports BracketMatch/BracketTeam/BracketRoundName
+  - ai-copilot-panel.tsx: Removed inline Message/TeamAnalysis, imports Message/TeamAnalysis/TeamStats
+  - page.tsx: Extracted TimezoneOption/ViewMode local types
+- Build passes (npm run build)
+- Zero `any` types used
+## P1-18-ApiClient — 前端：API 客户端层（fetch 封装 + 统一错误处理） ✅
+- Created `football-web/lib/api-client.ts`: core fetch wrapper with NEXT_PUBLIC_API_URL base URL, Accept-Language header, ApiResponse<T> envelope unwrapping, AbortController timeout (15s), buildQueryString() utility, ApiClientError class
+- Created `football-web/lib/api/matches.ts`: getMatches(params), getMatchById(id), getLiveMatches()
+- Created `football-web/lib/api/bracket.ts`: getBracket()
+- Created `football-web/lib/api/teams.ts`: getTeams(), getTeamByCode(code)
+- Created `football-web/lib/api/groups.ts`: getGroups(), getGroupDetail(group)
+- Created `football-web/lib/api/venues.ts`: getVenues()
+- Created `football-web/lib/api/cheers.ts`: getCheers(matchId), postCheer(matchId, side)
+- Created `football-web/.env.local.example` with NEXT_PUBLIC_API_URL
+- All modules use typed interfaces matching backend Pydantic VOs

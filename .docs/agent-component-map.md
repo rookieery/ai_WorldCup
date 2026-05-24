@@ -68,6 +68,43 @@
 
 Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import with `import type { ... } from "@/lib/types"`.
 
+## i18n System (`lib/i18n/`)
+
+### Architecture
+- **Approach**: Lightweight React Context (no external i18n library)
+- **Provider**: `I18nProvider` wraps app in `layout.tsx`
+- **Hook**: `useTranslation()` → `{ t, locale, setLocale }`
+- **Persistence**: `localStorage` key `worldcup-locale`
+- **Auto-detection**: Reads `navigator.language` on first visit (zh* → zh-CN, else en-US)
+- **Language mapping**: zh-CN → `document.documentElement.lang = "zh"`, en-US → `"en"`
+
+### Locale Files
+| File | Language | Keys |
+|------|----------|------|
+| `locales/zh-CN.json` | 简体中文 | 81 keys, 6 namespaces |
+| `locales/en-US.json` | English | 81 keys, 6 namespaces |
+
+### Namespaces
+| Namespace | Keys | Purpose |
+|-----------|------|---------|
+| `header` | 6 | Title, subtitle, timezone/view labels |
+| `timeline` | 8 | Stage labels (Group/R32/R16/QF/SF/3rd/Final/Rest) |
+| `match` | 12 | Match card labels (Live/Big Match/FT/cheer etc.) |
+| `bracket` | 9 | Knockout bracket labels |
+| `ai` | 20 | AI copilot panel labels |
+| `footer` | 4 | Footer status bar labels |
+| `common` | 22 | Weekdays, months, generic messages |
+
+### Usage Pattern
+```typescript
+import { useTranslation } from "@/lib/i18n"
+
+function MyComponent() {
+  const { t, locale, setLocale } = useTranslation()
+  return <h1>{t("header.title")}</h1>  // "World Cup 2026" or "世界杯 2026"
+}
+```
+
 ## API Client Layer (`lib/api-client.ts` + `lib/api/`)
 
 ### `lib/api-client.ts` — Core fetch wrapper
