@@ -68,9 +68,15 @@ skills/
 └── knockout_stage_predict.md     # 5-step reasoning for knockout match prediction
 ```
 
-## football-server/ — Backend (NOT YET IMPLEMENTED)
+## football-server/ — Backend (FastAPI + SQLite + Redis)
 
 ```
 football-server/
-└── REQUIREMENTS.md               # Backend spec (empty directory otherwise)
+├── pyproject.toml               # Project metadata + all core dependencies
+├── .env.example                 # Environment variable templates
+├── .gitignore                   # Python/venv/db ignore rules
+├── app/
+│   ├── __init__.py              # Package init (empty)
+│   └── config.py                # Pydantic Settings: all env vars with defaults
+└── scalable-beaming-riddle.md   # Backend architecture plan
 ```

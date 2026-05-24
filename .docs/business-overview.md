@@ -12,7 +12,7 @@ Real-time FIFA World Cup 2026 dashboard for global football fans. Features match
 |--------|--------|
 | Frontend UI | Complete visual shell (all components built) |
 | Data Source | 100% hardcoded in components |
-| Backend API | Not started (football-server/ is empty) |
+| Backend API | Scaffold complete (pyproject.toml, config.py, .env.example) |
 | State Management | Local `useState` only, no global store |
 | Routing | Single `/` route, no navigation |
 | AI Service | Simulated (2s timeout, fixed response) |
