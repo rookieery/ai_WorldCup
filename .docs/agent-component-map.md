@@ -14,9 +14,11 @@
 
 ### `header.tsx` — `Header`
 - **Props**: `timezone`, `viewMode`, `onTimezoneChange`, `onViewModeChange`
-- **UI**: Trophy icon + title, timezone toggle (Local/Host), view toggle (Timeline/Bracket)
-- **Dependencies**: `Switch`, `Label` (shadcn), `lucide-react` icons
-- **Lines**: ~107
+- **i18n**: Uses `useTranslation()` hook for all text; imports `Locale` type for language switch
+- **UI**: Trophy icon + title, language switch (Globe + Select dropdown: zh-CN/en-US), timezone toggle (Clock icon + Switch), view toggle (Timeline/Bracket)
+- **Language Switch**: Reads `locale`/`setLocale` from i18n context, renders as glass-card + Globe icon + shadcn Select
+- **Dependencies**: `Switch`, `Label`, `Select`/`SelectContent`/`SelectItem`/`SelectTrigger`/`SelectValue` (shadcn), `lucide-react` icons (Globe, Clock, LayoutGrid, GitBranch, Trophy)
+- **Lines**: ~139
 
 ### `date-timeline.tsx` — `DateTimeline`
 - **Props**: `selectedDate`, `onDateSelect`
@@ -81,13 +83,13 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 ### Locale Files
 | File | Language | Keys |
 |------|----------|------|
-| `locales/zh-CN.json` | 简体中文 | 81 keys, 6 namespaces |
-| `locales/en-US.json` | English | 81 keys, 6 namespaces |
+| `locales/zh-CN.json` | 简体中文 | 83 keys, 6 namespaces |
+| `locales/en-US.json` | English | 83 keys, 6 namespaces |
 
 ### Namespaces
 | Namespace | Keys | Purpose |
 |-----------|------|---------|
-| `header` | 6 | Title, subtitle, timezone/view labels |
+| `header` | 8 | Title, subtitle, timezone/view labels, language labels (langZh/langEn) |
 | `timeline` | 8 | Stage labels (Group/R32/R16/QF/SF/3rd/Final/Rest) |
 | `match` | 12 | Match card labels (Live/Big Match/FT/cheer etc.) |
 | `bracket` | 9 | Knockout bracket labels |

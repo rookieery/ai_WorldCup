@@ -30,7 +30,7 @@ football-web/
 │   └── globals.css           # CSS variables, animations, glassmorphism utilities
 ├── components/
 │   ├── dashboard/
-│   │   ├── header.tsx        # Top bar (timezone + view mode toggles)
+│   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
 │   │   ├── date-timeline.tsx # Horizontal date picker (Jun 11–Jul 19)
 │   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter
 │   │   ├── tournament-bracket.tsx # Knockout bracket (QF→SF→F, SVG connectors)
@@ -49,8 +49,8 @@ football-web/
 │   │   ├── use-translation.ts # useTranslation hook — thin wrapper exposing { t, locale, setLocale }
 │   │   ├── types.ts          # Locale union type + LocaleMessages interface (mirrors JSON shape)
 │   │   └── locales/
-│   │       ├── zh-CN.json    # Chinese translations (81 keys across 6 namespaces)
-│   │       └── en-US.json    # English translations (81 keys, full zh-CN parity)
+│   │       ├── zh-CN.json    # Chinese translations (83 keys across 6 namespaces)
+│   │       └── en-US.json    # English translations (83 keys, full zh-CN parity)
 │   ├── api/                  # API module functions (one file per backend resource)
 │   │   ├── matches.ts        # getMatches(params), getMatchById(id), getLiveMatches()
 │   │   ├── bracket.ts        # getBracket()

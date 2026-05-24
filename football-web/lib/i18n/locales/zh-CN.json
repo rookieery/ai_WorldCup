@@ -5,7 +5,9 @@
     "local": "本地",
     "hostCity": "主办城市",
     "timeline": "时间线",
-    "bracket": "对阵图"
+    "bracket": "对阵图",
+    "langZh": "中文",
+    "langEn": "English"
   },
   "timeline": {
     "stageGroup": "小组赛",

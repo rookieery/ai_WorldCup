@@ -5,7 +5,9 @@
     "local": "Local",
     "hostCity": "Host City",
     "timeline": "Timeline",
-    "bracket": "Bracket"
+    "bracket": "Bracket",
+    "langZh": "中文",
+    "langEn": "English"
   },
   "timeline": {
     "stageGroup": "Group",

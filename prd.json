@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-19-I18n",
-      "title": "前端：i18n 基础设施 + 中英文翻译文件",
-      "description": "国际化基础架构任务。\n\n1. 安装 next-intl 或创建轻量 i18n 上下文方案\n2. 创建 `football-web/lib/i18n/context.tsx`：I18nProvider，管理当前语言状态（默认从浏览器 Accept-Language 检测，支持手动切换）\n3. 创建 `football-web/lib/i18n/locales/zh-CN.json`：中文翻译文件，包含所有 UI 文案\n   - header 区域：标题、时区选项、视图选项\n   - timeline 区域：日期格式、阶段名称、状态标签\n   - match 卡片：比分、状态、场馆、活跃度、助威按钮\n   - bracket 区域：轮次名称\n   - AI 区域：标题、快捷提问、免责声明\n   - footer 区域：状态文案\n   - 通用：星期、月份、错误提示\n4. 创建 `football-web/lib/i18n/locales/en-US.json`：英文翻译文件，完整对照\n5. 创建 `football-web/lib/i18n/use-translation.ts`：useTranslation hook，提供 t() 函数\n6. 在 layout.tsx 中包裹 I18nProvider\n\n所有用户可见文本严禁硬编码",
-      "passes": true
-    },
-    {
       "id": "P1-20-LangSwitch",
       "title": "前端：Header 语言切换控件",
       "description": "Header 区域 UI 扩展任务。\n\n1. 修改 `football-web/components/dashboard/header.tsx`：在右侧控件区域新增语言切换\n   - 使用 Globe 图标（lucide-react）+ 下拉选择（zh-CN / en-US）\n   - 切换后更新 I18nProvider 的语言状态\n   - 视觉风格与现有时区/视图切换保持一致\n2. 确保语言切换后 Header 自身文案（标题、副标题、按钮文字）也切换语言\n3. 将 Header 中所有硬编码英文文案替换为 t() 调用\n\n验收：切换语言后，Header 所有文案立即切换为对应语言",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-21-DateFilter",

@@ -8,6 +8,8 @@ export interface LocaleMessages {
     hostCity: string
     timeline: string
     bracket: string
+    langZh: string
+    langEn: string
   }
   timeline: {
     stageGroup: string

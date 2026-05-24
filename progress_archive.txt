@@ -215,3 +215,19 @@
 - Created `football-web/lib/api/cheers.ts`: getCheers(matchId), postCheer(matchId, side)
 - Created `football-web/.env.local.example` with NEXT_PUBLIC_API_URL
 - All modules use typed interfaces matching backend Pydantic VOs
+- Language mapping: zh-CN → zh, en-US → en (matches backend lang param)
+- Build passes, TypeScript strict mode, zero `any` types
+## P1-19-I18n — 前端：i18n 基础设施 + 中英文翻译文件
+- **Status**: ✅ COMPLETE
+- **Approach**: Lightweight React Context (no external library needed)
+- **Files created**:
+  - `lib/i18n/context.tsx` — I18nProvider (React Context), locale detection, localStorage persistence, t() function
+  - `lib/i18n/use-translation.ts` — useTranslation hook exposing { t, locale, setLocale }
+  - `lib/i18n/types.ts` — Locale union type + LocaleMessages interface
+  - `lib/i18n/index.ts` — Barrel exports
+  - `lib/i18n/locales/zh-CN.json` — Chinese translations (81 keys, 6 namespaces)
+  - `lib/i18n/locales/en-US.json` — English translations (81 keys, full parity)
+  - `lib/i18n/AGENTS.md` — Agent notes for i18n module
+- **Files modified**:
+  - `app/layout.tsx` — Wrapped children with I18nProvider
+- **Namespaces**: header, timeline, match, bracket, ai, footer, common
