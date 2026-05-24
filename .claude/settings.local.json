@@ -33,6 +33,14 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ">&2 echo '📋 [Todo Check] 请检查本次任务是否有未完成项、遇到的问题或改进建议需要记录到 .docs/todo.md'"
+          }
+        ]
       }
     ]
   }
