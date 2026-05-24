@@ -86,3 +86,9 @@
 - Created `app/controllers/venue_controller.py` — GET /api/venues (page/page_size)
 - All responses wrapped in ApiResponse[T] with PaginatedResponse for list endpoints
 - ?lang=zh support: promotes name_zh into name field for Chinese display
+- Controllers use FastAPI Depends(_get_db) for session injection (to be centralised in P1-11)
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+## P1-08-Match — Match Service & Controller (match query + filter)
+- Created `app/services/match_service.py`: MatchService with get_matches (multi-filter by date/stage/group/team/status), get_match_by_id (with events), get_live_matches. Injects MatchRepository + MatchEventRepository. Timezone conversion via zoneinfo adds local_time and host_time fields.
+- Created `app/controllers/match_controller.py`: GET /api/matches (query params: date, stage, group, team, status, timezone, lang), GET /api/matches/live, GET /api/matches/:id (with events). Controller parses query params into MatchQueryParams DTO.
+- Updated `app/schemas/match_schema.py`: Added local_time and host_time optional fields to MatchResponse VO.
