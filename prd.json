@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-17-Types",
-      "title": "前端：提取共享 TypeScript 类型定义",
-      "description": "前端类型安全基础任务。\n\n1. 创建 `football-web/lib/types/` 目录结构\n2. 创建 `football-web/lib/types/team.ts`：提取 Team interface（name, code, flag, fifaRanking?）\n3. 创建 `football-web/lib/types/match.ts`：提取 Match, MatchEvent, MatchQueryParams interface\n4. 创建 `football-web/lib/types/bracket.ts`：提取 BracketMatch, BracketTeam, BracketRound, BracketTree interface\n5. 创建 `football-web/lib/types/ai.ts`：提取 Message, TeamAnalysis, TeamStats, SSEEvent interface\n6. 创建 `football-web/lib/types/api.ts`：定义 ApiResponse<T>, PaginatedResponse<T> 通用类型\n7. 创建 `football-web/lib/types/index.ts`：统一导出\n8. 修改现有 4 个组件文件（match-cards-grid, tournament-bracket, ai-copilot-panel, page.tsx），将内联类型替换为从共享模块导入\n\n严禁使用 any 类型",
-      "passes": true
-    },
-    {
       "id": "P1-18-ApiClient",
       "title": "前端：API 客户端层（fetch 封装 + 统一错误处理）",
       "description": "前端网络请求基础设施任务。\n\n1. 创建 `football-web/lib/api-client.ts`：\n   - 封装 fetch，统一处理 ApiResponse<T> 解包\n   - 自动附加 BASE_URL 前缀（从环境变量读取）\n   - 自动附加 Accept-Language Header（从 i18n 状态读取）\n   - 统一错误处理（网络错误、401、500 等转换为用户友好提示）\n   - 支持 query params 序列化\n2. 创建 `football-web/lib/api/matches.ts`：getMatches(params), getMatchById(id), getLiveMatches()\n3. 创建 `football-web/lib/api/bracket.ts`：getBracket()\n4. 创建 `football-web/lib/api/teams.ts`：getTeams(), getTeamByCode(code)\n5. 创建 `football-web/lib/api/groups.ts`：getGroups(), getGroupDetail(group)\n6. 创建 `football-web/lib/api/venues.ts`：getVenues()\n7. 创建 `football-web/lib/api/cheers.ts`：getCheers(matchId), postCheer(matchId, side)\n8. 添加 NEXT_PUBLIC_API_URL 环境变量到 .env.local.example",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P1-19-I18n",

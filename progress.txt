@@ -16,22 +16,19 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - GET /api/bracket → 32 matches across 6 rounds with from_group context
-  - DB state: 49 teams, 17 venues, 104 matches, 48 standings, 30 bracket links
 
-## P1-17-Types — 前端：提取共享 TypeScript 类型定义 [PASS]
-- Created football-web/lib/types/ directory with 7 files:
-  - team.ts: Team, TeamDetail, TeamStanding
-  - match.ts: Match, MatchStatus, CityIcon, MatchEvent, MatchEventType, MatchQueryParams
-  - bracket.ts: BracketTeam (extends Team), BracketMatch, BracketRound, BracketTree, BracketRoundName, BracketMatchStatus
-  - ai.ts: Message, TeamAnalysis, TeamAnalysisSide, TeamStats, SSEEvent, SSEEventType
-  - api.ts: ApiResponse<T>, PaginatedResponse<T>, ApiError
-  - index.ts: Unified type-only re-exports
-  - AGENTS.md: Architecture notes for future agents
-- Updated 4 component files to use shared imports:
-  - match-cards-grid.tsx: Removed inline Team/Match, imports from @/lib/types
-  - tournament-bracket.tsx: Removed inline Team/BracketMatch, imports BracketMatch/BracketTeam/BracketRoundName
-  - ai-copilot-panel.tsx: Removed inline Message/TeamAnalysis, imports Message/TeamAnalysis/TeamStats
-  - page.tsx: Extracted TimezoneOption/ViewMode local types
 - Build passes (npm run build)
 - Zero `any` types used
+
+## P1-18-ApiClient — 前端：API 客户端层（fetch 封装 + 统一错误处理） ✅
+- Created `football-web/lib/api-client.ts`: core fetch wrapper with NEXT_PUBLIC_API_URL base URL, Accept-Language header, ApiResponse<T> envelope unwrapping, AbortController timeout (15s), buildQueryString() utility, ApiClientError class
+- Created `football-web/lib/api/matches.ts`: getMatches(params), getMatchById(id), getLiveMatches()
+- Created `football-web/lib/api/bracket.ts`: getBracket()
+- Created `football-web/lib/api/teams.ts`: getTeams(), getTeamByCode(code)
+- Created `football-web/lib/api/groups.ts`: getGroups(), getGroupDetail(group)
+- Created `football-web/lib/api/venues.ts`: getVenues()
+- Created `football-web/lib/api/cheers.ts`: getCheers(matchId), postCheer(matchId, side)
+- Created `football-web/.env.local.example` with NEXT_PUBLIC_API_URL
+- All modules use typed interfaces matching backend Pydantic VOs
+- Language mapping: zh-CN → zh, en-US → en (matches backend lang param)
+- Build passes, TypeScript strict mode, zero `any` types

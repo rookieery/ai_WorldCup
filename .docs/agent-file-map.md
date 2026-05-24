@@ -42,6 +42,14 @@ football-web/
 │   └── use-toast.ts          # Toast hook
 ├── lib/
 │   ├── utils.ts              # cn() utility (clsx + tailwind-merge)
+│   ├── api-client.ts         # Core fetch wrapper: base URL, Accept-Language, ApiResponse<T> unwrapping, error handling, query-string builder
+│   ├── api/                  # API module functions (one file per backend resource)
+│   │   ├── matches.ts        # getMatches(params), getMatchById(id), getLiveMatches()
+│   │   ├── bracket.ts        # getBracket()
+│   │   ├── teams.ts          # getTeams(params), getTeamByCode(code)
+│   │   ├── groups.ts         # getGroups(), getGroupDetail(group)
+│   │   ├── venues.ts         # getVenues(params)
+│   │   └── cheers.ts         # getCheers(matchId), postCheer(matchId, side)
 │   └── types/                # Shared TypeScript type definitions
 │       ├── index.ts          # Unified re-exports
 │       ├── team.ts           # Team, TeamDetail, TeamStanding

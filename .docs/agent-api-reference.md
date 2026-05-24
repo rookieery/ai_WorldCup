@@ -2,7 +2,12 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT COMPLETE
+
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, and **frontend API client layer** are implemented.
+`uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
+Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
+Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
 
 Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, and **seed data pipeline** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.

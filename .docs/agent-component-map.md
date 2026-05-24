@@ -68,6 +68,42 @@
 
 Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import with `import type { ... } from "@/lib/types"`.
 
+## API Client Layer (`lib/api-client.ts` + `lib/api/`)
+
+### `lib/api-client.ts` — Core fetch wrapper
+- **Exports**: `apiRequest<T>(path, options)`, `buildQueryString(params)`, `setApiClientLanguage(lang)`, `getApiClientLanguage()`, `ApiClientError`
+- **Config**: `NEXT_PUBLIC_API_URL` env var (default: `http://localhost:8000`)
+- **Features**: 
+  - Auto-prepends base URL
+  - Attaches `Accept-Language` header from i18n state (module-level `currentLang`, updated via `setApiClientLanguage`)
+  - Timeout support (default 15s, AbortController)
+  - Unwraps `ApiResponse<T>` envelope (returns `data` field directly)
+  - Unified error handling: network errors, HTTP status codes (401/403/404/422/429/500/502-504) → `ApiClientError`
+  - `buildQueryString()` skips undefined/null values
+
+### API Modules (`lib/api/`)
+| Module | Functions | Backend Endpoints |
+|--------|-----------|-------------------|
+| `matches.ts` | `getMatches(params)`, `getMatchById(id, opts)`, `getLiveMatches(opts)` | `GET /api/matches`, `GET /api/matches/:id`, `GET /api/matches/live` |
+| `bracket.ts` | `getBracket(opts)` | `GET /api/bracket` |
+| `teams.ts` | `getTeams(params)`, `getTeamByCode(code)` | `GET /api/teams`, `GET /api/teams/:code` |
+| `groups.ts` | `getGroups()`, `getGroupDetail(group, opts)` | `GET /api/groups`, `GET /api/groups/:group` |
+| `venues.ts` | `getVenues(params)` | `GET /api/venues` |
+| `cheers.ts` | `getCheers(matchId)`, `postCheer(matchId, side)` | `GET /api/cheers/:matchId`, `POST /api/cheers/:matchId` |
+
+**Usage pattern**:
+```typescript
+import { getMatches } from "@/lib/api/matches"
+import { setApiClientLanguage } from "@/lib/api-client"
+
+// Set language from i18n provider
+setApiClientLanguage("zh-CN")
+
+// Fetch data — ApiResponse envelope is auto-unwrapped
+const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
+// result = { items: Match[], total, page, page_size }
+```
+
 | Module | Types | Purpose |
 |--------|-------|---------|
 | `lib/types/team.ts` | `Team`, `TeamDetail`, `TeamStanding` | Team base shape, API detail, group standings row |
