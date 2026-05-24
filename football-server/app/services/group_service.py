@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from zoneinfo import ZoneInfo
 
 from app.exceptions.exceptions import NotFoundError
 from app.repositories.group_repo import GroupRepository
 from app.repositories.match_repo import MatchRepository
 from app.schemas.group_schema import GroupStandingResponse
+from app.utils.timezone import utc_to_local as _utc_to_local
 
 
 class GroupService:
@@ -116,13 +115,6 @@ def _match_to_vo(
             data["host_time"] = None
 
     return data
-
-
-def _utc_to_local(utc_dt: datetime, target_tz: str) -> str:
-    """Convert a UTC datetime to a time string in the target timezone."""
-    aware_utc = utc_dt.replace(tzinfo=ZoneInfo("UTC"))
-    local_dt = aware_utc.astimezone(ZoneInfo(target_tz))
-    return local_dt.strftime("%H:%M")
 
 
 def _apply_team_lang(data: dict, team_key: str, lang: str) -> None:

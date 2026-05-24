@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from zoneinfo import ZoneInfo
 
 from app.repositories.match_repo import MatchRepository
 from app.schemas.bracket_schema import (
@@ -15,6 +13,7 @@ from app.schemas.bracket_schema import (
     BracketTeamResponse,
     BracketTreeResponse,
 )
+from app.utils.timezone import convert_datetime
 
 # Ordered from earliest to latest knockout stage.
 _STAGE_ORDER: list[str] = ["R32", "R16", "QF", "SF", "3rd", "F"]
@@ -142,8 +141,7 @@ def _match_to_bracket_vo(
     # If a timezone was requested, also compute the local kickoff time.
     if timezone_name and match.kickoff_utc:
         try:
-            aware_utc = match.kickoff_utc.replace(tzinfo=ZoneInfo("UTC"))
-            local_dt = aware_utc.astimezone(ZoneInfo(timezone_name))
+            local_dt = convert_datetime(match.kickoff_utc, timezone_name)
             kickoff_str = local_dt.isoformat()
         except Exception:
             pass
@@ -220,10 +218,3 @@ def _infer_tbd_context(match: object, side: str, vo: dict) -> None:
     elif stage in ("R16", "QF", "SF", "3rd", "F"):
         # Later rounds come from previous round winners.
         pass
-
-
-def _utc_to_local(utc_dt: datetime, target_tz: str) -> str:
-    """Convert a UTC datetime to a time string in the target timezone."""
-    aware_utc = utc_dt.replace(tzinfo=ZoneInfo("UTC"))
-    local_dt = aware_utc.astimezone(ZoneInfo(target_tz))
-    return local_dt.strftime("%H:%M")

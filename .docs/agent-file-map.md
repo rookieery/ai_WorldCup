@@ -115,9 +115,9 @@ football-server/
 │   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
-│   │   ├── match_service.py     # MatchService: get_matches (multi-filter), get_match_by_id (with events), get_live_matches; timezone conversion (local_time, host_time)
-│   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware
-│   │   └── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); lang + timezone aware
+│   │   ├── match_service.py     # MatchService: get_matches (multi-filter), get_match_by_id (with events), get_live_matches; uses shared app.utils.timezone
+│   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
+│   │   └── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
 │   ├── controllers/
 │   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
@@ -125,6 +125,10 @@ football-server/
 │   │   ├── match_controller.py  # GET /api/matches, /live, /:id (uses get_match_service DI)
 │   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
 │   │   └── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
+│   ├── utils/
+│   │   ├── __init__.py          # Re-exports MarkdownParser, utc_to_local, get_host_city_time
+│   │   ├── markdown_parser.py   # MarkdownParser: parses data/*.md → list[ParsedMatch] (72 group-stage fixtures)
+│   │   └── timezone.py          # utc_to_local, get_host_city_time, convert_datetime (zoneinfo-based)
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes

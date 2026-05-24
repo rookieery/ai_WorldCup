@@ -38,6 +38,8 @@
 - This pattern is duplicated across services; a shared utility module would be a future refactor target.
 
 ## Timezone Conversion
-- `_utc_to_local(utc_dt, target_tz)` converts UTC datetimes to `"HH:MM"` strings.
+- All services now use the shared `app.utils.timezone` module instead of local duplicates.
+- `utc_to_local(utc_dt, target_tz)` → `"HH:MM"` string, `get_host_city_time(utc_dt, venue_tz)` → `"HH:MM"` string.
+- `convert_datetime(utc_dt, target_tz, fmt)` → full `datetime` or formatted string.
 - `local_time` = user's requested timezone, `host_time` = venue's timezone.
-- Uses `zoneinfo` standard library — no extra dependencies.
+- Uses `zoneinfo` standard library — no extra dependencies (except `tzdata` on Windows, added to pyproject.toml).

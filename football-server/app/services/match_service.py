@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Optional, Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from zoneinfo import ZoneInfo
 
 from app.repositories.match_event_repo import MatchEventRepository
 from app.repositories.match_repo import MatchRepository
@@ -16,6 +15,7 @@ from app.schemas.match_schema import (
     MatchQueryParams,
     MatchResponse,
 )
+from app.utils.timezone import utc_to_local as _utc_to_local
 
 
 class MatchService:
@@ -165,13 +165,6 @@ class MatchService:
 
 
 # ── module-level helpers ──────────────────────────────────────────────────
-
-
-def _utc_to_local(utc_dt: datetime, target_tz: str) -> str:
-    """Convert a UTC datetime to a time string in the target timezone."""
-    aware_utc = utc_dt.replace(tzinfo=ZoneInfo("UTC"))
-    local_dt = aware_utc.astimezone(ZoneInfo(target_tz))
-    return local_dt.strftime("%H:%M")
 
 
 def _match_to_vo(

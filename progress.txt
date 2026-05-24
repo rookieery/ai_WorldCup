@@ -10,14 +10,21 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Synced `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
-- Updated `AGENTS.md` in both services/ and controllers/ directories
 
-## P1-11-AppFactory — 依赖注入模块 + FastAPI 应用工厂
-- Created `app/dependencies.py`: centralized DI providers (get_db, get_language, get_*_service factory functions)
-- Created `app/main.py`: FastAPI app factory with lifespan (init/dispose DB engine), middleware registration (ErrorHandler → Logging → CORS), all 5 routers registered, /docs and /redoc enabled
-- Created `football-server/run.py`: uvicorn entry point with --prod flag
-- Refactored all 5 controllers (match, team, venue, group, bracket) to remove inline `_get_db` helpers and use centralized `get_*_service` DI from dependencies.py
-- Verified: `uvicorn app.main:app --reload` starts successfully, /docs returns 200 with all 10 API routes visible in OpenAPI spec
 - Updated `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
 - Updated `AGENTS.md` in controllers/ directory
+
+## P1-12-Utils — 工具模块：Markdown 解析器 + 时区转换
+- **Status**: ✅ COMPLETE
+- **Files Created**:
+  - `football-server/app/utils/__init__.py` — Re-exports MarkdownParser, utc_to_local, get_host_city_time
+  - `football-server/app/utils/markdown_parser.py` — MarkdownParser class + ParsedMatch dataclass (parses 72 group-stage matches from markdown)
+  - `football-server/app/utils/timezone.py` — utc_to_local(), get_host_city_time(), convert_datetime() using zoneinfo stdlib
+  - `football-server/app/utils/AGENTS.md` — Documentation for utils module
+- **Files Modified**:
+  - `football-server/app/services/match_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
+  - `football-server/app/services/group_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
+  - `football-server/app/services/bracket_service.py` — Replaced local _utc_to_local/ZoneInfo with shared app.utils.timezone import
+  - `football-server/pyproject.toml` — Added tzdata dependency (needed on Windows for zoneinfo)
+- **Verification**: Parser correctly extracts 72 matches (12 groups × 6), dates 2026-06-11 to 2026-06-27, handles None FIFA rankings for playoff qualifiers
+- **Docs Updated**: agent-file-map.md, agent-api-reference.md, services/AGENTS.md, utils/AGENTS.md

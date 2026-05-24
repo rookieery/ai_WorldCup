@@ -2,11 +2,22 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI COMPLETE
+## Status: APP FACTORY + DI + UTILS COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, and **run.py entry point** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, and **utility modules (utils/)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Cheer services/controllers are not yet built.
+
+## Utility Layer
+
+Shared helpers with no business-logic coupling, located in `app/utils/`.
+
+| Module | Functions/Classes | Notes |
+|--------|-------------------|-------|
+| `markdown_parser.py` | `MarkdownParser`, `ParsedMatch` | Parses `data/2026_FIFA_World_Cup_Group_Stage.md` → 72 structured `ParsedMatch` objects (12 groups × 6 matches). Extracts: group_label, round_num, match_date, home/away team names (Chinese), FIFA rankings. |
+| `timezone.py` | `utc_to_local(utc_dt, target_tz)`, `get_host_city_time(utc_dt, venue_tz)`, `convert_datetime(utc_dt, target_tz, fmt)` | Pure `zoneinfo`-based timezone conversion (no third-party deps). Used by MatchService, GroupService, BracketService. |
+
+**ParsedMatch dataclass fields**: `group_label` (A-L), `round_num` (1-3), `match_date` (date), `home_team_zh`, `away_team_zh`, `fifa_ranking_home`, `fifa_ranking_away`
 
 ## Service Layer
 
