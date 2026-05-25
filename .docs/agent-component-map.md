@@ -11,6 +11,17 @@
 - **Props flow**: State drilled directly to child components
 - **Features**: Groups quick-entry link (Trophy icon → `/groups`) in Timeline view
 
+### `app/bracket/page.tsx` — `BracketPage`
+- **Type**: Client component (`"use client"`)
+- **Layout**: Header → TournamentBracket → Footer (full-width, no sidebar)
+- **Wrapper**: `I18nProvider` for standalone page i18n context
+- **Features**: Full-screen bracket view accessible at `/bracket`
+- **Type**: Client component (`"use client"`)
+- **State**: `timezone`, `viewMode`, `selectedDate` (all `useState`)
+- **Layout**: Header → Main (Timeline|Bracket) + AI Sidebar → Footer
+- **Props flow**: State drilled directly to child components
+- **Features**: Groups quick-entry link (Trophy icon → `/groups`) in Timeline view
+
 ## Dashboard Components (`components/dashboard/`)
 
 ### `header.tsx` — `Header`
@@ -53,13 +64,16 @@
 - **Lines**: ~307
 
 ### `tournament-bracket.tsx` — `TournamentBracket`
-- **Data**: Hardcoded `BracketMatch[]` (QF×4 + SF×2 + Final×1)
-- **Sub-components**: `BracketCard`, `TeamRow`, `ConnectorLine`
-- **UI**: Three-column grid with SVG connector lines, gradient glow effects
-- **Note**: Currently only QF→SF→F, needs expansion to R32→R16→QF→SF→3rd→F
-- **Types imported**: `BracketMatch`, `BracketTeam`, `BracketRoundName` from `@/lib/types`
-- **Dependencies**: `cn` utility, `Trophy`/`Zap` icons
-- **Lines**: ~438
+- **Data**: Fetched from API via `getBracket()` — full BracketTree (R32→R16→QF→SF→3rd→F)
+- **Sub-components**: `BracketCard`, `TeamRow`, `RoundConnector`, `DesktopBracket`, `MobileBracket`
+- **UI**: 6-round horizontal scroll with SVG connectors (desktop), vertical stack (mobile)
+- **Features**: API data fetch with loading/error/retry, TBD teams show fromGroup info, winner gold highlight, LIVE pulse, 3rd place as separate branch
+- **Responsive**: `hidden md:block` for DesktopBracket, `md:hidden` for MobileBracket
+- **All colors**: Semantic theme variables (text-gold, text-accent, bg-primary/20, etc.)
+- **All text**: Internationalized via `t()`
+- **Types imported**: `BracketMatch`, `BracketTeam`, `BracketRoundName`, `BracketTree` from `@/lib/types`
+- **Dependencies**: `cn` utility, `lucide-react` icons (Trophy, Zap, Loader2, AlertCircle, Medal), `getBracket` from API, `useTranslation` from i18n
+- **Lines**: ~413
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
 - **State**: `messages[]`, `input`, `isTyping`, `isFocused`
@@ -98,8 +112,8 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 ### Locale Files
 | File | Language | Keys |
 |------|----------|------|
-| `locales/zh-CN.json` | 简体中文 | 101 keys, 7 namespaces |
-| `locales/en-US.json` | English | 101 keys, 7 namespaces |
+| `locales/zh-CN.json` | 简体中文 | 107 keys, 7 namespaces |
+| `locales/en-US.json` | English | 107 keys, 7 namespaces |
 
 ### Namespaces
 | Namespace | Keys | Purpose |
@@ -107,7 +121,7 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 | `header` | 8 | Title, subtitle, timezone/view labels, language labels (langZh/langEn) |
 | `timeline` | 8 | Stage labels (Group/R32/R16/QF/SF/3rd/Final/Rest) |
 | `match` | 12 | Match card labels (Live/Big Match/FT/cheer etc.) |
-| `bracket` | 9 | Knockout bracket labels |
+| `bracket` | 16 | Knockout bracket labels (6 rounds, fromGroup, tbd, states) |
 | `ai` | 20 | AI copilot panel labels |
 | `footer` | 4 | Footer status bar labels |
 | `groups` | 18 | Group standings labels (title, table columns, navigation, states) |

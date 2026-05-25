@@ -39,13 +39,20 @@
   "bracket": {
     "knockoutStage": "淘汰赛阶段",
     "roadToGlory": "荣耀之路 - 2026 FIFA 世界杯",
+    "roundOf32": "32强赛",
+    "roundOf16": "16强赛",
     "quarterFinals": "四分之一决赛",
     "semiFinals": "半决赛",
+    "thirdPlace": "季军赛",
     "final": "决赛",
     "vs": "对阵",
     "liveMatch": "直播比赛",
     "winnerAdvances": "胜者晋级",
-    "advancementPath": "晋级路线"
+    "advancementPath": "晋级路线",
+    "fullBracket": "完整对阵图",
+    "fromGroup": "{position}{group}组",
+    "tbd": "待定",
+    "errorLoading": "加载对阵图数据失败"
   },
   "ai": {
     "copilotTitle": "世界杯 AI 助手",

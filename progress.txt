@@ -21,37 +21,34 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-  - `lib/i18n/types.ts`: Updated `match` section with 3 new keys
-- **Notes**: Date format changed from "Jun 14" to ISO "2026-06-14" for API compatibility. City icon is inferred from venue city name (heuristic). The `common.noMatches` key was already present in en-US but not in match namespace; added match-scoped keys instead.
 
-## P1-22-GroupView - 前端：小组积分榜组件 + 页面 (COMPLETED)
-
-### Files Created:
-- `football-web/components/dashboard/group-standings.tsx` (~307 lines) — GroupStandings component with GroupCard sub-component
-  - Responsive grid: 1 col mobile → 4 cols desktop (md:2, xl:3, 2xl:4)
-  - 12 groups A-L with color-coded headers (cycle: lime/cyan/magenta/gold)
-  - Qualified zone highlight (top 2 rows)
-  - Loading/error/empty states with retry
-  - Links to group detail pages
-- `football-web/app/groups/page.tsx` (~65 lines) — Groups overview page with I18nProvider wrapper
-- `football-web/app/groups/[group]/page.tsx` (~485 lines) — Group detail page
-  - Full standings table with all stats (P/W/D/L/GF/GA/GD/Pts)
-  - Group match list with live/finished/upcoming states
-  - Color-coded group branding
-  - Back navigation to groups overview
-
-### Files Modified:
-- `football-web/app/page.tsx` — Added Groups quick-entry link in Timeline view (Trophy icon → /groups)
-- `football-web/lib/i18n/types.ts` — Added `groups` namespace with 19 keys
-- `football-web/lib/i18n/locales/zh-CN.json` — Added groups namespace (19 Chinese keys)
-- `football-web/lib/i18n/locales/en-US.json` — Added groups namespace (19 English keys)
-- `.docs/agent-component-map.md` — Updated with GroupStandings component docs, groups page, updated namespace counts
-- `.docs/agent-file-map.md` — Updated tree with groups/ directory and group-standings.tsx
-
-### Key Decisions:
-- Used existing `getGroups()` / `getGroupDetail()` API functions from `lib/api/groups.ts`
-- Local TypeScript interfaces defined in each component (matching API response shape) rather than central types
-- Each page wraps itself in `I18nProvider` since they are separate routes (not nested under root page)
-- Cyberpunk glass-card styling matches existing dashboard components
 - shadcn Table component used for standings tables
 - Group colors cycle through 4 neon colors (CCFF00/00F0FF/FF00E5/FFD700) for A-L
+
+## P1-23-FullBracket — 前端：完整淘汰赛对阵图扩展（R32→R16→QF→SF→3rd→F）
+**Status**: ✅ COMPLETE
+**Date**: 2026-05-25
+
+### Changes
+- **Refactored** `football-web/components/dashboard/tournament-bracket.tsx`:
+  - Replaced hardcoded QF/SF/F demo data with API integration via `getBracket()`
+  - Supports full 6-round structure: R32(16) → R16(8) → QF(4) → SF(2) → 3rd(1) → F(1)
+  - Desktop: horizontal scroll layout with SVG connectors between rounds
+  - Mobile: vertical stack layout with wrapping cards
+  - TBD teams display `fromGroup` info (e.g. "1st Group A")
+  - Winner highlighted with gold color + LIVE status pulse animation
+  - 3rd place playoff shown as separate branch after SF
+  - All hardcoded hex colors replaced with semantic theme variables
+  - All text internationalized via t()
+  - Loading, error, retry states for API fetch
+- **Created** `football-web/app/bracket/page.tsx`: standalone full-screen bracket page
+- **Updated** i18n files:
+  - Added keys: roundOf32, roundOf16, thirdPlace, fullBracket, fromGroup, tbd, errorLoading
+  - Both en-US.json and zh-CN.json updated
+  - Updated LocaleMessages type in i18n/types.ts
+
+### Key patterns
+- ROUND_COLORS map uses semantic classes (text-primary, bg-primary/20, etc.)
+- SVG connectors use CSS custom properties (var(--accent), var(--magenta)) instead of hex
+- API data flow: getBracket() → BracketTree → rounds[] → BracketCard[]
+- Responsive: hidden md:block / md:hidden breakpoint split between DesktopBracket and MobileBracket

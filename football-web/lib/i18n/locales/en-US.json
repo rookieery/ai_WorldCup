@@ -39,13 +39,20 @@
   "bracket": {
     "knockoutStage": "Knockout Stage",
     "roadToGlory": "Road to Glory - FIFA World Cup 2026",
+    "roundOf32": "ROUND OF 32",
+    "roundOf16": "ROUND OF 16",
     "quarterFinals": "QUARTER-FINALS",
     "semiFinals": "SEMI-FINALS",
+    "thirdPlace": "3RD PLACE",
     "final": "FINAL",
     "vs": "VS",
     "liveMatch": "Live Match",
     "winnerAdvances": "Winner Advances",
-    "advancementPath": "Advancement Path"
+    "advancementPath": "Advancement Path",
+    "fullBracket": "Full Bracket",
+    "fromGroup": "{position} Group {group}",
+    "tbd": "TBD",
+    "errorLoading": "Failed to load bracket data"
   },
   "ai": {
     "copilotTitle": "World Cup AI Copilot",

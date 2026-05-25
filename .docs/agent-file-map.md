@@ -32,13 +32,15 @@ football-web/
 │       ├── page.tsx          # Groups overview page (all 12 groups standings grid)
 │       └── [group]/
 │           └── page.tsx      # Single group detail page (standings + match list)
+├── bracket/
+│   └── page.tsx              # Standalone full-screen bracket page
 ├── components/
 │   ├── dashboard/
 │   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
 │   │   ├── date-timeline.tsx # Horizontal date picker (Jun 11–Jul 19)
 │   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter
 │   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
-│   │   ├── tournament-bracket.tsx # Knockout bracket (QF→SF→F, SVG connectors)
+│   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven)
 │   │   └── ai-copilot-panel.tsx   # AI chat sidebar (messages, radar chart, analysis)
 │   ├── theme-provider.tsx    # next-themes wrapper (unused in layout currently)
 │   └── ui/                   # shadcn/ui primitives (~60 components)

@@ -41,13 +41,20 @@ export interface LocaleMessages {
   bracket: {
     knockoutStage: string
     roadToGlory: string
+    roundOf32: string
+    roundOf16: string
     quarterFinals: string
     semiFinals: string
+    thirdPlace: string
     final: string
     vs: string
     liveMatch: string
     winnerAdvances: string
     advancementPath: string
+    fullBracket: string
+    fromGroup: string
+    tbd: string
+    errorLoading: string
   }
   ai: {
     copilotTitle: string
