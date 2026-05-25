@@ -151,7 +151,8 @@ football-server/
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   ├── services/
-│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService, LiveService, ConnectionManager, get_manager
+│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService, LiveService, ConnectionManager, PromptBuilder, get_manager
+│   │   ├── prompt_builder.py    # PromptBuilder: build_system_prompt, build_match_analysis_prompt, build_knockout_prompt, build_chat_context (bilingual zh-CN/en-US, reads skills/ markdowns)
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
 │   │   ├── match_service.py     # MatchService: get_match_dates, get_matches (multi-filter + Redis live merge), get_match_by_id (with events + Redis live), get_live_matches (Redis live merge); uses shared app.utils.timezone

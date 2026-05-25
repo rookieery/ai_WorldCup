@@ -29,27 +29,41 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Updated football-web/lib/store/AGENTS.md: live.ts now references websocket.ts driver
-- Build verification: npx next build compiled successfully with no errors
 
-## P2-07-MatchDetail — 前端：比赛详情弹窗（阵容 + 进球事件 + 技术统计）
-- **Status**: ✅ PASS
-- **Date**: 2026-05-25
-- **Files Created**:
-  - `football-web/components/dashboard/match-detail-dialog.tsx` (~465 lines) — MatchDetailDialog component using shadcn/ui Dialog
-  - `football-web/components/dashboard/match-detail-helpers.tsx` (~215 lines) — Helper components + types (EventsSection, StatRow, VenueInfoItem, EventIcon, EventLabel, MatchDetailData, MatchDetailEvent)
-- **Files Modified**:
-  - `football-web/components/dashboard/match-cards-grid.tsx` — Added MatchDetailDialog import, cursor-pointer on MatchCard, onClick opens dialog with matchId, onMatchClick callback prop
-  - `football-web/components/dashboard/tournament-bracket.tsx` — Added MatchDetailDialog import, cursor-pointer on BracketCard, onClick opens dialog, onMatchClick prop threaded through DesktopBracket/MobileBracket
-  - `football-web/lib/i18n/locales/en-US.json` — Added matchDetail namespace (18 keys: goal, yellowCard, redCard, substitution, var, fanCheer, votes, matchEvents, noEvents, firstHalf, secondHalf, extraTime, matchStats, goals, yellowCards, redCards, venueInfo, venue, city, kickoff, capacity, loadError)
-  - `football-web/lib/i18n/locales/zh-CN.json` — Added matchDetail namespace (18 keys, Chinese translations)
-- **Features**:
-  - Dialog shows: match header (teams + flags + score + status badges), live activity bar, fan cheer meter (with live store merge), match events timeline grouped by half, match statistics (goals/yellow cards/red cards as dual-bar charts), venue info grid
-  - Real-time data merged from Zustand live store (scorePatch, cheerUpdate) on top of API data
-  - Cyberpunk glass-card style with glow effects, gradient overlays, LED display for live scores
-  - Cheer data fetched from API + merged with live store updates
-  - Events timeline splits into First Half / Second Half / Extra Time sections
-  - BracketCard click parses string match.id to int for dialog
-  - Dialog resets state on close, fetches fresh data on open
 - **Build verification**: npx next build compiled successfully with no errors
 - **Docs synced**: Updated .docs/agent-component-map.md and .docs/agent-file-map.md
+
+## P3-01-PromptBuilder — AI Schema + Prompt Builder (2026-05-25)
+
+### What was done
+1. **Verified `app/schemas/ai_schema.py` completeness**:
+   - `ChatRequest`: messages (List[ChatMessageItem]) + context (ChatContext) + lang (zh-CN/en-US)
+   - `ChatMessageItem`: role (user/assistant) + content
+   - `ChatContext`: currentView, selectedDate, timezone
+   - `SSEEvent`: type (thinking/answer/analysis/done/error) + content + data
+   - `TeamAnalysisResponse`: team_code, team_name, team_name_zh, radar (5-dim), win_probability, insights
+
+2. **Created `app/services/prompt_builder.py`** — PromptBuilder class with:
+   - `build_system_prompt(lang)` → constructs system prompt with tournament context (2026 FIFA World Cup format), current date, available tool descriptions, response guidelines. Full bilingual support (zh-CN / en-US).
+   - `build_match_analysis_prompt(match_id, team1, team2, lang)` → reads `skills/group_stage_predict.md` and constructs a 6-step reasoning chain prompt for group-stage match analysis
+   - `build_knockout_prompt(match_id, team1, team2, lang)` → reads `skills/knockout_stage_predict.md` and constructs a 5-step reasoning chain prompt for knockout match prediction
+   - `build_chat_context(messages)` → converts ChatMessageItem list to OpenAI-compatible message format
+   - Lazy-loads skill markdown files on first use (not at module import time)
+   - Graceful fallback if skill files are missing (logs warning, returns empty string)
+
+3. **Updated `app/services/__init__.py`** to export PromptBuilder
+
+4. **Updated `.docs/agent-file-map.md`** to document prompt_builder.py
+
+### Patterns discovered
+- Skill files are loaded from `skills/` directory at project root (4 levels up from `football-server/app/services/`)
+- PromptBuilder uses static methods (no instance state needed) — follows same pattern as other services in the project
+- All methods return `list[dict]` (OpenAI message format: `[{"role": ..., "content": ...}]`)
+
+### Smoke tests passed
+- build_system_prompt zh-CN / en-US
+- build_match_analysis_prompt with team names + match_id
+- build_knockout_prompt with team names + match_id
+- build_chat_context converts ChatMessageItem list correctly
+- Skill content loaded successfully (verified content length > 500 chars)
+- Full app import still works (`from app.main import app`)
