@@ -31,6 +31,12 @@ from app.schemas.ai_schema import (
     TeamAnalysisResponse,
 )
 from app.schemas.ws_schema import WSEventType, WSMessage
+from app.schemas.scraper_schema import (
+    ScrapedMatch,
+    ScrapedSchedule,
+    ScrapedEvent,
+    ScrapedMatchResult,
+)
 
 __all__ = [
     # common
@@ -66,4 +72,9 @@ __all__ = [
     # ws
     "WSEventType",
     "WSMessage",
+    # scraper
+    "ScrapedMatch",
+    "ScrapedSchedule",
+    "ScrapedEvent",
+    "ScrapedMatchResult",
 ]

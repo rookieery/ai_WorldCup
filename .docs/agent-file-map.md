@@ -191,7 +191,12 @@ football-server/
 │       ├── bracket_schema.py    # BracketTeam/Match/Round/TreeResponse VOs (TBD support)
 │       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VOs
-│       └── ws_schema.py         # WSEventType enum + WSMessage VO
+│       ├── ws_schema.py         # WSEventType enum + WSMessage VO
+│       └── scraper_schema.py   # ScrapedMatch/Schedule/Event/MatchResult VOs for scraper data validation
+├── scraping/                    # Web scraping infrastructure
+│   ├── __init__.py              # Re-exports BaseScraper, FIFAScraper
+│   ├── base_scraper.py          # BaseScraper: rate limiting (asyncio.Semaphore), retry with exponential backoff (max 3), structured logging, error hierarchy (ScraperError/Timeout/HTTP/Parse)
+│   └── fifa_scraper.py          # FIFAScraper(BaseScraper): scrape_match_schedule(), scrape_match_result(match_id); __NEXT_DATA__ JSON extraction from FIFA.com pages
 ├── scripts/                     # Database seeding scripts
 │   ├── __init__.py              # Package init
 │   ├── seed_data.py             # One-click init orchestrator (seed_venues→teams→matches→bracket→standings)

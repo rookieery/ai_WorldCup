@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     SCRAPER_ENABLED: bool = False
 
+    # ── Scraper ───────────────────────────────────────────────────────
+    FIFA_SCHEDULE_URL: str = "https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/2026/matchschedule"
+    FIFA_MATCH_URL: str = "https://www.fifa.com/fifaplus/en/tournaments/mens/worldcup/2026/matchcenter"
+    SCRAPER_CONCURRENCY: int = 3
+    SCRAPER_TIMEOUT: int = 30
+    SCRAPER_RETRY_MAX: int = 3
+
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"

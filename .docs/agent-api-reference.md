@@ -2,9 +2,9 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER + SCRAPER INFRASTRUCTURE COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, and **AI Controller (POST /api/ai/chat SSE endpoint)** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, **AI Controller (POST /api/ai/chat SSE endpoint)**, and **Scraper infrastructure (BaseScraper + FIFAScraper)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
@@ -23,6 +23,32 @@ Shared helpers with no business-logic coupling, located in `app/utils/`.
 | `timezone.py` | `utc_to_local(utc_dt, target_tz)`, `get_host_city_time(utc_dt, venue_tz)`, `convert_datetime(utc_dt, target_tz, fmt)` | Pure `zoneinfo`-based timezone conversion (no third-party deps). Used by MatchService, GroupService, BracketService. |
 
 **ParsedMatch dataclass fields**: `group_label` (A-L), `round_num` (1-3), `match_date` (date), `home_team_zh`, `away_team_zh`, `fifa_ranking_home`, `fifa_ranking_away`
+
+## Scraper Infrastructure (`app/scraping/`)
+
+### `app/scraping/base_scraper.py` — BaseScraper
+- **Rate limiting**: `asyncio.Semaphore` limits concurrent HTTP requests to `SCRAPER_CONCURRENCY` (default 3).
+- **Retry with exponential backoff**: Up to `SCRAPER_RETRY_MAX` (default 3) retries with `2**attempt` second delays for transient failures.
+- **Error hierarchy**: `ScraperError` (base) → `ScraperTimeoutError`, `ScraperHTTPError` (with `status_code`), `ScraperParseError`.
+- **Retryable check**: Retries on `httpx.TimeoutException`, `httpx.ConnectError`, and HTTP 5xx. Non-retryable errors (4xx) raise immediately.
+- **Structured logging**: Each request logs URL, status code, elapsed time, and attempt number.
+- **HTTP client**: Uses `httpx.AsyncClient` with lazy init; supports async context-manager protocol.
+- **Config**: `SCRAPER_CONCURRENCY`, `SCRAPER_TIMEOUT`, `SCRAPER_RETRY_MAX` from `app.config.settings`.
+
+### `app/scraping/fifa_scraper.py` — FIFAScraper(BaseScraper)
+- `scrape_match_schedule()` → `ScrapedSchedule` — Fetches FIFA schedule page, extracts `__NEXT_DATA__` JSON, parses match list.
+- `scrape_match_result(match_id)` → `ScrapedMatchResult` — Fetches individual match page, extracts result with events.
+- **JSON extraction**: `_extract_next_data()` regex extracts `__NEXT_DATA__` script tag content; multiple fallback JSON paths tried.
+- **Graceful degradation**: Returns empty schedules/results when page structure doesn't match expectations.
+- **Config**: `FIFA_SCHEDULE_URL`, `FIFA_MATCH_URL` from `app.config.settings`.
+
+### `app/schemas/scraper_schema.py` — Scraper Data Models
+| Model | Fields | Validation |
+|-------|--------|------------|
+| `ScrapedMatch` | external_id, home_team, away_team, kickoff_utc, stage, group_label?, venue_name?, status, home_score?, away_score? | stage ∈ {group, R32, R16, QF, SF, 3rd, F}; status ∈ {upcoming, live, finished, postponed} |
+| `ScrapedSchedule` | matches: List[ScrapedMatch], scraped_at, source_url | — |
+| `ScrapedEvent` | event_type, minute (≥0), team_side, player_name? | team_side ∈ {home, away} |
+| `ScrapedMatchResult` | external_id, status, home_score (≥0), away_score (≥0), events, scraped_at, source_url | status ∈ {upcoming, live, finished, postponed} |
 
 ## Redis Infrastructure (`app/redis/`)
 
