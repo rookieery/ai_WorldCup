@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P2-04-WebSocket",
-      "title": "WebSocket 管理器 + Controller + 广播机制",
-      "description": "WebSocket 实时推送任务。\n\n1. 创建 `app/services/websocket_manager.py`：ConnectionManager\n   - connect(websocket, client_id)：注册新连接\n   - disconnect(client_id)：移除连接\n   - broadcast(event_type, data)：向所有连接广播消息\n   - broadcast_to_match(match_id, event_type, data)：向关注特定比赛的用户广播\n2. 创建 `app/controllers/ws_controller.py`：\n   - WS /ws/live — WebSocket 端点\n   - 连接时发送初始数据（当前 live 比赛列表）\n   - 维持心跳（ping/pong）\n   - 连接断开时自动清理\n3. 修改 LiveService：在状态变更时通过 ConnectionManager 广播事件\n   - score_update, match_start, match_end, activity_update, bracket_update",
-      "passes": true
-    },
-    {
       "id": "P2-05-Zustand",
       "title": "前端：Zustand 全局状态管理搭建",
       "description": "前端状态架构任务。\n\n1. 安装 zustand 依赖\n2. 创建 `football-web/lib/store/preferences.ts`：用户偏好 store\n   - language（zh-CN/en-US）\n   - timezone（local/host）\n   - viewMode（timeline/bracket）\n   - theme（dark/light）\n   - 持久化到 localStorage\n3. 创建 `football-web/lib/store/matches.ts`：比赛数据 store\n   - matches 缓存（按日期索引）\n   - liveMatches 列表\n   - loading/error 状态\n   - fetchMatchesByDate(date)、fetchLiveMatches() actions\n4. 创建 `football-web/lib/store/live.ts`：实时更新 store\n   - WebSocket 连接状态\n   - 实时比分更新\n   - 活跃度更新\n   - cheer 数据更新\n5. 创建 `football-web/lib/store/ai-chat.ts`：AI 对话 store\n   - messages 列表\n   - isStreaming 状态\n   - currentStreamContent",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P2-06-WSIntegration",

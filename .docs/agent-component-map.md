@@ -181,6 +181,39 @@ const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
 | `lib/types/ai.ts` | `Message`, `MessageRole`, `MessageType`, `TeamAnalysis`, `TeamAnalysisSide`, `TeamStats`, `SSEEvent`, `SSEEventType` | AI chat messages, analysis payload, SSE streaming |
 | `lib/types/api.ts` | `ApiResponse<T>`, `PaginatedResponse<T>`, `ApiError` | Standard API envelope types |
 
+## State Management (`lib/store/`) — Zustand
+
+### Architecture
+- **Approach**: Zustand stores (lightweight, no boilerplate)
+- **Import**: `import { usePreferencesStore, useMatchesStore, useLiveStore, useAIChatStore } from "@/lib/store"`
+- **Persistence**: `usePreferencesStore` uses `zustand/persist` middleware (localStorage key `worldcup-preferences`)
+
+### Store Registry
+| Store | File | Purpose |
+|-------|------|---------|
+| `usePreferencesStore` | `preferences.ts` | User settings: language, timezone, viewMode, theme (localStorage persisted) |
+| `useMatchesStore` | `matches.ts` | Match data cache indexed by date + live matches, fetch actions with TTL |
+| `useLiveStore` | `live.ts` | Real-time WebSocket state: connection status, score patches, cheer updates |
+| `useAIChatStore` | `ai-chat.ts` | AI chat messages, streaming buffers, pending analysis payload |
+
+### Usage Pattern
+```typescript
+import { usePreferencesStore } from "@/lib/store"
+
+function MyComponent() {
+  const { language, timezone, setLanguage } = usePreferencesStore()
+  // language: "zh-CN" | "en-US"
+  // timezone: "local" | "host"
+  // setLanguage("zh-CN")
+}
+```
+
+### Key Design Decisions
+- **Preferences** persist to localStorage via `zustand/middleware/persist`
+- **Matches** store has a 5-minute TTL cache per date, avoiding redundant API calls
+- **Live** store mirrors WebSocket events and is the single source of truth for real-time data
+- **AI Chat** store manages streaming buffers and finalizes messages on stream completion
+
 ## CSS Architecture (`app/globals.css`)
 
 | Concept | CSS Variable / Class | Usage |

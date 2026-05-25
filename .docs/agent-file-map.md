@@ -65,6 +65,12 @@ football-web/
 │   │   ├── groups.ts         # getGroups(), getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)
 │   │   └── cheers.ts         # getCheers(matchId), postCheer(matchId, side)
+│   ├── store/                # Zustand global state stores
+│   │   ├── index.ts          # Barrel re-exports for all stores
+│   │   ├── preferences.ts    # User preferences (language, timezone, viewMode, theme) — localStorage persisted
+│   │   ├── matches.ts        # Match data cache (by date + live) with fetch actions + TTL
+│   │   ├── live.ts           # Real-time WebSocket state (scores, cheer updates, WS connection status)
+│   │   └── ai-chat.ts        # AI chat messages + streaming state (content buffers, analysis payload)
 │   └── types/                # Shared TypeScript type definitions
 │       ├── index.ts          # Unified re-exports
 │       ├── team.ts           # Team, TeamDetail, TeamStanding
