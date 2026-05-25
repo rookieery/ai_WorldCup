@@ -106,7 +106,10 @@
     "thinkingCollapse": "Hide reasoning",
     "thinkingExpand": "Show reasoning",
     "streamError": "An error occurred while generating the response. Please try again.",
-    "connectionError": "Unable to connect to the AI service. Please check your network and try again."
+    "connectionError": "Unable to connect to the AI service. Please check your network and try again.",
+    "fabLabel": "AI Copilot",
+    "sheetTitle": "AI Copilot",
+    "sheetDescription": "Chat with AI about World Cup"
   },
   "footer": {
     "liveUpdates": "Live Updates Active",

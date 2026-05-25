@@ -9,7 +9,7 @@
 - **State**: `timezone`, `viewMode`, `selectedDate` (all `useState`)
 - **Layout**: Header → Main (Timeline|Bracket) + AI Sidebar → Footer
 - **Props flow**: State drilled directly to child components
-- **Features**: Groups quick-entry link (Trophy icon → `/groups`) in Timeline view
+- **Features**: Groups quick-entry link (Trophy icon → `/groups`) in Timeline view; Mobile AI Copilot (`AICopilotMobile`) with FAB + bottom-sheet drawer
 
 ### `app/bracket/page.tsx` — `BracketPage`
 - **Type**: Client component (`"use client"`)
@@ -117,6 +117,15 @@
 - **Dependencies**: `Input`, `Button` (shadcn), `cn`, `lucide-react`, `useAIChatStore`, `usePreferencesStore`, `useTranslation`, `streamChat`
 - **Lines**: ~570
 
+### `ai-copilot-mobile.tsx` — `AICopilotMobile`
+- **State**: Local `open` (Sheet visibility), reads `isStreaming` from `useAIChatStore`
+- **Components**: FAB (fixed bottom-right, `lg:hidden`) + Sheet (bottom drawer, `h-[88vh]`) wrapping `AICopilotPanel`
+- **Features**: FAB with streaming pulse indicator, accessible Sheet with sr-only header, gradient FAB button matching cyberpunk theme
+- **i18n**: Uses `t()` for FAB label, Sheet title/description (ai namespace: fabLabel, sheetTitle, sheetDescription)
+- **Dependencies**: `Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle`/`SheetDescription` (shadcn), `AICopilotPanel`, `MessageCircle`/`Sparkles` (lucide-react), `useAIChatStore`, `useTranslation`
+- **Visibility**: Only rendered below `lg` breakpoint (FAB uses `lg:hidden` class)
+- **Lines**: ~79
+
 ## Shared Components
 
 ### `components/theme-provider.tsx`
@@ -155,7 +164,7 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 | `match` | 12 | Match card labels (Live/Big Match/FT/cheer etc.) |
 | `matchDetail` | 18 | Match detail dialog labels (events, stats, venue, cheer) |
 | `bracket` | 16 | Knockout bracket labels (6 rounds, fromGroup, tbd, states) |
-| `ai` | 26 | AI copilot panel labels |
+| `ai` | 29 | AI copilot panel labels (incl. fabLabel, sheetTitle, sheetDescription) |
 | `footer` | 4 | Footer status bar labels |
 | `groups` | 18 | Group standings labels (title, table columns, navigation, states) |
 | `common` | 22 | Weekdays, months, generic messages |

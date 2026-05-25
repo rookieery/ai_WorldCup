@@ -26,7 +26,7 @@ ai_WorldCup/
 football-web/
 ├── app/
 │   ├── layout.tsx            # Root layout (dark theme, Geist fonts, Analytics)
-│   ├── page.tsx              # Single-page dashboard (all state lives here, Groups quick-entry link)
+│   ├── page.tsx              # Single-page dashboard (all state lives here, Groups quick-entry link, Mobile AI Copilot FAB+Sheet)
 │   ├── globals.css           # CSS variables, animations, glassmorphism utilities
 │   └── groups/
 │       ├── page.tsx          # Groups overview page (all 12 groups standings grid)
@@ -48,7 +48,8 @@ football-web/
 │   │   ├── match-detail-helpers.tsx # Helper components + types for MatchDetailDialog (EventsSection, StatRow, VenueInfoItem, EventIcon/Label)
 │   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
 │   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven) + MatchDetailDialog on click
-│   │   └── ai-copilot-panel.tsx   # AI chat sidebar (real SSE streaming, typewriter effect, thinking block, analysis card, Zustand store)
+│   │   ├── ai-copilot-panel.tsx   # AI chat sidebar (real SSE streaming, typewriter effect, thinking block, analysis card, Zustand store)
+│   │   └── ai-copilot-mobile.tsx  # Mobile AI Copilot — FAB entry + Sheet bottom drawer (visible <lg breakpoint)
 │   ├── stats/
 │   │   ├── scorers-table.tsx    # Scorers leaderboard table (sortable by goals/assists, cyberpunk glass-card, top-3 highlight)
 │   │   └── match-stats-card.tsx # Match statistics card (upcoming/live/finished counts with progress bars)

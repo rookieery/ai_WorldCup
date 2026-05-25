@@ -8,6 +8,7 @@ import { DateTimeline } from "@/components/dashboard/date-timeline"
 import { MatchCardsGrid } from "@/components/dashboard/match-cards-grid"
 import { TournamentBracket } from "@/components/dashboard/tournament-bracket"
 import { AICopilotPanel } from "@/components/dashboard/ai-copilot-panel"
+import { AICopilotMobile } from "@/components/dashboard/ai-copilot-mobile"
 import { useTranslation } from "@/lib/i18n"
 
 type TimezoneOption = "local" | "host"
@@ -108,11 +109,14 @@ export default function WorldCupDashboard() {
           )}
         </main>
 
-        {/* Right Sidebar - AI Copilot (30%) */}
+        {/* Right Sidebar - AI Copilot (30%) — desktop only */}
         <div className="w-[30%] min-w-[340px] max-w-[480px] hidden lg:block border-l border-glass-border">
           <AICopilotPanel />
         </div>
       </div>
+
+      {/* Mobile AI Copilot — FAB + bottom-sheet drawer */}
+      <AICopilotMobile />
 
       {/* Footer Status Bar */}
       <footer className="h-10 border-t border-glass-border glass-card px-6 flex items-center justify-between text-xs text-muted-foreground relative z-10">

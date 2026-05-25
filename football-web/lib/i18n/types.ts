@@ -82,6 +82,9 @@ export interface LocaleMessages {
     thinkingExpand: string
     streamError: string
     connectionError: string
+    fabLabel: string
+    sheetTitle: string
+    sheetDescription: string
   }
   footer: {
     liveUpdates: string

@@ -592,3 +592,25 @@ Date: 2026-05-25
 - `next build` passes cleanly (0 errors)
 - All files well under 600-line limit
 - All text uses t() i18n (no hardcoded strings)
+## P4-05-TeamDetail — Team Detail Page
+Date: Sun May 25 2026
+### Backend Changes
+- **Schema**: Added `TeamStandingVO`, `TeamMatchVO`, `TeamStatsResponse` to `team_schema.py`
+- **Service**: Added `get_team_stats(code, lang, timezone_name)` to `TeamService` — aggregates team info, group standing, finished matches, and upcoming matches
+- **Controller**: Added `GET /api/teams/{code}/stats` route (registered before `/{code}` to avoid route conflicts)
+- Route order: `GET /api/teams` → `GET /api/teams/{code}/stats` → `GET /api/teams/{code}`
+### Frontend Changes
+- **API**: Added `getTeamStats(code)` and related types (`TeamStatsData`, `TeamMatchVO`, `TeamStandingVO`) to `lib/api/teams.ts`
+- **Page**: Created `app/teams/[code]/page.tsx` — team detail page with:
+  - Team header (flag, name, FIFA ranking, confederation, group, World Cup appearances)
+  - Group standing card (points, position, W/D/L/GF/GA/GD)
+  - Finished matches list (result indicator: win/loss/draw, opponent, score)
+  - Upcoming matches list (time, venue city, opponent)
+- **i18n**: Added `teamDetail.*` namespace keys (24 keys) to both `en-US.json` and `zh-CN.json`
+- Dynamic route: `/teams/[code]` where code is 3-letter team code (e.g., BRA, USA)
+### Quality
+- Build: `npm run build` passes cleanly
+- Route registered as dynamic: `ƒ /teams/[code]`
+- Backend imports verified: all schemas, services, controllers import without errors
+- No console.log or dead code
+- Follows existing codebase patterns (glass-card, Header component, API client pattern)
