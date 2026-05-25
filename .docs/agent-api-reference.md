@@ -2,9 +2,9 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER + SCRAPER INFRASTRUCTURE + LIVE SCRAPER + DATA SYNC COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER + SCRAPER INFRASTRUCTURE + LIVE SCRAPER + DATA SYNC + SCHEDULER COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, **AI Controller (POST /api/ai/chat SSE endpoint)**, **Scraper infrastructure (BaseScraper + FIFAScraper)**, **Live Score Scraper (LiveScoreScraper)**, and **Data Sync Service (DataSyncService)** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, **AI Controller (POST /api/ai/chat SSE endpoint)**, **Scraper infrastructure (BaseScraper + FIFAScraper)**, **Live Score Scraper (LiveScoreScraper)**, **Data Sync Service (DataSyncService)**, and **Scraper Scheduler (ScraperScheduler)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
@@ -66,6 +66,17 @@ Shared helpers with no business-logic coupling, located in `app/utils/`.
 - **Distributed lock**: `_acquire_lock()` / `_release_lock()` — Redis `SET NX EX` with Lua-script safe release (only deletes own token). Fallback to `asyncio.Lock` when Redis unavailable.
 - **Lock key**: `RedisKeys.SCRAPER_LOCK` (= `scraper:lock`), TTL: 60s.
 - **External ID resolution**: `_resolve_match_id()` queries DB first, falls back to integer parsing.
+
+### `app/scraping/scheduler.py` — ScraperScheduler
+- `start()` → None — Starts three `asyncio.Task` periodic loops. No-op when `SCRAPER_ENABLED=false`.
+- `stop()` → None — Cancels all tasks via `task.cancel()`, awaits via `asyncio.gather(return_exceptions=True)`, logs non-CancelledError exceptions.
+- **Periodic tasks**:
+  - `live_scores` (default 30s, configurable via `SCRAPER_LIVE_INTERVAL`) — Scrapes live match data via `LiveScoreScraper`, syncs to Redis via `DataSyncService`. Skipped when no matches are currently live (checked via `LiveService.get_live_matches()`).
+  - `finished_results` (default 5min, configurable via `SCRAPER_FINISHED_INTERVAL`) — Queries recent finished matches from DB, scrapes each result via `FIFAScraper`, persists scores/events via `DataSyncService.sync_match_result()`. 2s delay between individual scrapes.
+  - `group_standings` (default 1h, configurable via `SCRAPER_GROUP_INTERVAL`) — Recalculates all 12 group standings via `DataSyncService.sync_group_standings()`.
+- **Integration**: Started in `main.py` lifespan after DB engine + Redis init. Receives `sessionmaker` factory for per-task DB sessions.
+- **Error handling**: Each periodic run catches all exceptions, logs via `logging.error`, and retries on next interval. `CancelledError` propagates for clean shutdown.
+- **Configuration**: Intervals read from `app.config.settings` (env-overridable): `SCRAPER_LIVE_INTERVAL`, `SCRAPER_FINISHED_INTERVAL`, `SCRAPER_GROUP_INTERVAL`.
 
 ## Redis Infrastructure (`app/redis/`)
 

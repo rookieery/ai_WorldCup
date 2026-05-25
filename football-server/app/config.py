@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     SCRAPER_TIMEOUT: int = 30
     SCRAPER_RETRY_MAX: int = 3
 
+    # ── Scraper scheduler intervals (seconds) ────────────────────────
+    SCRAPER_LIVE_INTERVAL: int = 30
+    SCRAPER_FINISHED_INTERVAL: int = 300
+    SCRAPER_GROUP_INTERVAL: int = 3600
+
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"

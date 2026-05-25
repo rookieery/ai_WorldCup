@@ -124,8 +124,8 @@ football-server/
 │       └── 001_initial_schema.py  # Initial migration: 5 tables + FK relationships
 ├── app/
 │   ├── __init__.py              # Package init (empty)
-│   ├── config.py                # Pydantic Settings: all env vars with defaults (incl. REDIS_URL, REDIS_ENABLED)
-│   ├── main.py                  # FastAPI app factory (lifespan: DB + Redis init/close, middleware, routers, /docs)
+│   ├── config.py                # Pydantic Settings: all env vars with defaults (incl. REDIS_URL, REDIS_ENABLED, SCRAPER_*, scraper intervals)
+│   ├── main.py                  # FastAPI app factory (lifespan: DB + Redis init/close, ScraperScheduler start/stop, middleware, routers, /docs)
 │   ├── dependencies.py          # DI providers: get_db, get_*_service, get_ai_service, get_language; Redis DI via app.redis.get_redis
 │   ├── exceptions/
 │   │   ├── __init__.py          # Re-exports all exception classes
@@ -194,11 +194,12 @@ football-server/
 │       ├── ws_schema.py         # WSEventType enum + WSMessage VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VOs for scraper data validation
 ├── scraping/                    # Web scraping infrastructure
-│   ├── __init__.py              # Re-exports BaseScraper, FIFAScraper, LiveScoreScraper, DataSyncService
+│   ├── __init__.py              # Re-exports BaseScraper, FIFAScraper, LiveScoreScraper, DataSyncService, ScraperScheduler
 │   ├── base_scraper.py          # BaseScraper: rate limiting (asyncio.Semaphore), retry with exponential backoff (max 3), structured logging, error hierarchy (ScraperError/Timeout/HTTP/Parse)
 │   ├── fifa_scraper.py          # FIFAScraper(BaseScraper): scrape_match_schedule(), scrape_match_result(match_id); __NEXT_DATA__ JSON extraction from FIFA.com pages
 │   ├── live_score_scraper.py    # LiveScoreScraper(BaseScraper): scrape_live_scores() -> ScrapedLiveScoreBatch; activity level estimation heuristic
-│   └── data_sync.py             # DataSyncService: sync_live_scores, sync_match_result, sync_group_standings; Redis distributed lock (scraper:lock)
+│   ├── data_sync.py             # DataSyncService: sync_live_scores, sync_match_result, sync_group_standings; Redis distributed lock (scraper:lock)
+│   └── scheduler.py             # ScraperScheduler: periodic task orchestrator (live 30s, finished 5min, group 1h); started in main.py lifespan when SCRAPER_ENABLED=true
 ├── scripts/                     # Database seeding scripts
 │   ├── __init__.py              # Package init
 │   ├── seed_data.py             # One-click init orchestrator (seed_venues→teams→matches→bracket→standings)

@@ -522,3 +522,24 @@
 - All imports work correctly (base_scraper, fifa_scraper, scraper_schema)
 - Pydantic schema validation tested (valid data passes, invalid data raises errors)
 - FIFAScraper instantiation verified with config values
+- `next build` passes cleanly (no frontend breakage)
+- No `console.log`, `print()`, or dead code in new files
+## P4-02-LiveScraper - 实时比分爬虫 + 数据同步服务 (COMPLETED)
+### Files Created
+- `football-server/app/scraping/live_score_scraper.py` — LiveScoreScraper(BaseScraper): scrape_live_scores() returns ScrapedLiveScoreBatch with activity level estimation
+- `football-server/app/scraping/data_sync.py` — DataSyncService: sync_live_scores, sync_match_result, sync_group_standings with Redis distributed lock (scraper:lock)
+### Files Modified
+- `football-server/app/schemas/scraper_schema.py` — Added ScrapedLiveEvent, ScrapedLiveScore, ScrapedLiveScoreBatch models
+- `football-server/app/services/live_service.py` — Added apply_sync_data() batched update method (Redis pipeline + memory fallback)
+- `football-server/app/scraping/__init__.py` — Added LiveScoreScraper, DataSyncService exports
+### Key Design Decisions
+- LiveScoreScraper reuses _extract_next_data() from fifa_scraper.py (DRY)
+- Activity level estimated via heuristic: event type weights + recency + match minute baseline
+- DataSyncService uses Redis SET NX EX for distributed lock with Lua-script safe release
+- Fallback to asyncio.Lock when Redis unavailable
+- Group standings recalculated from finished matches: W/D/L/GF/GA/GD/points with position re-ranking
+- apply_sync_data() in LiveService provides single Redis pipeline write+read for batched syncs
+- External ID resolution: DB lookup first, integer parsing fallback
+### Quality Checks
+- `next build` passes cleanly (no frontend breakage)
+- All Python files pass syntax validation

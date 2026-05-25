@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P4-02-LiveScraper",
-      "title": "实时比分爬虫 + 数据同步服务",
-      "description": "实时数据采集与同步任务。\n\n1. 创建 `app/scraping/live_score_scraper.py`：LiveScoreScraper(BaseScraper)\n   - scrape_live_scores()：获取当前进行中比赛的实时比分\n   - 返回结构化数据：match_id, home_score, away_score, status, activity_level, events\n2. 创建 `app/scraping/data_sync.py`：DataSyncService\n   - sync_live_scores()：将爬取的实时比分同步到 Redis（通过 LiveService）\n   - sync_match_results()：将已结束比赛的结果同步到 SQLite（通过 MatchService）\n   - sync_group_standings()：重新计算并更新小组积分\n   - 使用 Redis 分布式锁（scraper:lock）防止并发同步冲突\n3. 修改 LiveService：新增从 DataSyncService 接收数据的方法",
-      "passes": true
-    },
-    {
       "id": "P4-03-BGTask",
       "title": "后台定时任务集成（main.py lifespan 启动爬虫调度）",
       "description": "后台任务调度任务。\n\n1. 修改 `app/main.py`：在 lifespan 中添加后台任务\n   - 启动时创建 asyncio.Task 运行爬虫调度器\n   - 调度器按配置间隔执行：\n     - 每 30s：同步 live 比分（仅当有进行中比赛时）\n     - 每 5min：同步已完成比赛结果\n     - 每 1h：重新计算小组积分\n   - 关闭时取消后台任务并等待完成\n2. 可通过 SCRAPER_ENABLED=false 完全禁用爬虫\n3. 爬虫执行状态通过日志输出（标准 logging，非 print）\n\n验收：启动后端后，如启用爬虫，后台开始定时采集，比分更新通过 WebSocket 推送到前端",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P4-04-StatsPage",

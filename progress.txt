@@ -35,31 +35,40 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- `next build` passes cleanly (no frontend breakage)
+
 - No `console.log`, `print()`, or dead code in new files
+- All files within 600-line hard limit
 
-## P4-02-LiveScraper - 实时比分爬虫 + 数据同步服务 (COMPLETED)
+## P4-03-BGTask — 后台定时任务集成（main.py lifespan 启动爬虫调度）
+**Status**: ✅ COMPLETE
 
-### Files Created
-- `football-server/app/scraping/live_score_scraper.py` — LiveScoreScraper(BaseScraper): scrape_live_scores() returns ScrapedLiveScoreBatch with activity level estimation
-- `football-server/app/scraping/data_sync.py` — DataSyncService: sync_live_scores, sync_match_result, sync_group_standings with Redis distributed lock (scraper:lock)
+### Changes
+1. **NEW** `football-server/app/scraping/scheduler.py` — `ScraperScheduler` class
+   - Three periodic asyncio tasks: live scores (30s), finished results (5min), group standings (1h)
+   - Configurable intervals via `SCRAPER_LIVE_INTERVAL`, `SCRAPER_FINISHED_INTERVAL`, `SCRAPER_GROUP_INTERVAL` env vars
+   - Graceful start/stop with task cancellation and gather
+   - Standard `logging` throughout (no print statements)
+   - Live score sync skips when no matches are currently live
+   - Finished results scrape with 2s delay between matches
 
-### Files Modified
-- `football-server/app/schemas/scraper_schema.py` — Added ScrapedLiveEvent, ScrapedLiveScore, ScrapedLiveScoreBatch models
-- `football-server/app/services/live_service.py` — Added apply_sync_data() batched update method (Redis pipeline + memory fallback)
-- `football-server/app/scraping/__init__.py` — Added LiveScoreScraper, DataSyncService exports
+2. **MODIFIED** `football-server/app/main.py` — Integrated scheduler in lifespan
+   - Scheduler starts after DB engine + Redis pool init when `SCRAPER_ENABLED=true`
+   - Scheduler stopped before Redis/DB cleanup on shutdown
+   - Accesses `_session_factory` via `app.dependencies` module reference (runtime lookup)
 
-### Key Design Decisions
-- LiveScoreScraper reuses _extract_next_data() from fifa_scraper.py (DRY)
-- Activity level estimated via heuristic: event type weights + recency + match minute baseline
-- DataSyncService uses Redis SET NX EX for distributed lock with Lua-script safe release
-- Fallback to asyncio.Lock when Redis unavailable
-- Group standings recalculated from finished matches: W/D/L/GF/GA/GD/points with position re-ranking
-- apply_sync_data() in LiveService provides single Redis pipeline write+read for batched syncs
-- External ID resolution: DB lookup first, integer parsing fallback
+3. **MODIFIED** `football-server/app/config.py` — Added scraper interval settings
+   - `SCRAPER_LIVE_INTERVAL: int = 30`
+   - `SCRAPER_FINISHED_INTERVAL: int = 300`
+   - `SCRAPER_GROUP_INTERVAL: int = 3600`
 
-### Quality Checks
-- `next build` passes cleanly (no frontend breakage)
-- All Python files pass syntax validation
-- No `console.log`, `print()`, or dead code in new files
+4. **MODIFIED** `football-server/app/scraping/__init__.py` — Exported `ScraperScheduler`
+
+5. **UPDATED** `.docs/agent-file-map.md` — Added scheduler.py entry, updated main.py/config.py descriptions
+6. **UPDATED** `.docs/agent-api-reference.md` — Added ScraperScheduler section, updated status line
+
+### Quality
+- All imports verified (scheduler, main, config compile OK)
+- Frontend build passes (`npm run build` succeeds)
+- App startup/shutdown test passed (TestClient lifespan verification)
+- No `console.log`, `print()`, or dead code
 - All files within 600-line hard limit
