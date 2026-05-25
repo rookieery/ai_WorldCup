@@ -43,7 +43,7 @@ football-web/
 │   │   ├── match-detail-helpers.tsx # Helper components + types for MatchDetailDialog (EventsSection, StatRow, VenueInfoItem, EventIcon/Label)
 │   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
 │   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven) + MatchDetailDialog on click
-│   │   └── ai-copilot-panel.tsx   # AI chat sidebar (messages, radar chart, analysis)
+│   │   └── ai-copilot-panel.tsx   # AI chat sidebar (real SSE streaming, typewriter effect, thinking block, analysis card, Zustand store)
 │   ├── theme-provider.tsx    # next-themes wrapper (unused in layout currently)
 │   └── ui/                   # shadcn/ui primitives (~60 components)
 ├── hooks/
@@ -68,6 +68,7 @@ football-web/
 │   │   ├── groups.ts         # getGroups(), getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)
 │   │   └── cheers.ts         # getCheers(matchId), postCheer(matchId, side)
+│   │   └── ai-chat.ts        # streamChat() SSE consumer (fetch+ReadableStream, POST /api/ai/chat)
 │   ├── store/                # Zustand global state stores
 │   │   ├── index.ts          # Barrel re-exports for all stores
 │   │   ├── preferences.ts    # User preferences (language, timezone, viewMode, theme) — localStorage persisted

@@ -97,14 +97,15 @@
 - **Lines**: ~215
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
-- **State**: `messages[]`, `input`, `isTyping`, `isFocused`
-- **Sub-components**: `MiniRadarChart`, `AnalysisCard`, `ThinkingIndicator`
-- **Data**: Hardcoded initial messages + `brazilFranceAnalysis`
-- **AI Simulation**: 2s timeout returns fixed string (no real API call)
-- **Features**: Quick prompts, chat messages, radar chart analysis, streaming indicator
-- **Types imported**: `Message`, `TeamAnalysis`, `TeamStats` from `@/lib/types`
-- **Dependencies**: `Input`, `Button` (shadcn), `cn`, `lucide-react`
-- **Lines**: ~437
+- **State**: Connected to Zustand `useAIChatStore` + local `input`, `isFocused`, `thinkingCollapsed`, `errorMessage`, `showDisclaimer`
+- **Sub-components**: `MiniRadarChart`, `AnalysisCard`, `ThinkingIndicator`, `TypewriterText`, `ThinkingBlock`
+- **Data**: Real SSE streaming via `streamChat()` from `@/lib/api/ai-chat`; store-managed messages
+- **AI Integration**: POST to `/api/ai/chat` via fetch+ReadableStream SSE consumer; typewriter cursor effect; collapsible thinking block; error + disclaimer states
+- **Features**: Quick prompt buttons auto-send AI requests, streaming typewriter effect, collapsible reasoning display, AnalysisCard (radar + probability + insights), auto-scroll, welcome message seed, AbortController support
+- **i18n**: All text via `t()` (ai namespace)
+- **Types imported**: `TeamAnalysis`, `TeamStats` from `@/lib/types`; `ChatMessageItem` from `@/lib/api/ai-chat`
+- **Dependencies**: `Input`, `Button` (shadcn), `cn`, `lucide-react`, `useAIChatStore`, `usePreferencesStore`, `useTranslation`, `streamChat`
+- **Lines**: ~570
 
 ## Shared Components
 
@@ -144,7 +145,7 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 | `match` | 12 | Match card labels (Live/Big Match/FT/cheer etc.) |
 | `matchDetail` | 18 | Match detail dialog labels (events, stats, venue, cheer) |
 | `bracket` | 16 | Knockout bracket labels (6 rounds, fromGroup, tbd, states) |
-| `ai` | 20 | AI copilot panel labels |
+| `ai` | 26 | AI copilot panel labels |
 | `footer` | 4 | Footer status bar labels |
 | `groups` | 18 | Group standings labels (title, table columns, navigation, states) |
 | `common` | 22 | Weekdays, months, generic messages |
@@ -181,6 +182,7 @@ function MyComponent() {
 | `groups.ts` | `getGroups()`, `getGroupDetail(group, opts)` | `GET /api/groups`, `GET /api/groups/:group` |
 | `venues.ts` | `getVenues(params)` | `GET /api/venues` |
 | `cheers.ts` | `getCheers(matchId)`, `postCheer(matchId, side)` | `GET /api/cheers/:matchId`, `POST /api/cheers/:matchId` |
+| `ai-chat.ts` | `streamChat(messages, context, lang, callbacks, signal?)` | `POST /api/ai/chat` (SSE streaming via fetch+ReadableStream) |
 
 **Usage pattern**:
 ```typescript

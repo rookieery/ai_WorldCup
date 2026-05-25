@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P3-03-AIController",
-      "title": "AI 对话 Controller（POST /api/ai/chat SSE 端点）",
-      "description": "AI 路由层任务。\n\n1. 创建 `app/controllers/ai_controller.py`：\n   - POST /api/ai/chat — SSE 流式端点\n   - 接收 ChatRequest body（messages + context + lang）\n   - 调用 PromptBuilder 构建 prompt\n   - 调用 AIService.stream_chat() 获取 async generator\n   - 使用 FastAPI StreamingResponse(content_type='text/event-stream')\n   - 将 SSEEvent 格式化为标准 SSE 行：`data: {json}\\n\\n`\n   - 流结束时发送 `data: [DONE]\\n\\n`\n2. 在 main.py 注册 ai_controller router\n\n验收：`curl -X POST http://localhost:8000/api/ai/chat -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}],\"lang\":\"zh-CN\"}'` 收到 SSE 流式响应",
-      "passes": true
-    },
-    {
       "id": "P3-04-SSEFrontend",
       "title": "前端：SSE 消费 + 打字机效果 + 分析卡片渲染",
       "description": "前端 AI 对接任务。\n\n1. 创建 `football-web/lib/api/ai-chat.ts`：\n   - streamChat(messages, context)：使用 fetch + ReadableStream 消费 SSE\n   - 不使用 EventSource（需要 POST）\n   - 手动解析 `data:` 行，区分 thinking/answer/analysis/done 事件\n   - 返回 AsyncGenerator 或 callback 模式\n   - 支持 AbortController 中断\n2. 修改 `football-web/components/dashboard/ai-copilot-panel.tsx`：\n   - 替换 2s 假延迟为真实 SSE 调用\n   - 实现 thinking + answer 双队列打字机效果\n   - thinking 区域可折叠展示推理过程\n   - answer 区域逐字显示回复\n   - 收到 analysis 事件时渲染 AnalysisCard（雷达图 + 概率条 + 洞察列表）\n   - 流结束显示免责声明\n3. 快捷提问按钮：点击后自动发送对应问题的 AI 请求\n4. 连接 Zustand ai-chat store 持久化对话历史\n\n所有文案使用 t() 国际化",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P4-01-BaseScraper",

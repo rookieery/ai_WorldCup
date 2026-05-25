@@ -100,7 +100,13 @@
     "statATK": "ATK",
     "statDEF": "DEF",
     "statPOSS": "POSS",
-    "statFORM": "FORM"
+    "statFORM": "FORM",
+    "thinking": "Thinking...",
+    "thinkingLabel": "Reasoning Process",
+    "thinkingCollapse": "Hide reasoning",
+    "thinkingExpand": "Show reasoning",
+    "streamError": "An error occurred while generating the response. Please try again.",
+    "connectionError": "Unable to connect to the AI service. Please check your network and try again."
   },
   "footer": {
     "liveUpdates": "Live Updates Active",

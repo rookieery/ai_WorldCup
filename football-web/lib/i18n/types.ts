@@ -76,6 +76,12 @@ export interface LocaleMessages {
     statDEF: string
     statPOSS: string
     statFORM: string
+    thinking: string
+    thinkingLabel: string
+    thinkingCollapse: string
+    thinkingExpand: string
+    streamError: string
+    connectionError: string
   }
   footer: {
     liveUpdates: string
