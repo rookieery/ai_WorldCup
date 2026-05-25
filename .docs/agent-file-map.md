@@ -72,7 +72,7 @@ football-web/
 │   │       └── en-US.json    # English translations (125 keys, full zh-CN parity)
 │   ├── api/                  # API module functions (one file per backend resource)
 │   │   ├── matches.ts        # getMatchDates(), getMatches(params), getMatchById(id), getLiveMatches(), apiMatchToUi()
-│   │   ├── bracket.ts        # getBracket()
+│   │   ├── bracket.ts        # getBracket() — includes backend→frontend field mapping layer (round_name→round, home_team→team1, etc.)
 │   │   ├── teams.ts          # getTeams(params), getTeamByCode(code), getTeamStats(code) — team detail with standing + matches
 │   │   ├── groups.ts         # getGroups(), getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)

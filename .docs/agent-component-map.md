@@ -196,7 +196,7 @@ function MyComponent() {
 | Module | Functions | Backend Endpoints |
 |--------|-----------|-------------------|
 | `matches.ts` | `getMatchDates()`, `getMatches(params)`, `getMatchById(id, opts)`, `getLiveMatches(opts)`, `apiMatchToUi(item)` | `GET /api/matches/dates`, `GET /api/matches`, `GET /api/matches/:id`, `GET /api/matches/live` |
-| `bracket.ts` | `getBracket(opts)` | `GET /api/bracket` |
+| `bracket.ts` | `getBracket(opts)` — maps backend VO fields (`round_name`→`round`, `home_team`→`team1`, `stage`→`round`, `id:int`→`id:string`) | `GET /api/bracket` |
 | `teams.ts` | `getTeams(params)`, `getTeamByCode(code)` | `GET /api/teams`, `GET /api/teams/:code` |
 | `groups.ts` | `getGroups()`, `getGroupDetail(group, opts)` | `GET /api/groups`, `GET /api/groups/:group` |
 | `venues.ts` | `getVenues(params)` | `GET /api/venues` |

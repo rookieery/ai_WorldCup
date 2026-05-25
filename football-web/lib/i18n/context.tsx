@@ -48,14 +48,21 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
 const STORAGE_KEY = "worldcup-locale"
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    if (typeof window === "undefined") return "en-US"
-    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
-    if (stored && stored in localeMap) return stored
-    return detectLocale()
-  })
+  // Always initialize with "en-US" to ensure SSR and client hydration match.
+  // The actual locale is detected/applied in the useEffect below.
+  const [locale, setLocaleState] = useState<Locale>("en-US")
 
   const messages = localeMap[locale]
+
+  // After hydration, detect the user's preferred locale from localStorage
+  // or browser settings and update if different from the default.
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY) as Locale | null
+    const detected = stored && stored in localeMap ? stored : detectLocale()
+    if (detected !== locale) {
+      setLocaleState(detected)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale)
