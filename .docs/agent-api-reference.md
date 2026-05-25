@@ -2,12 +2,13 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, and **frontend API client layer** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, and **Redis infrastructure (app/redis/)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
+Redis: `app/redis/` — connection pool manager with graceful degradation (REDIS_ENABLED=false → all ops use fallbacks), key patterns via `RedisKeys` class.
 
 Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, and **seed data pipeline** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
@@ -24,6 +25,27 @@ Shared helpers with no business-logic coupling, located in `app/utils/`.
 | `timezone.py` | `utc_to_local(utc_dt, target_tz)`, `get_host_city_time(utc_dt, venue_tz)`, `convert_datetime(utc_dt, target_tz, fmt)` | Pure `zoneinfo`-based timezone conversion (no third-party deps). Used by MatchService, GroupService, BracketService. |
 
 **ParsedMatch dataclass fields**: `group_label` (A-L), `round_num` (1-3), `match_date` (date), `home_team_zh`, `away_team_zh`, `fifa_ranking_home`, `fifa_ranking_away`
+
+## Redis Infrastructure (`app/redis/`)
+
+### `app/redis/client.py` — Connection Pool Manager
+- `init_redis_pool()` — Creates async connection pool via `redis.asyncio`; verifies with `ping()`. No-op when `REDIS_ENABLED=false`.
+- `close_redis_pool()` — Graceful shutdown; closes both `Redis` and `ConnectionPool`.
+- `get_redis() -> Optional[Redis]` — FastAPI `Depends` provider; returns `None` when Redis unavailable.
+- `is_redis_available() -> bool` — Health-check for downstream services.
+- Graceful degradation: connection failure logs warning, never blocks startup.
+
+### `app/redis/keys.py` — Key Pattern Definitions
+| Constant | Pattern | Purpose |
+|----------|---------|---------|
+| `LIVE_MATCH` | `live:match:{match_id}` | Real-time score/status/activity hash |
+| `CHEERS_MATCH` | `cheers:match:{match_id}` | Fan cheer counts (home/away) hash |
+| `WS_CONNECTIONS` | `ws:connections` | Active WebSocket client IDs set |
+| `CACHE_GROUPS` | `cache:groups` | Group standings JSON cache |
+| `CACHE_BRACKET` | `cache:bracket` | Bracket tree JSON cache |
+| `SCRAPER_LOCK` | `scraper:lock` | Scraper distributed lock |
+
+Usage: `RedisKeys.LIVE_MATCH.format(match_id=42)` → `"live:match:42"`
 
 ## Service Layer
 
@@ -59,7 +81,9 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 > - `get_db` — yields `AsyncSession` with auto-commit/rollback
 > - `get_language` — extracts lang from query param or `Accept-Language` header
 > - `get_team_service`, `get_match_service`, `get_venue_service`, `get_group_service`, `get_bracket_service` — service factory functions
+> - `get_redis` (from `app/redis/client.py`) — returns `Optional[Redis]` (`None` when Redis unavailable)
 > Engine lifecycle managed by `main.py` lifespan (init on startup, dispose on shutdown).
+> Redis pool lifecycle also managed by `main.py` lifespan (init_redis_pool on startup, close_redis_pool on shutdown).
 
 ## Repository Layer
 

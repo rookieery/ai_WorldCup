@@ -15,6 +15,7 @@ from fastapi import FastAPI
 
 from app.config import settings
 from app.dependencies import dispose_db_engine, init_db_engine
+from app.redis import close_redis_pool, init_redis_pool
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +28,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: initialise resources on startup, clean up on shutdown."""
     logger.info("Starting Football World Cup API (%s)", settings.APP_ENV)
     init_db_engine()
+    await init_redis_pool()
     yield
     logger.info("Shutting down — disposing database engine")
+    await close_redis_pool()
     await dispose_db_engine()
 
 

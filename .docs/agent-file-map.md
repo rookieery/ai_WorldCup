@@ -114,9 +114,9 @@ football-server/
 │       └── 001_initial_schema.py  # Initial migration: 5 tables + FK relationships
 ├── app/
 │   ├── __init__.py              # Package init (empty)
-│   ├── config.py                # Pydantic Settings: all env vars with defaults
-│   ├── main.py                  # FastAPI app factory (lifespan, middleware, routers, /docs)
-│   ├── dependencies.py          # DI providers: get_db, get_*_service, get_language
+│   ├── config.py                # Pydantic Settings: all env vars with defaults (incl. REDIS_URL, REDIS_ENABLED)
+│   ├── main.py                  # FastAPI app factory (lifespan: DB + Redis init/close, middleware, routers, /docs)
+│   ├── dependencies.py          # DI providers: get_db, get_*_service, get_language; Redis DI via app.redis.get_redis
 │   ├── exceptions/
 │   │   ├── __init__.py          # Re-exports all exception classes
 │   │   └── exceptions.py        # AppException hierarchy (NotFound, Validation, Business, ExternalService)
@@ -155,6 +155,10 @@ football-server/
 │   │   ├── match_controller.py  # GET /api/matches, /dates, /live, /:id (uses get_match_service DI)
 │   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
 │   │   └── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
+│   ├── redis/
+│   │   ├── __init__.py          # Re-exports RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
+│   │   ├── client.py            # Redis connection pool (init_redis_pool, close_redis_pool, get_redis DI, is_redis_available)
+│   │   └── keys.py              # RedisKeys namespace class (LIVE_MATCH, CHEERS_MATCH, WS_CONNECTIONS, CACHE_GROUPS, CACHE_BRACKET, SCRAPER_LOCK)
 │   ├── utils/
 │   │   ├── __init__.py          # Re-exports MarkdownParser, utc_to_local, get_host_city_time
 │   │   ├── markdown_parser.py   # MarkdownParser: parses data/*.md → list[ParsedMatch] (72 group-stage fixtures)

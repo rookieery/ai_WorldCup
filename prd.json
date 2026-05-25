@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P1-23-FullBracket",
-      "title": "前端：完整淘汰赛对阵图扩展（R32→R16→QF→SF→3rd→F）",
-      "description": "Bracket 核心重构任务。\n\n1. 重构 `football-web/components/dashboard/tournament-bracket.tsx`：\n   - 从 API 获取完整 bracket 数据：getBracket()\n   - 扩展为 6 轮结构：R32(16场) → R16(8场) → QF(4场) → SF(2场) → 3rd(1场) → F(1场)\n   - 桌面端：横向滚动布局，支持完整展示 6 轮\n   - 移动端：考虑纵向布局或缩放方案\n   - TBD 队伍显示为 fromGroup 信息（如 \"1st Group A\"）\n   - SVG 连接线适配 6 轮结构\n   - 获胜方高亮（金色）+ LIVE 状态脉冲动画\n2. 创建 `football-web/app/bracket/page.tsx`：独立全屏对阵图页面\n3. 三四名决赛单独分支展示\n\n所有文案使用 t() 国际化",
-      "passes": true
-    },
-    {
       "id": "P2-01-Redis",
       "title": "Redis 客户端连接池 + 键模式定义",
       "description": "Redis 基础设施任务。\n\n1. 创建 `app/redis/__init__.py`\n2. 创建 `app/redis/client.py`：Redis 连接池管理\n   - 使用 redis.asyncio 创建连接池\n   - 提供 get_redis() 依赖注入函数\n   - 连接失败时优雅降级（日志警告，不阻塞启动）\n   - 支持 REDIS_ENABLED=false 时完全禁用\n3. 创建 `app/redis/keys.py`：定义所有键模式\n   - LIVE_MATCH = 'live:match:{match_id}' — 实时比分/状态/活跃度\n   - CHEERS_MATCH = 'cheers:match:{match_id}' — 球迷助威计数\n   - WS_CONNECTIONS = 'ws:connections' — 活跃 WS 连接\n   - CACHE_GROUPS = 'cache:groups' — 小组积分缓存\n   - CACHE_BRACKET = 'cache:bracket' — 对阵图缓存\n   - SCRAPER_LOCK = 'scraper:lock' — 爬虫分布式锁",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P2-02-Cheer",

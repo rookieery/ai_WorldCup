@@ -22,33 +22,13 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- shadcn Table component used for standings tables
-- Group colors cycle through 4 neon colors (CCFF00/00F0FF/FF00E5/FFD700) for A-L
 
-## P1-23-FullBracket — 前端：完整淘汰赛对阵图扩展（R32→R16→QF→SF→3rd→F）
-**Status**: ✅ COMPLETE
-**Date**: 2026-05-25
-
-### Changes
-- **Refactored** `football-web/components/dashboard/tournament-bracket.tsx`:
-  - Replaced hardcoded QF/SF/F demo data with API integration via `getBracket()`
-  - Supports full 6-round structure: R32(16) → R16(8) → QF(4) → SF(2) → 3rd(1) → F(1)
-  - Desktop: horizontal scroll layout with SVG connectors between rounds
-  - Mobile: vertical stack layout with wrapping cards
-  - TBD teams display `fromGroup` info (e.g. "1st Group A")
-  - Winner highlighted with gold color + LIVE status pulse animation
-  - 3rd place playoff shown as separate branch after SF
-  - All hardcoded hex colors replaced with semantic theme variables
-  - All text internationalized via t()
-  - Loading, error, retry states for API fetch
-- **Created** `football-web/app/bracket/page.tsx`: standalone full-screen bracket page
-- **Updated** i18n files:
-  - Added keys: roundOf32, roundOf16, thirdPlace, fullBracket, fromGroup, tbd, errorLoading
-  - Both en-US.json and zh-CN.json updated
-  - Updated LocaleMessages type in i18n/types.ts
-
-### Key patterns
-- ROUND_COLORS map uses semantic classes (text-primary, bg-primary/20, etc.)
-- SVG connectors use CSS custom properties (var(--accent), var(--magenta)) instead of hex
 - API data flow: getBracket() → BracketTree → rounds[] → BracketCard[]
 - Responsive: hidden md:block / md:hidden breakpoint split between DesktopBracket and MobileBracket
+
+## P2-01-Redis — Redis client connection pool + key patterns (COMPLETED)
+- Created `app/redis/__init__.py` — barrel exports for RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
+- Created `app/redis/client.py` — async connection pool manager using redis.asyncio, graceful degradation when REDIS_ENABLED=false or connection fails, get_redis() DI provider returns Optional[Redis]
+- Created `app/redis/keys.py` — RedisKeys class with 6 key patterns (LIVE_MATCH, CHEERS_MATCH, WS_CONNECTIONS, CACHE_GROUPS, CACHE_BRACKET, SCRAPER_LOCK)
+- Modified `app/main.py` lifespan — added init_redis_pool() on startup, close_redis_pool() on shutdown
+- Verified: all imports work, app creates without errors, lifecycle test passes (Redis disabled mode)
