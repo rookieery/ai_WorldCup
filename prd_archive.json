@@ -175,6 +175,24 @@
         "title": "前端：WebSocket 集成 + 实时比分 + 助威投票对接",
         "description": "前端实时功能对接任务。\n\n1. 创建 `football-web/lib/websocket.ts`：WebSocket 客户端管理\n   - 自动连接/重连 ws://host/api/ws/live\n   - 事件分发：监听 score_update/match_start/match_end/activity_update\n   - 更新 Zustand live store\n2. 修改 `match-cards-grid.tsx`：\n   - 从 Zustand store 读取实时比分和活跃度\n   - 收到 score_update 时自动更新对应卡片\n   - LIVE 状态脉冲动画\n3. 修改助威投票逻辑：\n   - 点击 Cheer 按钮调用 postCheer(matchId, side) API\n   - 成功后更新本地 Zustand store（乐观更新）\n   - 收到其他用户的投票更新时同步刷新",
         "passes": true
+      },
+      {
+        "id": "P2-07-MatchDetail",
+        "title": "前端：比赛详情弹窗（阵容 + 进球事件 + 技术统计）",
+        "description": "新增交互功能任务。\n\n1. 创建 `football-web/components/dashboard/match-detail-dialog.tsx`：\n   - 使用 shadcn/ui Dialog 组件\n   - 展示：比赛信息头（双方队伍 + 比分 + 状态 + 时间 + 场馆）\n   - 比赛事件时间线（进球、黄/红牌、换人、VAR）\n   - 技术统计区域（控球率、射门、角球等，如有数据）\n   - 球迷助威投票展示\n   - 赛博朋克风格（glass-card + 发光效果）\n2. 修改 match-cards-grid.tsx：卡片点击时打开 MatchDetailDialog，传入 matchId\n3. 修改 tournament-bracket.tsx：对阵卡片点击同样打开详情弹窗\n4. 调用 getMatchById(id) API 获取详情数据\n\n所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P3-01-PromptBuilder",
+        "title": "AI Schema + Prompt Builder（基于 skills/ 推理链）",
+        "description": "AI 服务基础架构任务。\n\n1. 确认 `app/schemas/ai_schema.py` 中 AI 相关类型完整：\n   - ChatRequest：messages（role + content 列表）+ context（currentView, selectedDate, timezone）+ lang\n   - TeamAnalysis 结构：5 维雷达 + 胜率 + 洞察\n2. 创建 `app/services/prompt_builder.py`：PromptBuilder\n   - build_system_prompt(lang)：构建系统提示词（含赛事上下文说明、当前日期、可用工具描述）\n   - build_match_analysis_prompt(match_id, team1, team2)：基于 skills/group_stage_predict.md 的 6 步推理链构建小组赛分析 prompt\n   - build_knockout_prompt(match_id, team1, team2)：基于 skills/knockout_stage_predict.md 的 5 步推理链构建淘汰赛预测 prompt\n   - build_chat_context(messages)：将多轮对话格式化为 OpenAI 兼容格式\n   - 支持 lang 参数：zh-CN 时返回中文 prompt，en-US 时返回英文 prompt\n3. 读取 skills/ 下的两个 skill 文件作为 prompt 模板源",
+        "passes": true
+      },
+      {
+        "id": "P3-02-Deepseek",
+        "title": "Deepseek API 客户端 + SSE 流式输出 Service",
+        "description": "AI 核心服务任务。\n\n1. 创建 `app/services/ai_service.py`：AIService\n   - __init__：初始化 httpx.AsyncClient，配置 base_url（DEEPSEEK_BASE_URL）和 api_key\n   - stream_chat(messages, context, lang) -> AsyncGenerator：核心流式方法\n     - 调用 Deepseek API（OpenAI 兼容接口），stream=True\n     - 逐 chunk 解析 SSE，区分 reasoning_content 和 content\n     - 对外 yield 统一事件格式：\n       - SSEEvent(type='thinking', content=reasoning_delta)\n       - SSEEvent(type='answer', content=answer_delta)\n       - SSEEvent(type='done')\n     - 检测到分析请求时，在 answer 完成后 yield SSEEvent(type='analysis', data=TeamAnalysis)\n   - 超时处理：30s 超时，超时时 yield error 事件\n   - 错误处理：API 限流/异常时返回友好错误消息（非抛异常中断流）\n2. 参考 D:\\code\\ai coding 项目的实现模式：async generator + SSE 事件格式",
+        "passes": true
       }
     ]
   }

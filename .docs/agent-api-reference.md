@@ -2,9 +2,9 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, and **AI Service (Deepseek API client with SSE streaming)** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, and **AI Controller (POST /api/ai/chat SSE endpoint)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
@@ -81,6 +81,7 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 | `cheer_controller` | `GET /api/cheers/{match_id}` | — |
 | `cheer_controller` | `POST /api/cheers/{match_id}` | Body: `{side: "home" \| "away"}`; IP-based rate limiting via `X-Forwarded-For` |
 | `ws_controller` | `WS /ws/live` | WebSocket: initial payload (connected + live_matches), subscribe/unsubscribe by matchId, 30s ping keep-alive, auto-cleanup on disconnect |
+| `ai_controller` | `POST /api/ai/chat` | Body: `ChatRequest` (`messages`, `context?`, `lang`); SSE streaming response; events: `thinking`, `answer`, `analysis`, `done`, `error`; terminated with `data: [DONE]\n\n` |
 
 > Dependency injection is centralised in `app/dependencies.py`:
 > - `get_db` — yields `AsyncSession` with auto-commit/rollback
@@ -211,14 +212,17 @@ interface BracketResponse {
 }
 ```
 
-### AI Chat (SSE Stream)
+### AI Chat (SSE Stream) — IMPLEMENTED
 ```
 POST /api/ai/chat
-Body: { messages: Array<{role, content}>, context: {currentView, selectedDate, timezone} }
-Response: SSE stream
-  data: {"type": "text", "content": "..."}
-  data: {"type": "analysis", "data": {TeamAnalysis}}
-  data: {"type": "done"}
+Body: { messages: Array<{role, content}>, context?: {currentView, selectedDate, timezone}, lang: "zh-CN" | "en-US" }
+Response: SSE stream (text/event-stream)
+  data: {"type": "thinking", "content": "..."}    # Reasoning delta
+  data: {"type": "answer", "content": "..."}       # Content delta
+  data: {"type": "analysis", "data": {...}}        # Structured team analysis
+  data: {"type": "error", "content": "..."}        # Error message
+  data: {"type": "done"}                           # Stream complete
+  data: [DONE]                                     # Terminal sentinel
 ```
 
 ### WebSocket Events

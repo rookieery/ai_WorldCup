@@ -31,22 +31,25 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Skill content loaded successfully (verified content length > 500 chars)
-- Full app import still works (`from app.main import app`)
 
-## P3-02-Deepseek — Deepseek API 客户端 + SSE 流式输出 Service
-**Status**: ✅ COMPLETE
-**Files created/modified**:
-- `football-server/app/services/ai_service.py` (NEW) — AIService class with Deepseek API streaming
-- `football-server/app/services/__init__.py` (MODIFIED) — added AIService export
-- `football-server/app/dependencies.py` (MODIFIED) — added get_ai_service DI provider
-**Implementation details**:
-- `AIService.stream_chat(messages, context, lang) -> AsyncGenerator[SSEEvent]`: calls Deepseek `deepseek-reasoner` model via OpenAI-compatible `/chat/completions` endpoint
-- SSE parsing: distinguishes `reasoning_content` (→ thinking events) and `content` (→ answer events) from streaming chunks
-- Analysis detection: checks user message for analysis keywords (bilingual), buffers answer, extracts embedded JSON with `team_code` post-stream
-- Error handling: 429 rate limit, 30s timeout, generic errors → friendly bilingual SSE error events (never raises exceptions)
-- Uses `httpx.AsyncClient` with lazy initialization
-- References `chat.service.ts` from `D:\code\ai coding\gomoku-server` for async generator + SSE event pattern
-**Quality checks**:
 - Full app import verified (`from app.main import app` → 18 routes)
 - Frontend build verified (no regressions)
+
+## P3-03-AIController — AI 对话 Controller（POST /api/ai/chat SSE 端点）
+- **Date**: 2026-05-25
+- **Created** `football-server/app/controllers/ai_controller.py`:
+  - POST /api/ai/chat SSE streaming endpoint
+  - Accepts ChatRequest body (messages + context + lang)
+  - Builds full prompt via PromptBuilder (system prompt + chat context)
+  - Streams SSEEvent objects from AIService.stream_chat() as `data: {json}\n\n` lines
+  - Terminal sentinel: `data: [DONE]\n\n`
+  - StreamingResponse headers: Cache-Control: no-cache, Connection: keep-alive, X-Accel-Buffering: no
+  - Graceful exception handling: catches errors in stream, yields error SSEEvent
+- **Modified** `football-server/app/controllers/__init__.py`: added ai_router export
+- **Modified** `football-server/app/main.py`: registered ai_router (now 19 total routes)
+- **Updated** `.docs/agent-api-reference.md`: AI Chat section marked IMPLEMENTED, controller table updated
+- **Updated** `.docs/agent-file-map.md`: controllers section updated with ai_controller.py
+- **Updated** `football-server/app/controllers/AGENTS.md`: added ai_controller documentation
+- **Verified**: curl test returns correct SSE stream (data: {type:error} → data: {type:done} → data: [DONE])
+- **Verified**: Both zh-CN and en-US language support confirmed
+- **Verified**: Frontend build passes (no regressions)

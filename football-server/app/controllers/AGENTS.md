@@ -40,6 +40,17 @@
 - Uses `_get_cheer_service()` factory (no DB session needed; injects optional Redis client)
 - Client IP extracted from `X-Forwarded-For` header or `request.client.host`
 
+### ai_controller (`/api/ai`)
+- `POST /api/ai/chat` — SSE streaming AI chat endpoint
+- Accepts `ChatRequest` body: `{messages: [{role, content}], context?: ChatContext, lang: "zh-CN" | "en-US"}`
+- Calls `PromptBuilder.build_system_prompt()` + `PromptBuilder.build_chat_context()` to assemble the full message list
+- Delegates to `AIService.stream_chat()` which yields `SSEEvent` objects
+- Returns `StreamingResponse` with `text/event-stream` content type
+- Each event formatted as `data: {json}\n\n`, stream terminated with `data: [DONE]\n\n`
+- SSE headers: `Cache-Control: no-cache`, `Connection: keep-alive`, `X-Accel-Buffering: no`
+- Uses `Depends(get_ai_service)` — no DB session needed
+- Event types: `thinking`, `answer`, `analysis`, `done`, `error`
+
 ## Common Query Params
 - `lang`: `en` (default) or `zh` — controls name language
 - `timezone`: IANA timezone string — adds `local_time` field to match data

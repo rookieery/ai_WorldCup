@@ -163,7 +163,8 @@ football-server/
 │   │   ├── live_service.py      # LiveService: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data (Redis HASH + in-memory fallback, cache invalidation, WebSocket broadcast on state changes)
 │   │   └── websocket_manager.py # ConnectionManager: connect/disconnect, subscribe/unsubscribe, broadcast/broadcast_to_match, get_manager singleton
 │   ├── controllers/
-│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router
+│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router, ai_router
+│   │   ├── ai_controller.py    # POST /api/ai/chat (SSE streaming: PromptBuilder + AIService.stream_chat → StreamingResponse text/event-stream)
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
 │   │   ├── venue_controller.py  # GET /api/venues (uses get_venue_service DI)
 │   │   ├── match_controller.py  # GET /api/matches, /dates, /live, /:id (uses get_match_service DI)
