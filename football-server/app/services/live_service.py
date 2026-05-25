@@ -6,6 +6,12 @@ service degrades transparently to a process-local ``dict``.
 
 Status changes also trigger cache invalidation markers so that downstream consumers
 (groups, bracket) know their cached data is stale.
+
+Broadcast integration
+---------------------
+Every mutating operation (status / score / activity update) also pushes a
+WebSocket event through the ``ConnectionManager`` singleton so that connected
+clients receive updates in real time.
 """
 
 from __future__ import annotations
@@ -17,6 +23,7 @@ from typing import Any, Dict, List, Optional
 from redis.asyncio import Redis
 
 from app.redis.keys import RedisKeys
+from app.schemas.ws_schema import WSEventType
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +57,9 @@ class LiveService:
     ) -> Dict[str, Any]:
         """Update the status field for a match and return the full live state.
 
+        Also broadcasts a ``match_start`` or ``match_end`` event via the
+        WebSocket ``ConnectionManager``.
+
         Parameters
         ----------
         match_id:
@@ -66,8 +76,33 @@ class LiveService:
             raise ValueError(f"Invalid match status: {status!r}")
 
         if self._redis is not None:
-            return await self._update_status_redis(match_id, status)
-        return self._update_status_memory(match_id, status)
+            result = await self._update_status_redis(match_id, status)
+        else:
+            result = self._update_status_memory(match_id, status)
+
+        # ── Broadcast WebSocket event ────────────────────────────────────
+        if status == "live":
+            await _broadcast_event(
+                WSEventType.MATCH_START,
+                {"match_id": match_id, "status": status},
+            )
+        elif status == "finished":
+            await _broadcast_event(
+                WSEventType.MATCH_END,
+                {
+                    "match_id": match_id,
+                    "status": status,
+                    "home_score": result.get("home_score", 0),
+                    "away_score": result.get("away_score", 0),
+                },
+            )
+            # A finished match may also update the bracket
+            await _broadcast_event(
+                WSEventType.BRACKET_UPDATE,
+                {"match_id": match_id, "status": status},
+            )
+
+        return result
 
     async def update_score(
         self,
@@ -77,27 +112,59 @@ class LiveService:
     ) -> Dict[str, Any]:
         """Update the score for a match and return the full live state.
 
+        Also broadcasts a ``score_update`` event via the WebSocket
+        ``ConnectionManager``.
+
         Negative scores are rejected.
         """
         if home_score < 0 or away_score < 0:
             raise ValueError("Scores must be non-negative")
 
         if self._redis is not None:
-            return await self._update_score_redis(match_id, home_score, away_score)
-        return self._update_score_memory(match_id, home_score, away_score)
+            result = await self._update_score_redis(
+                match_id, home_score, away_score
+            )
+        else:
+            result = self._update_score_memory(
+                match_id, home_score, away_score
+            )
+
+        # ── Broadcast WebSocket event ────────────────────────────────────
+        await _broadcast_event(
+            WSEventType.SCORE_UPDATE,
+            {
+                "match_id": match_id,
+                "home_score": home_score,
+                "away_score": away_score,
+            },
+        )
+
+        return result
 
     async def update_activity(
         self, match_id: int, level: int
     ) -> Dict[str, Any]:
         """Update the activity level for a match (0-100 scale).
 
+        Also broadcasts an ``activity_update`` event via the WebSocket
+        ``ConnectionManager``.
+
         The value is clamped to ``0..100``.
         """
         level = max(0, min(100, level))
 
         if self._redis is not None:
-            return await self._update_activity_redis(match_id, level)
-        return self._update_activity_memory(match_id, level)
+            result = await self._update_activity_redis(match_id, level)
+        else:
+            result = self._update_activity_memory(match_id, level)
+
+        # ── Broadcast WebSocket event ────────────────────────────────────
+        await _broadcast_event(
+            WSEventType.ACTIVITY_UPDATE,
+            {"match_id": match_id, "activity_level": level},
+        )
+
+        return result
 
     async def get_live_matches(self) -> List[Dict[str, Any]]:
         """Return the live data for all matches currently in ``live`` status.
@@ -308,3 +375,24 @@ def _extract_match_id(key: str) -> int:
     except (ValueError, IndexError):
         logger.warning("Could not extract match_id from key %r", key)
         return 0
+
+
+async def _broadcast_event(
+    event_type: WSEventType,
+    data: Dict[str, Any],
+) -> None:
+    """Fire-and-forget broadcast through the WebSocket ConnectionManager.
+
+    Imports are deferred to avoid circular dependencies at module load time.
+    Broadcast failures are logged but never raise — the caller (e.g.
+    LiveService) must not be disrupted by WebSocket issues.
+    """
+    try:
+        from app.services.websocket_manager import get_manager
+
+        manager = get_manager()
+        await manager.broadcast(event_type, data)
+    except Exception:
+        logger.warning(
+            "WebSocket broadcast failed for %s", event_type.value, exc_info=True
+        )

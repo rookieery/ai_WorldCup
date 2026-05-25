@@ -68,6 +68,7 @@ def create_app() -> FastAPI:
         match_router,
         team_router,
         venue_router,
+        ws_router,
     )
 
     application.include_router(match_router)
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
     application.include_router(group_router)
     application.include_router(bracket_router)
     application.include_router(cheer_router)
+    application.include_router(ws_router)
 
     return application
 

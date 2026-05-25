@@ -2,15 +2,16 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, and **Live Service** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, and **WebSocket manager + controller** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
 Redis: `app/redis/` — connection pool manager with graceful degradation (REDIS_ENABLED=false → all ops use fallbacks), key patterns via `RedisKeys` class.
 Cheer: `app/services/cheer_service.py` + `app/controllers/cheer_controller.py` — Redis HASH atomic counters with in-memory fallback, IP-based rate limiting.
-Live: `app/services/live_service.py` — Redis HASH real-time match state (status/score/activity) with in-memory fallback; `MatchService` auto-merges Redis live data into DB query results.
+Live: `app/services/live_service.py` — Redis HASH real-time match state (status/score/activity) with in-memory fallback; `MatchService` auto-merges Redis live data into DB query results; **broadcasts WebSocket events** on state changes (score_update, match_start, match_end, activity_update, bracket_update).
+WebSocket: `app/services/websocket_manager.py` + `app/controllers/ws_controller.py` — ConnectionManager singleton with connect/disconnect, subscribe/unsubscribe, broadcast/broadcast_to_match; WS /ws/live endpoint with initial payload, keep-alive pings, and auto-cleanup.
 
 ## Utility Layer
 
@@ -56,7 +57,8 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `GroupService` | `get_all_groups(lang)`, `get_group_detail(group_label, timezone_name, lang)` | Returns all 12 groups standings overview or single group detail with standings + matches; standings sorted by points desc, GD desc, GF desc; lang-aware (promotes `name_zh`); validates group label A-L |
 | `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams in R32 matches carry `from_group`/`from_position` context (e.g. "1st Group A"); predictions endpoint returns placeholder for Phase 3 AI integration |
 | `CheerService` | `get_cheers(match_id)`, `vote_cheer(match_id, side, client_ip)` | Redis HASH counters (`cheers:match:{id}` with `home`/`away` fields); HINCRBY atomic increment via pipeline; IP-based rate limiting (5-min cooldown per match+IP); in-memory class-level fallback when Redis unavailable; `_cleanup_expired_rate_limits()` prevents unbounded memory growth |
-| `LiveService` | `update_match_status(match_id, status)`, `update_score(match_id, home_score, away_score)`, `update_activity(match_id, level)`, `get_live_matches()`, `get_match_live_data(match_id)` | Redis HASH live state (`live:match:{id}` with `status`/`home_score`/`away_score`/`activity` fields); in-memory fallback; cache invalidation markers on status/score change; MatchService auto-merges Redis live data into query results via `_merge_live_data_batch()` |
+| `LiveService` | `update_match_status(match_id, status)`, `update_score(match_id, home_score, away_score)`, `update_activity(match_id, level)`, `get_live_matches()`, `get_match_live_data(match_id)` | Redis HASH live state (`live:match:{id}` with `status`/`home_score`/`away_score`/`activity` fields); in-memory fallback; cache invalidation markers on status/score change; MatchService auto-merges Redis live data into query results via `_merge_live_data_batch()`; **broadcasts WebSocket events** on state changes (MATCH_START/MATCH_END/SCORE_UPDATE/ACTIVITY_UPDATE/BRACKET_UPDATE) |
+| `ConnectionManager` | `connect(websocket, client_id)`, `disconnect(client_id)`, `subscribe(client_id, match_id)`, `unsubscribe(client_id, match_id)`, `broadcast(event_type, data)`, `broadcast_to_match(match_id, event_type, data)`, `get_active_count()` | Module-level singleton via `get_manager()`; in-process registry of active WebSocket connections; asyncio.Lock-guarded state; auto-removes broken connections; supports per-match subscription channels |
 
 ## Controller Layer
 
@@ -77,6 +79,7 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 | `bracket_controller` | `GET /api/bracket/predictions` | — |
 | `cheer_controller` | `GET /api/cheers/{match_id}` | — |
 | `cheer_controller` | `POST /api/cheers/{match_id}` | Body: `{side: "home" \| "away"}`; IP-based rate limiting via `X-Forwarded-For` |
+| `ws_controller` | `WS /ws/live` | WebSocket: initial payload (connected + live_matches), subscribe/unsubscribe by matchId, 30s ping keep-alive, auto-cleanup on disconnect |
 
 > Dependency injection is centralised in `app/dependencies.py`:
 > - `get_db` — yields `AsyncSession` with auto-commit/rollback
@@ -157,7 +160,7 @@ Exception mapping: `NotFoundError→404`, `ValidationError→422`, `BusinessErro
 ├── /ai
 │   └── POST /chat               # AI chat (SSE streaming)
 └── /ws
-    └── /live                    # WebSocket real-time events
+    └── /live                    # WebSocket real-time events (IMPLEMENTED)
 ```
 
 ## Key Data Models (from REQUIREMENTS.md)

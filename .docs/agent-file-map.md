@@ -142,22 +142,24 @@ football-server/
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   ├── services/
-│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService, LiveService
+│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService, LiveService, ConnectionManager, get_manager
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
 │   │   ├── match_service.py     # MatchService: get_match_dates, get_matches (multi-filter + Redis live merge), get_match_by_id (with events + Redis live), get_live_matches (Redis live merge); uses shared app.utils.timezone
 │   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
 │   │   ├── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
 │   │   ├── cheer_service.py     # CheerService: get_cheers, vote_cheer (Redis HASH + in-memory fallback, IP rate limiting)
-│   │   └── live_service.py      # LiveService: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data (Redis HASH + in-memory fallback, cache invalidation)
+│   │   ├── live_service.py      # LiveService: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data (Redis HASH + in-memory fallback, cache invalidation, WebSocket broadcast on state changes)
+│   │   └── websocket_manager.py # ConnectionManager: connect/disconnect, subscribe/unsubscribe, broadcast/broadcast_to_match, get_manager singleton
 │   ├── controllers/
-│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router
+│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
 │   │   ├── venue_controller.py  # GET /api/venues (uses get_venue_service DI)
 │   │   ├── match_controller.py  # GET /api/matches, /dates, /live, /:id (uses get_match_service DI)
 │   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
 │   │   ├── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
-│   │   └── cheer_controller.py  # GET /api/cheers/:matchId, POST /api/cheers/:matchId (IP rate-limited voting)
+│   │   ├── cheer_controller.py  # GET /api/cheers/:matchId, POST /api/cheers/:matchId (IP rate-limited voting)
+│   │   └── ws_controller.py     # WS /ws/live (WebSocket endpoint: initial payload, subscribe/unsubscribe, ping/pong keep-alive)
 │   ├── redis/
 │   │   ├── __init__.py          # Re-exports RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
 │   │   ├── client.py            # Redis connection pool (init_redis_pool, close_redis_pool, get_redis DI, is_redis_available)

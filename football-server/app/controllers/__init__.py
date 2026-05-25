@@ -6,6 +6,7 @@ from app.controllers.group_controller import router as group_router
 from app.controllers.match_controller import router as match_router
 from app.controllers.team_controller import router as team_router
 from app.controllers.venue_controller import router as venue_router
+from app.controllers.ws_controller import router as ws_router
 
 __all__ = [
     "bracket_router",
@@ -14,4 +15,5 @@ __all__ = [
     "match_router",
     "team_router",
     "venue_router",
+    "ws_router",
 ]

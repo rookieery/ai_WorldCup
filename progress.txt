@@ -25,24 +25,16 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Functional tests passed: GET returns zeros, POST increments, duplicate IP blocked per match, different matches allowed
-- Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md
 
-## P2-03-LiveService — Live Service: Redis Real-time Match Status Management
-- Created app/services/live_service.py: LiveService with Redis HASH real-time match state management
-  - update_match_status(match_id, status): validates status, updates Redis HASH live:match:{id}
-  - update_score(match_id, home_score, away_score): rejects negative scores, updates Redis HASH
-  - update_activity(match_id, level): clamps to 0-100, updates Redis HASH
-  - get_live_matches(): scans Redis for all status=live matches (scan_iter)
-  - get_match_live_data(match_id): fetches single match live data
-  - Cache invalidation: sets TTL markers on cache:groups and cache:bracket on status/score changes
-  - In-memory fallback: module-level _memory_store dict (single-process dev only)
-- Modified app/services/match_service.py: auto-merge Redis live data into DB query results
-  - Constructor accepts optional redis: Optional[Redis]
-  - get_matches: batch pipeline _merge_live_data_batch() for all returned items
-  - get_match_by_id: _get_live_data_from_redis() + _apply_live_override()
-  - get_live_matches: batch pipeline merge
-  - _apply_live_override(): in-place VO override of status/home_score/away_score/activity_level
-- Modified app/dependencies.py: get_match_service injects optional Redis via Depends(get_redis)
 - Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md
 - Functional tests passed: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data, invalid input validation, activity clamping, in-memory fallback
+
+## P2-04-WebSocket — WebSocket Manager + Controller + Broadcast Mechanism
+- Created `app/services/websocket_manager.py`: ConnectionManager singleton with connect/disconnect, subscribe/unsubscribe (per-match channels), broadcast (all clients), broadcast_to_match (subscribers + fallback), get_active_count; asyncio.Lock-guarded state; auto-removes broken connections
+- Created `app/controllers/ws_controller.py`: WS /ws/live endpoint with initial payload (connected + live_matches), client subscribe/unsubscribe messages, 30s ping keep-alive loop, auto-cleanup on disconnect
+- Modified `app/services/live_service.py`: Added WebSocket broadcast integration — update_match_status broadcasts MATCH_START (status=live) / MATCH_END + BRACKET_UPDATE (status=finished); update_score broadcasts SCORE_UPDATE; update_activity broadcasts ACTIVITY_UPDATE. Broadcast uses fire-and-forget pattern with deferred import to avoid circular deps; failures logged but never raise
+- Updated `app/controllers/__init__.py`: Added ws_router export
+- Updated `app/main.py`: Registered ws_router
+- Updated `app/services/__init__.py`: Added ConnectionManager + get_manager exports
+- Updated docs: agent-api-reference.md, agent-file-map.md
+- Functional tests passed: ConnectionManager singleton, broadcast with no connections, broadcast_to_match with no subscribers, LiveService broadcast on status/score/activity changes, WebSocket TestClient connection + initial payload + subscribe/unsubscribe, existing routes unaffected
