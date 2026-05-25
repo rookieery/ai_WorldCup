@@ -24,20 +24,25 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Modified `app/main.py` lifespan — added init_redis_pool() on startup, close_redis_pool() on shutdown
-- Verified: all imports work, app creates without errors, lifecycle test passes (Redis disabled mode)
 
-## P2-02-Cheer — 球迷助威 Service + Controller（Redis 计数器） ✅
-- Created `app/services/cheer_service.py`: CheerService with Redis HASH counters + in-memory fallback
-  - `get_cheers(match_id)`: reads home/away counts from Redis HASH or in-memory dict
-  - `vote_cheer(match_id, side, client_ip)`: atomic HINCRBY via Redis pipeline, returns updated counts
-  - IP-based rate limiting: 5-min cooldown per (match_id, client_ip), raises BusinessError on duplicate
-  - Class-level shared stores (`_shared_counts`, `_shared_rate_limits`) persist across per-request instances
-  - `_cleanup_expired_rate_limits()` classmethod prevents unbounded memory growth
-- Created `app/controllers/cheer_controller.py`:
-  - GET /api/cheers/{match_id} — returns current cheer counts
-  - POST /api/cheers/{match_id} — submit vote with IP rate limiting
-  - Client IP extracted from X-Forwarded-For header or request.client.host
-- Registered cheer_router in `app/main.py` and `app/controllers/__init__.py`
 - Functional tests passed: GET returns zeros, POST increments, duplicate IP blocked per match, different matches allowed
 - Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md
+
+## P2-03-LiveService — Live Service: Redis Real-time Match Status Management
+- Created app/services/live_service.py: LiveService with Redis HASH real-time match state management
+  - update_match_status(match_id, status): validates status, updates Redis HASH live:match:{id}
+  - update_score(match_id, home_score, away_score): rejects negative scores, updates Redis HASH
+  - update_activity(match_id, level): clamps to 0-100, updates Redis HASH
+  - get_live_matches(): scans Redis for all status=live matches (scan_iter)
+  - get_match_live_data(match_id): fetches single match live data
+  - Cache invalidation: sets TTL markers on cache:groups and cache:bracket on status/score changes
+  - In-memory fallback: module-level _memory_store dict (single-process dev only)
+- Modified app/services/match_service.py: auto-merge Redis live data into DB query results
+  - Constructor accepts optional redis: Optional[Redis]
+  - get_matches: batch pipeline _merge_live_data_batch() for all returned items
+  - get_match_by_id: _get_live_data_from_redis() + _apply_live_override()
+  - get_live_matches: batch pipeline merge
+  - _apply_live_override(): in-place VO override of status/home_score/away_score/activity_level
+- Modified app/dependencies.py: get_match_service injects optional Redis via Depends(get_redis)
+- Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md
+- Functional tests passed: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data, invalid input validation, activity clamping, in-memory fallback

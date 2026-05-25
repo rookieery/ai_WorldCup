@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date
-from typing import Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.redis.keys import RedisKeys
 from app.repositories.match_event_repo import MatchEventRepository
 from app.repositories.match_repo import MatchRepository
 from app.schemas.match_schema import (
@@ -17,6 +20,8 @@ from app.schemas.match_schema import (
 )
 from app.utils.timezone import utc_to_local as _utc_to_local
 
+logger = logging.getLogger(__name__)
+
 
 class MatchService:
     """Orchestrates match-related business operations.
@@ -25,11 +30,20 @@ class MatchService:
     ----------
     session:
         An ``AsyncSession`` managed by the caller (dependency injection).
+    redis:
+        An optional ``redis.asyncio.Redis`` instance.  When provided and
+        available, live data from Redis overrides DB values for score,
+        status, and activity_level.
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        redis: Optional[Redis] = None,
+    ) -> None:
         self._match_repo = MatchRepository(session)
         self._event_repo = MatchEventRepository(session)
+        self._redis = redis
 
     # ── public methods ─────────────────────────────────────────────────────
 
@@ -105,6 +119,11 @@ class MatchService:
             _match_to_vo(m, lang=lang, timezone_name=timezone_name)
             for m in matches
         ]
+
+        # Merge Redis live data when available
+        if self._redis is not None and items_vo:
+            await self._merge_live_data_batch(items_vo)
+
         return items_vo, total
 
     async def get_match_by_id(
@@ -120,7 +139,15 @@ class MatchService:
         """
         match = await self._match_repo.get_by_id(match_id)
         events = await self._event_repo.get_by_match(match_id)
-        return _match_detail_to_vo(match, events, lang=lang, timezone_name=timezone_name)
+        result = _match_detail_to_vo(match, events, lang=lang, timezone_name=timezone_name)
+
+        # Merge Redis live data when available
+        if self._redis is not None:
+            live_data = await self._get_live_data_from_redis(match_id)
+            if live_data is not None:
+                _apply_live_override(result, live_data)
+
+        return result
 
     async def get_live_matches(
         self,
@@ -128,14 +155,60 @@ class MatchService:
         timezone_name: Optional[str] = None,
         lang: str = "en",
     ) -> list[dict]:
-        """Return all currently live matches."""
+        """Return all currently live matches.
+
+        When Redis is available, live data from Redis overrides the DB
+        values for score, status, and activity_level.  The base match
+        list still comes from the database.
+        """
         matches = await self._match_repo.get_live_matches()
-        return [
+        items_vo = [
             _match_to_vo(m, lang=lang, timezone_name=timezone_name)
             for m in matches
         ]
 
+        # Merge Redis live data when available
+        if self._redis is not None and items_vo:
+            await self._merge_live_data_batch(items_vo)
+
+        return items_vo
+
     # ── private helpers ────────────────────────────────────────────────────
+
+    async def _merge_live_data_batch(
+        self, items_vo: list[dict]
+    ) -> None:
+        """Fetch live data for multiple matches from Redis and merge into VOs."""
+        try:
+            pipe = self._redis.pipeline(transaction=False)
+            for item in items_vo:
+                key = RedisKeys.LIVE_MATCH.format(match_id=item["id"])
+                pipe.hgetall(key)
+            results = await pipe.execute()
+
+            for item, data in zip(items_vo, results):
+                if data:
+                    _apply_live_override(item, data)
+        except Exception:
+            logger.warning(
+                "Failed to merge live data from Redis", exc_info=True
+            )
+
+    async def _get_live_data_from_redis(
+        self, match_id: int
+    ) -> Optional[Dict[str, Any]]:
+        """Fetch live data for a single match from Redis."""
+        try:
+            key = RedisKeys.LIVE_MATCH.format(match_id=match_id)
+            data = await self._redis.hgetall(key)
+            return data if data else None
+        except Exception:
+            logger.warning(
+                "Failed to fetch live data for match %d from Redis",
+                match_id,
+                exc_info=True,
+            )
+            return None
 
     @staticmethod
     def _apply_secondary_filters(
@@ -242,3 +315,28 @@ def _apply_team_lang(data: dict, team_key: str, lang: str) -> None:
     if lang == "zh" and team_key in data and data[team_key]:
         team_data = data[team_key]
         team_data["name"] = team_data.get("name_zh", team_data["name"])
+
+
+def _apply_live_override(
+    vo: dict, live_data: Dict[str, Any]
+) -> None:
+    """Overlay Redis live data onto a match value-object dict in-place.
+
+    Only overrides fields that exist in the live data hash:
+    ``status``, ``home_score``, ``away_score``, ``activity_level`` (mapped
+    from the Redis ``activity`` field).
+
+    Redis HASH values are always strings, so they are coerced to the
+    expected types.
+    """
+    if "status" in live_data:
+        vo["status"] = live_data["status"]
+
+    if "home_score" in live_data:
+        vo["home_score"] = int(live_data["home_score"])
+
+    if "away_score" in live_data:
+        vo["away_score"] = int(live_data["away_score"])
+
+    if "activity" in live_data:
+        vo["activity_level"] = int(live_data["activity"])

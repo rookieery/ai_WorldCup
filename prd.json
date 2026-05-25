@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P2-02-Cheer",
-      "title": "球迷助威 Service + Controller（Redis 计数器）",
-      "description": "投票功能任务。\n\n1. 创建 `app/services/cheer_service.py`：CheerService\n   - get_cheers(match_id)：从 Redis HASH 读取 home/away 计数，Redis 不可用时返回默认值\n   - vote_cheer(match_id, side)：HINCRBY 原子递增，返回更新后计数\n   - 禁止重复投票可通过 IP 限流实现（简单方案）\n2. 创建 `app/controllers/cheer_controller.py`：\n   - GET /api/cheers/:matchId — 返回当前投票数据 {home: n, away: n}\n   - POST /api/cheers/:matchId — 提交投票，body: {side: 'home' | 'away'}\n\nRedis 不可用时自动降级为内存计数（进程内 dict）",
-      "passes": true
-    },
-    {
       "id": "P2-03-LiveService",
       "title": "Live Service：Redis 实时比赛状态管理",
       "description": "实时状态管理任务。\n\n1. 创建 `app/services/live_service.py`：LiveService\n   - update_match_status(match_id, status)：更新比赛状态到 Redis\n   - update_score(match_id, home_score, away_score)：更新比分\n   - update_activity(match_id, level)：更新活跃度\n   - get_live_matches()：获取所有 status=live 的比赛状态\n   - get_match_live_data(match_id)：获取单场实时数据\n   - 同时更新 Redis 缓存失效标记（cache:groups, cache:bracket）\n2. 修改 `app/services/match_service.py`：在查询时合并 DB 数据 + Redis 实时数据\n   - get_matches：如 Redis 可用，用 live 数据覆盖 DB 中的比分/状态/活跃度\n   - get_live_matches：优先从 Redis 获取",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P2-04-WebSocket",

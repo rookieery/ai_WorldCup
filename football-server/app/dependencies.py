@@ -9,9 +9,11 @@ from __future__ import annotations
 from typing import AsyncGenerator
 
 from fastapi import Depends, Query, Request
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.redis.client import get_redis
 
 # ── Database session ────────────────────────────────────────────────────────
 
@@ -103,11 +105,14 @@ def get_team_service(session: AsyncSession = Depends(get_db)) -> "TeamService":
     return TeamService(session)
 
 
-def get_match_service(session: AsyncSession = Depends(get_db)) -> "MatchService":
-    """Create a ``MatchService`` with an injected session."""
+def get_match_service(
+    session: AsyncSession = Depends(get_db),
+    redis: Redis | None = Depends(get_redis),
+) -> "MatchService":
+    """Create a ``MatchService`` with an injected session and optional Redis."""
     from app.services.match_service import MatchService
 
-    return MatchService(session)
+    return MatchService(session, redis=redis)
 
 
 def get_venue_service(session: AsyncSession = Depends(get_db)) -> "VenueService":

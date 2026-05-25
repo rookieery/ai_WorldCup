@@ -16,9 +16,12 @@
 - `get_all_venues(page, page_size)` → `(items_vo, total)`
 
 ### MatchService
-- `get_matches(params, timezone_name, lang, page, page_size)` → `(items_vo, total)` — multi-filter with secondary in-memory filtering
-- `get_match_by_id(match_id, timezone_name, lang)` → `dict` (raises `NotFoundError`)
-- `get_live_matches(timezone_name, lang)` → `list[dict]`
+- `get_matches(params, timezone_name, lang, page, page_size)` → `(items_vo, total)` — multi-filter with secondary in-memory filtering; **auto-merges Redis live data** when available
+- `get_match_by_id(match_id, timezone_name, lang)` → `dict` (raises `NotFoundError`); **auto-merges Redis live data** when available
+- `get_live_matches(timezone_name, lang)` → `list[dict]` — **auto-merges Redis live data** when available
+- Constructor accepts optional `redis: Optional[Redis]` — injected via `get_match_service` DI which passes `get_redis()`
+- Redis live data overrides: `status`, `home_score`, `away_score`, `activity_level` (from Redis `activity` field)
+- `_merge_live_data_batch(items_vo)` — batch pipeline for multiple matches; `_get_live_data_from_redis(match_id)` — single match fetch
 
 ### GroupService
 - `get_all_groups(lang)` → `list[dict]` — iterates A-L, returns each group with standings
@@ -41,6 +44,17 @@
 - Class-level `_shared_counts` / `_shared_rate_limits` dicts persist across per-request instances
 - `_cleanup_expired_rate_limits()` classmethod removes stale memory entries
 - No DB dependency — pure Redis/in-memory counter service
+
+### LiveService
+- `update_match_status(match_id, status)` → `dict` — updates match status in Redis HASH `live:match:{match_id}`; validates status ∈ {upcoming, live, finished, postponed}
+- `update_score(match_id, home_score, away_score)` → `dict` — updates home/away scores; rejects negative values
+- `update_activity(match_id, level)` → `dict` — updates activity level (clamped to 0-100)
+- `get_live_matches()` → `list[dict]` — returns all matches with status=live from Redis (scan_iter) or memory
+- `get_match_live_data(match_id)` → `dict | None` — returns single match live data or None if absent
+- Cache invalidation: `update_match_status` and `update_score` set TTL-based markers on `cache:groups` and `cache:bracket`
+- In-memory fallback: module-level `_memory_store` dict (single-process dev only)
+- Constructor: `LiveService(redis: Optional[Redis] = None)` — same pattern as CheerService
+- No DB dependency — pure Redis/in-memory state service
 
 ## Language Handling Pattern
 - All services accept `lang="en"` (default) or `lang="zh"`.

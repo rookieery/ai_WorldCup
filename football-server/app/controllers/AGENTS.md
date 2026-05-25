@@ -10,13 +10,14 @@
 - Each controller uses `Depends(get_<domain>_service)` instead of manual `_get_db` + `Svc(session)`.
 - Engine lifecycle managed by `app/main.py` lifespan (init on startup, dispose on shutdown).
 - `get_db` provides auto-commit/rollback session management.
+- `get_match_service` now injects optional `Redis` via `Depends(get_redis)` for live data merging.
 
 ## Registered Routes
 
 ### match_controller (`/api/matches`)
-- `GET /api/matches` — multi-filter (date, stage, group, team, status) + pagination
-- `GET /api/matches/live` — currently live matches
-- `GET /api/matches/{id}` — single match detail with events
+- `GET /api/matches` — multi-filter (date, stage, group, team, status) + pagination; **auto-merges Redis live data** (status/score/activity_level) when Redis available
+- `GET /api/matches/live` — currently live matches; **auto-merges Redis live data** when available
+- `GET /api/matches/{id}` — single match detail with events; **auto-merges Redis live data** when available
 
 ### team_controller (`/api/teams`)
 - `GET /api/teams` — paginated team list, optional group filter
