@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   MapPin,
   Clock,
@@ -13,10 +13,16 @@ import {
   Activity,
   Inbox,
   RefreshCw,
+  Wifi,
+  WifiOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/lib/i18n"
 import { getMatches, apiMatchToUi } from "@/lib/api/matches"
+import { postCheer } from "@/lib/api/cheers"
+import { useLiveStore } from "@/lib/store"
+import type { LiveScorePatch, CheerUpdate } from "@/lib/store"
+import { wsClient } from "@/lib/websocket"
 import type { Match, CityIcon } from "@/lib/types"
 
 const CityIconComponent = ({ type }: { type: CityIcon }) => {
@@ -40,25 +46,80 @@ interface MatchCardProps {
 
 function MatchCard({ match }: MatchCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const [localCheer1, setLocalCheer1] = useState(match.cheerTeam1)
-  const [localCheer2, setLocalCheer2] = useState(match.cheerTeam2)
+  const [cheeringSide, setCheeringSide] = useState<"home" | "away" | null>(null)
   const { t } = useTranslation()
 
-  const handleCheer = (team: 1 | 2) => {
-    if (team === 1) {
-      const newCheer1 = Math.min(99, localCheer1 + 1)
-      setLocalCheer1(newCheer1)
-      setLocalCheer2(100 - newCheer1)
+  // ── Real-time data from Zustand live store ────────────────────────────────
+  const scorePatch = useLiveStore(
+    (s) => s.scoreUpdates[match.id],
+  ) as LiveScorePatch | undefined
+  const cheerUpdate = useLiveStore(
+    (s) => s.cheerUpdates[match.id],
+  ) as CheerUpdate | undefined
+
+  // Merge real-time data into local match props
+  const liveScore1 = scorePatch?.score1 ?? match.score1
+  const liveScore2 = scorePatch?.score2 ?? match.score2
+  const liveStatus = scorePatch?.status ?? match.status
+  const liveActivity = scorePatch?.activityLevel ?? match.activityLevel
+
+  // Cheer data: prefer live store, fallback to base match data
+  const cheerTotal = (cheerUpdate?.home ?? match.cheerTeam1) + (cheerUpdate?.away ?? match.cheerTeam2)
+  const rawCheer1 = cheerUpdate?.home ?? match.cheerTeam1
+  const rawCheer2 = cheerUpdate?.away ?? match.cheerTeam2
+  const cheerPercent1 = cheerTotal > 0 ? Math.round((rawCheer1 / cheerTotal) * 100) : 50
+  const cheerPercent2 = cheerTotal > 0 ? 100 - cheerPercent1 : 50
+
+  const handleCheer = async (team: 1 | 2) => {
+    if (cheeringSide) return
+    const side = team === 1 ? "home" : "away"
+    setCheeringSide(side)
+
+    // Optimistic update — immediately update local store
+    const store = useLiveStore.getState()
+    const current = store.cheerUpdates[match.id] ?? {
+      matchId: match.id,
+      home: match.cheerTeam1,
+      away: match.cheerTeam2,
+    }
+
+    if (side === "home") {
+      store.applyCheerUpdate({
+        matchId: match.id,
+        home: current.home + 1,
+        away: current.away,
+      })
     } else {
-      const newCheer2 = Math.min(99, localCheer2 + 1)
-      setLocalCheer2(newCheer2)
-      setLocalCheer1(100 - newCheer2)
+      store.applyCheerUpdate({
+        matchId: match.id,
+        home: current.home,
+        away: current.away + 1,
+      })
+    }
+
+    try {
+      const result = await postCheer(match.id, side)
+      // Server response is authoritative — apply it
+      store.applyCheerUpdate({
+        matchId: result.match_id,
+        home: result.home,
+        away: result.away,
+      })
+    } catch {
+      // Rollback on failure — revert to previous values
+      store.applyCheerUpdate({
+        matchId: match.id,
+        home: current.home,
+        away: current.away,
+      })
+    } finally {
+      setCheeringSide(null)
     }
   }
 
-  const isLive = match.status === "live"
+  const isLive = liveStatus === "live"
   const isBigMatch = match.isBigMatch
-  const isFinished = match.status === "finished"
+  const isFinished = liveStatus === "finished"
 
   return (
     <div
@@ -150,7 +211,7 @@ function MatchCard({ match }: MatchCardProps) {
 
           {/* Score / VS */}
           <div className="flex flex-col items-center px-4">
-            {(isLive || isFinished) && match.score1 !== undefined ? (
+            {(isLive || isFinished) && liveScore1 !== undefined ? (
               <div
                 className={cn(
                   "flex items-center gap-3 font-score text-3xl",
@@ -158,9 +219,9 @@ function MatchCard({ match }: MatchCardProps) {
                   isFinished && "text-foreground"
                 )}
               >
-                <span>{match.score1}</span>
+                <span>{liveScore1}</span>
                 <span className="text-muted-foreground text-lg">-</span>
-                <span>{match.score2}</span>
+                <span>{liveScore2}</span>
               </div>
             ) : (
               <span className="text-2xl font-bold text-muted-foreground/40">{t("match.vs")}</span>
@@ -215,12 +276,12 @@ function MatchCard({ match }: MatchCardProps) {
                 <Activity className="h-3 w-3 text-[#00F0FF]" />
                 {t("match.matchActivity")}
               </span>
-              <span className="text-[10px] font-bold text-[#00F0FF]">{match.activityLevel}%</span>
+              <span className="text-[10px] font-bold text-[#00F0FF]">{liveActivity}%</span>
             </div>
             <div className="h-1.5 bg-secondary/50 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-[#00F0FF] to-[#CCFF00] rounded-full activity-pulse"
-                style={{ width: `${match.activityLevel}%` }}
+                style={{ width: `${liveActivity}%` }}
               />
             </div>
           </div>
@@ -245,15 +306,15 @@ function MatchCard({ match }: MatchCardProps) {
             <div className="relative h-3 bg-secondary/30 rounded-full overflow-hidden mb-3">
               <div
                 className="absolute left-0 top-0 h-full bg-gradient-to-r from-[#CCFF00] to-[#CCFF00]/70 transition-all duration-300"
-                style={{ width: `${localCheer1}%` }}
+                style={{ width: `${cheerPercent1}%` }}
               />
               <div
                 className="absolute right-0 top-0 h-full bg-gradient-to-l from-[#00F0FF] to-[#00F0FF]/70 transition-all duration-300"
-                style={{ width: `${localCheer2}%` }}
+                style={{ width: `${cheerPercent2}%` }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-[9px] font-bold text-background drop-shadow-md">
-                  {localCheer1}% - {localCheer2}%
+                  {cheerPercent1}% - {cheerPercent2}%
                 </span>
               </div>
             </div>
@@ -262,7 +323,14 @@ function MatchCard({ match }: MatchCardProps) {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => handleCheer(1)}
-                className="cheer-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/10 border border-[#CCFF00]/30 hover:bg-[#CCFF00]/20 hover:border-[#CCFF00]/50 transition-all text-[#CCFF00]"
+                disabled={cheeringSide !== null}
+                className={cn(
+                  "cheer-btn flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all",
+                  cheeringSide === "home"
+                    ? "bg-[#CCFF00]/30 border-[#CCFF00]/60 text-[#CCFF00]"
+                    : "bg-[#CCFF00]/10 border-[#CCFF00]/30 hover:bg-[#CCFF00]/20 hover:border-[#CCFF00]/50 text-[#CCFF00]",
+                  cheeringSide !== null && cheeringSide !== "home" && "opacity-50 cursor-not-allowed"
+                )}
               >
                 <Flame className="h-3.5 w-3.5" />
                 <span className="text-xs font-medium">{t("match.cheer")} {match.team1.code}</span>
@@ -270,7 +338,14 @@ function MatchCard({ match }: MatchCardProps) {
 
               <button
                 onClick={() => handleCheer(2)}
-                className="cheer-btn flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00F0FF]/10 border border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 hover:border-[#00F0FF]/50 transition-all text-[#00F0FF]"
+                disabled={cheeringSide !== null}
+                className={cn(
+                  "cheer-btn flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all",
+                  cheeringSide === "away"
+                    ? "bg-[#00F0FF]/30 border-[#00F0FF]/60 text-[#00F0FF]"
+                    : "bg-[#00F0FF]/10 border-[#00F0FF]/30 hover:bg-[#00F0FF]/20 hover:border-[#00F0FF]/50 text-[#00F0FF]",
+                  cheeringSide !== null && cheeringSide !== "away" && "opacity-50 cursor-not-allowed"
+                )}
               >
                 <Heart className="h-3.5 w-3.5" />
                 <span className="text-xs font-medium">{t("match.cheer")} {match.team2.code}</span>
@@ -321,6 +396,19 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const wsStatus = useLiveStore((s) => s.wsStatus)
+  const wsStarted = useRef(false)
+
+  // Start WebSocket connection on mount (once)
+  useEffect(() => {
+    if (!wsStarted.current) {
+      wsStarted.current = true
+      wsClient.start()
+    }
+    return () => {
+      // Do NOT stop on unmount — keep WS alive across date changes
+    }
+  }, [])
 
   const fetchMatches = useCallback(async () => {
     if (!selectedDate) return
@@ -350,6 +438,26 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
           <p className="text-sm text-muted-foreground">{selectedDate}</p>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          {/* WebSocket connection indicator */}
+          <div className="flex items-center gap-1.5">
+            {wsStatus === "connected" ? (
+              <>
+                <Wifi className="h-3 w-3 text-[#00F0FF]" />
+                <span className="text-[#00F0FF]">{t("match.liveUpdates")}</span>
+              </>
+            ) : wsStatus === "connecting" ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-[#FFD700] animate-pulse" />
+                <span>{t("common.loading")}</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3 w-3 text-muted-foreground/50" />
+                <span className="text-muted-foreground/50">{t("match.disconnected")}</span>
+              </>
+            )}
+          </div>
+          <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-[#00F0FF] animate-pulse" />
             <span>{t("match.live")}</span>

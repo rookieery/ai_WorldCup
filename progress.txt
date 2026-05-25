@@ -27,17 +27,20 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Updated docs: agent-api-reference.md, agent-file-map.md
-- Functional tests passed: ConnectionManager singleton, broadcast with no connections, broadcast_to_match with no subscribers, LiveService broadcast on status/score/activity changes, WebSocket TestClient connection + initial payload + subscribe/unsubscribe, existing routes unaffected
 
-## P2-05-Zustand — Frontend Zustand Global State Management
-- Installed zustand dependency
-- Created lib/store/preferences.ts: User preferences store (language, timezone, viewMode, theme) with localStorage persistence via zustand/persist middleware
-- Created lib/store/matches.ts: Match data store with date-indexed cache, live matches list, loading/error states, 5-min TTL, fetchMatchesByDate/fetchLiveMatches actions
-- Created lib/store/live.ts: Real-time update store with WS connection status, score patches, cheer updates keyed by matchId
-- Created lib/store/ai-chat.ts: AI chat store with message history, streaming buffers (content + thinking), pending analysis, abort/clear support
-- Created lib/store/index.ts: Barrel re-exports for all stores and exported types
-- Created lib/store/AGENTS.md: Store architecture documentation
-- Updated .docs/agent-file-map.md: Added lib/store/ to file tree
 - Updated .docs/agent-component-map.md: Added State Management section with store registry and usage patterns
+- Build verification: npx next build compiled successfully with no errors
+
+## P2-06-WSIntegration — 前端：WebSocket 集成 + 实时比分 + 助威投票对接
+- Created `football-web/lib/websocket.ts`: WSClient singleton with auto-connect, exponential back-off reconnection, event dispatch to Zustand live store
+- Handles all backend WSEventTypes: score_update, match_start, match_end, activity_update, cheer_update, connected (initial payload), ping, bracket_update
+- Modified `football-web/components/dashboard/match-cards-grid.tsx`:
+  - MatchCard reads real-time score/activity/cheer data from useLiveStore
+  - Cheer buttons call postCheer() API with optimistic update + rollback on failure
+  - WebSocket connection started on mount via wsClient.start()
+  - WS status indicator (Wifi/WifiOff icons) in header bar
+- Added i18n keys: match.liveUpdates, match.disconnected (en-US + zh-CN)
+- Updated .docs/agent-component-map.md: WebSocket client section, updated MatchCardsGrid docs
+- Updated .docs/agent-file-map.md: websocket.ts entry, updated match-cards-grid.tsx and live.ts descriptions
+- Updated football-web/lib/store/AGENTS.md: live.ts now references websocket.ts driver
 - Build verification: npx next build compiled successfully with no errors

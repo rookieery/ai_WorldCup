@@ -47,12 +47,14 @@
 - **Props**: `selectedDate`, `timezone` ("local" | "host")
 - **Data**: Fetched from API via `getMatches({ date, timezone })` — dynamic, date-driven
 - **Sub-components**: `MatchCard`, `CityIconComponent`, `EmptyState`
-- **Features**: Live score display, Big Match badge, activity bar, Fan Cheer Meter (hover expand), loading/error/empty states
+- **Real-time**: Subscribes to `useLiveStore` for live score patches, cheer updates, and WS status; starts `wsClient` on mount
+- **Cheer Voting**: `MatchCard.handleCheer()` calls `postCheer(matchId, side)` API with optimistic update + rollback on failure
+- **Features**: Live score display with WS-patched data, Big Match badge, activity bar, Fan Cheer Meter (hover expand), WS connection indicator, loading/error/empty states
 - **API mapping**: `apiMatchToUi()` converts backend `MatchApiItem` → frontend `Match` type
 - **i18n**: Uses `useTranslation()` for all visible text
-- **Types imported**: `Match`, `CityIcon` from `@/lib/types`, `MatchApiItem` from API module
-- **Dependencies**: `cn` utility, `lucide-react` icons, `getMatches` + `apiMatchToUi` from API
-- **Lines**: ~430
+- **Types imported**: `Match`, `CityIcon` from `@/lib/types`, `LiveScorePatch`, `CheerUpdate` from `@/lib/store`
+- **Dependencies**: `cn` utility, `lucide-react` icons (incl. Wifi, WifiOff), `getMatches` + `apiMatchToUi` from API, `postCheer` from cheers API, `useLiveStore`, `wsClient`
+- **Lines**: ~513
 
 ### `group-standings.tsx` — `GroupStandings`
 - **Data**: Fetched from API via `getGroups()` — all 12 groups (A-L) with standings
@@ -213,6 +215,50 @@ function MyComponent() {
 - **Matches** store has a 5-minute TTL cache per date, avoiding redundant API calls
 - **Live** store mirrors WebSocket events and is the single source of truth for real-time data
 - **AI Chat** store manages streaming buffers and finalizes messages on stream completion
+
+## WebSocket Client (`lib/websocket.ts`)
+
+### `wsClient` — Singleton WebSocket client
+- **Exports**: `wsClient` (WSClient instance)
+- **Config**: `NEXT_PUBLIC_WS_URL` env var (auto-derived from `NEXT_PUBLIC_API_URL` by replacing `http` → `ws`)
+- **Endpoint**: `/ws/live`
+- **Features**:
+  - Auto-connect with exponential back-off reconnection (1s base, 30s max, 20 attempts)
+  - Dispatches all backend events into Zustand `useLiveStore`
+  - Subscribe/unsubscribe to specific match channels
+  - Connection status tracked in `useLiveStore.wsStatus`
+
+### Event Mapping (Backend → Zustand Live Store)
+| Backend WSEventType | Frontend Action | Store Method |
+|---------------------|-----------------|--------------|
+| `score_update` | Apply score patch | `applyScoreUpdate({ matchId, score1, score2, status, activityLevel })` |
+| `match_start` | Set status=live, scores=0 | `applyScoreUpdate(...)` |
+| `match_end` | Set status=finished, final scores | `applyScoreUpdate(...)` |
+| `activity_update` | Update activity level (preserves scores) | `applyScoreUpdate(...)` |
+| `cheer_update` | Update cheer counts | `applyCheerUpdate({ matchId, home, away })` |
+| `connected` | Apply initial live matches payload | Batch `applyScoreUpdate(...)` for each live match |
+| `ping` | No-op (browser auto-responds) | — |
+| `bracket_update` | No-op (reserved for future) | — |
+
+### Usage Pattern
+```typescript
+import { wsClient } from "@/lib/websocket"
+import { useLiveStore } from "@/lib/store"
+
+// Start connection (typically in top-level component mount)
+wsClient.start()
+
+// Subscribe to specific match updates
+wsClient.subscribeToMatch(42)
+
+// Read real-time data in components
+const scorePatch = useLiveStore((s) => s.scoreUpdates[matchId])
+const cheerData = useLiveStore((s) => s.cheerUpdates[matchId])
+const wsStatus = useLiveStore((s) => s.wsStatus)
+
+// Stop connection (on page unload)
+wsClient.stop()
+```
 
 ## CSS Architecture (`app/globals.css`)
 

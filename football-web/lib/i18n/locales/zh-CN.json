@@ -34,7 +34,9 @@
     "cheer": "助威",
     "noMatches": "该日期暂无比赛",
     "today": "今天",
-    "errorLoading": "加载比赛数据失败"
+    "errorLoading": "加载比赛数据失败",
+    "liveUpdates": "实时",
+    "disconnected": "离线"
   },
   "bracket": {
     "knockoutStage": "淘汰赛阶段",

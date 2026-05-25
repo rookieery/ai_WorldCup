@@ -34,7 +34,9 @@
     "cheer": "Cheer",
     "noMatches": "No matches on this date",
     "today": "Today",
-    "errorLoading": "Failed to load matches"
+    "errorLoading": "Failed to load matches",
+    "liveUpdates": "Live",
+    "disconnected": "Offline"
   },
   "bracket": {
     "knockoutStage": "Knockout Stage",

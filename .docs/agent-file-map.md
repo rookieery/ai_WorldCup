@@ -38,7 +38,7 @@ football-web/
 │   ├── dashboard/
 │   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
 │   │   ├── date-timeline.tsx # Horizontal date picker (Jun 11–Jul 19)
-│   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter
+│   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter + real-time WS score/cheer integration + live connection indicator
 │   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
 │   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven)
 │   │   └── ai-copilot-panel.tsx   # AI chat sidebar (messages, radar chart, analysis)
@@ -50,6 +50,7 @@ football-web/
 ├── lib/
 │   ├── utils.ts              # cn() utility (clsx + tailwind-merge)
 │   ├── api-client.ts         # Core fetch wrapper: base URL, Accept-Language, ApiResponse<T> unwrapping, error handling, query-string builder
+│   ├── websocket.ts          # WebSocket client singleton (auto-connect/reconnect, event dispatch to Zustand live store)
 │   ├── i18n/                 # Internationalization infrastructure
 │   │   ├── index.ts          # Barrel exports (I18nProvider, useI18n, useTranslation, types)
 │   │   ├── context.tsx       # I18nProvider (React Context: locale state, t() function, localStorage persistence)
@@ -69,7 +70,7 @@ football-web/
 │   │   ├── index.ts          # Barrel re-exports for all stores
 │   │   ├── preferences.ts    # User preferences (language, timezone, viewMode, theme) — localStorage persisted
 │   │   ├── matches.ts        # Match data cache (by date + live) with fetch actions + TTL
-│   │   ├── live.ts           # Real-time WebSocket state (scores, cheer updates, WS connection status)
+│   │   ├── live.ts           # Real-time WebSocket state (scores, cheer updates, WS connection status) — driven by websocket.ts events
 │   │   └── ai-chat.ts        # AI chat messages + streaming state (content buffers, analysis payload)
 │   └── types/                # Shared TypeScript type definitions
 │       ├── index.ts          # Unified re-exports

@@ -145,6 +145,30 @@
         "title": "Redis 客户端连接池 + 键模式定义",
         "description": "Redis 基础设施任务。\n\n1. 创建 `app/redis/__init__.py`\n2. 创建 `app/redis/client.py`：Redis 连接池管理\n   - 使用 redis.asyncio 创建连接池\n   - 提供 get_redis() 依赖注入函数\n   - 连接失败时优雅降级（日志警告，不阻塞启动）\n   - 支持 REDIS_ENABLED=false 时完全禁用\n3. 创建 `app/redis/keys.py`：定义所有键模式\n   - LIVE_MATCH = 'live:match:{match_id}' — 实时比分/状态/活跃度\n   - CHEERS_MATCH = 'cheers:match:{match_id}' — 球迷助威计数\n   - WS_CONNECTIONS = 'ws:connections' — 活跃 WS 连接\n   - CACHE_GROUPS = 'cache:groups' — 小组积分缓存\n   - CACHE_BRACKET = 'cache:bracket' — 对阵图缓存\n   - SCRAPER_LOCK = 'scraper:lock' — 爬虫分布式锁",
         "passes": true
+      },
+      {
+        "id": "P2-02-Cheer",
+        "title": "球迷助威 Service + Controller（Redis 计数器）",
+        "description": "投票功能任务。\n\n1. 创建 `app/services/cheer_service.py`：CheerService\n   - get_cheers(match_id)：从 Redis HASH 读取 home/away 计数，Redis 不可用时返回默认值\n   - vote_cheer(match_id, side)：HINCRBY 原子递增，返回更新后计数\n   - 禁止重复投票可通过 IP 限流实现（简单方案）\n2. 创建 `app/controllers/cheer_controller.py`：\n   - GET /api/cheers/:matchId — 返回当前投票数据 {home: n, away: n}\n   - POST /api/cheers/:matchId — 提交投票，body: {side: 'home' | 'away'}\n\nRedis 不可用时自动降级为内存计数（进程内 dict）",
+        "passes": true
+      },
+      {
+        "id": "P2-03-LiveService",
+        "title": "Live Service：Redis 实时比赛状态管理",
+        "description": "实时状态管理任务。\n\n1. 创建 `app/services/live_service.py`：LiveService\n   - update_match_status(match_id, status)：更新比赛状态到 Redis\n   - update_score(match_id, home_score, away_score)：更新比分\n   - update_activity(match_id, level)：更新活跃度\n   - get_live_matches()：获取所有 status=live 的比赛状态\n   - get_match_live_data(match_id)：获取单场实时数据\n   - 同时更新 Redis 缓存失效标记（cache:groups, cache:bracket）\n2. 修改 `app/services/match_service.py`：在查询时合并 DB 数据 + Redis 实时数据\n   - get_matches：如 Redis 可用，用 live 数据覆盖 DB 中的比分/状态/活跃度\n   - get_live_matches：优先从 Redis 获取",
+        "passes": true
+      },
+      {
+        "id": "P2-04-WebSocket",
+        "title": "WebSocket 管理器 + Controller + 广播机制",
+        "description": "WebSocket 实时推送任务。\n\n1. 创建 `app/services/websocket_manager.py`：ConnectionManager\n   - connect(websocket, client_id)：注册新连接\n   - disconnect(client_id)：移除连接\n   - broadcast(event_type, data)：向所有连接广播消息\n   - broadcast_to_match(match_id, event_type, data)：向关注特定比赛的用户广播\n2. 创建 `app/controllers/ws_controller.py`：\n   - WS /ws/live — WebSocket 端点\n   - 连接时发送初始数据（当前 live 比赛列表）\n   - 维持心跳（ping/pong）\n   - 连接断开时自动清理\n3. 修改 LiveService：在状态变更时通过 ConnectionManager 广播事件\n   - score_update, match_start, match_end, activity_update, bracket_update",
+        "passes": true
+      },
+      {
+        "id": "P2-05-Zustand",
+        "title": "前端：Zustand 全局状态管理搭建",
+        "description": "前端状态架构任务。\n\n1. 安装 zustand 依赖\n2. 创建 `football-web/lib/store/preferences.ts`：用户偏好 store\n   - language（zh-CN/en-US）\n   - timezone（local/host）\n   - viewMode（timeline/bracket）\n   - theme（dark/light）\n   - 持久化到 localStorage\n3. 创建 `football-web/lib/store/matches.ts`：比赛数据 store\n   - matches 缓存（按日期索引）\n   - liveMatches 列表\n   - loading/error 状态\n   - fetchMatchesByDate(date)、fetchLiveMatches() actions\n4. 创建 `football-web/lib/store/live.ts`：实时更新 store\n   - WebSocket 连接状态\n   - 实时比分更新\n   - 活跃度更新\n   - cheer 数据更新\n5. 创建 `football-web/lib/store/ai-chat.ts`：AI 对话 store\n   - messages 列表\n   - isStreaming 状态\n   - currentStreamContent",
+        "passes": true
       }
     ]
   }
