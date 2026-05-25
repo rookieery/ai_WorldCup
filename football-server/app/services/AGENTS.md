@@ -11,6 +11,7 @@
 - `get_all_teams(page, page_size, group, lang)` → `(items_vo, total)`
 - `get_team_by_code(code, lang)` → `dict` (raises `NotFoundError`)
 - `get_teams_by_group(group_label, lang)` → `list[dict]`
+- `get_team_stats(code, lang, timezone_name)` → `dict` — comprehensive stats (team info, group standing, finished/upcoming matches); raises `NotFoundError`
 
 ### VenueService
 - `get_all_venues(page, page_size)` → `(items_vo, total)`

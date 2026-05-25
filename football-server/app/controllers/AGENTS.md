@@ -21,6 +21,7 @@
 
 ### team_controller (`/api/teams`)
 - `GET /api/teams` — paginated team list, optional group filter
+- `GET /api/teams/{code}/stats` — comprehensive team stats (standing + finished/upcoming matches)
 - `GET /api/teams/{code}` — single team by 3-letter code
 
 ### venue_controller (`/api/venues`)

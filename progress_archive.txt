@@ -543,3 +543,52 @@
 ### Quality Checks
 - `next build` passes cleanly (no frontend breakage)
 - All Python files pass syntax validation
+- No `console.log`, `print()`, or dead code in new files
+- All files within 600-line hard limit
+## P4-03-BGTask — 后台定时任务集成（main.py lifespan 启动爬虫调度）
+**Status**: ✅ COMPLETE
+### Changes
+1. **NEW** `football-server/app/scraping/scheduler.py` — `ScraperScheduler` class
+   - Three periodic asyncio tasks: live scores (30s), finished results (5min), group standings (1h)
+   - Configurable intervals via `SCRAPER_LIVE_INTERVAL`, `SCRAPER_FINISHED_INTERVAL`, `SCRAPER_GROUP_INTERVAL` env vars
+   - Graceful start/stop with task cancellation and gather
+   - Standard `logging` throughout (no print statements)
+   - Live score sync skips when no matches are currently live
+   - Finished results scrape with 2s delay between matches
+2. **MODIFIED** `football-server/app/main.py` — Integrated scheduler in lifespan
+   - Scheduler starts after DB engine + Redis pool init when `SCRAPER_ENABLED=true`
+   - Scheduler stopped before Redis/DB cleanup on shutdown
+   - Accesses `_session_factory` via `app.dependencies` module reference (runtime lookup)
+3. **MODIFIED** `football-server/app/config.py` — Added scraper interval settings
+   - `SCRAPER_LIVE_INTERVAL: int = 30`
+   - `SCRAPER_FINISHED_INTERVAL: int = 300`
+   - `SCRAPER_GROUP_INTERVAL: int = 3600`
+4. **MODIFIED** `football-server/app/scraping/__init__.py` — Exported `ScraperScheduler`
+5. **UPDATED** `.docs/agent-file-map.md` — Added scheduler.py entry, updated main.py/config.py descriptions
+6. **UPDATED** `.docs/agent-api-reference.md` — Added ScraperScheduler section, updated status line
+### Quality
+- All imports verified (scheduler, main, config compile OK)
+- Frontend build passes (`npm run build` succeeds)
+- App startup/shutdown test passed (TestClient lifespan verification)
+- No `console.log`, `print()`, or dead code
+- All files within 600-line hard limit
+## P4-04-StatsPage — 射手榜 / 数据统计中心页面 ✅ DONE
+Date: 2026-05-25
+### Backend (FastAPI)
+- **New**: `app/schemas/stats_schema.py` — ScorerItem VO (rank, player_name, team info, goals, assists)
+- **New**: `app/services/stats_service.py` — StatsService with `get_scorers()` method (aggregates goal events, enriches with team info)
+- **New**: `app/controllers/stats_controller.py` — GET /api/stats/scorers (lang, limit params)
+- **Modified**: `app/repositories/match_event_repo.py` — Added `get_scorers_leaderboard()` method (goal aggregation SQL join with Match+Team)
+- **Modified**: `app/controllers/__init__.py` — Registered `stats_router`
+- **Modified**: `app/main.py` — Mounted `stats_router` in app factory
+### Frontend (Next.js)
+- **New**: `football-web/app/stats/page.tsx` — Stats center page with cyberpunk glass-card layout
+- **New**: `football-web/components/stats/scorers-table.tsx` — Scorers leaderboard table (sortable by goals/assists, top-3 highlight with gold/silver/bronze badges)
+- **New**: `football-web/components/stats/match-stats-card.tsx` — Match statistics card (upcoming/live/finished counts with progress bars)
+- **New**: `football-web/lib/api/stats.ts` — Frontend API client for GET /api/stats/scorers
+- **Modified**: `football-web/lib/i18n/locales/en-US.json` — Added `stats.*` i18n keys (12 keys)
+- **Modified**: `football-web/lib/i18n/locales/zh-CN.json` — Added `stats.*` i18n keys (12 keys, full zh parity)
+### Quality
+- `next build` passes cleanly (0 errors)
+- All files well under 600-line limit
+- All text uses t() i18n (no hardcoded strings)

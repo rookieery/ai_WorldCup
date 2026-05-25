@@ -70,3 +70,59 @@ class TeamListResponse(BaseModel):
     group_label: str
 
     model_config = {"from_attributes": True}
+
+
+class TeamStandingVO(BaseModel):
+    """VO for a team's group standing within the team stats response."""
+
+    played: int = 0
+    won: int = 0
+    drawn: int = 0
+    lost: int = 0
+    goals_for: int = 0
+    goals_against: int = 0
+    goal_difference: int = 0
+    points: int = 0
+    position: int = 0
+
+    model_config = {"from_attributes": True}
+
+
+class TeamMatchVO(BaseModel):
+    """VO for a single match within the team stats response."""
+
+    id: int
+    opponent: str = Field(description="Opponent team name (display language)")
+    opponent_code: str = Field(description="Opponent 3-letter code")
+    opponent_flag: str = Field(default="", description="Opponent flag emoji")
+    home_away: str = Field(description="home or away from the perspective of this team")
+    score_for: int | None = Field(default=None, description="This team's score")
+    score_against: int | None = Field(default=None, description="Opponent's score")
+    kickoff_utc: str = ""
+    host_time: str | None = None
+    venue_name: str = ""
+    venue_city: str = ""
+    status: str = "upcoming"
+    stage: str = ""
+    group_label: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class TeamStatsResponse(BaseModel):
+    """Comprehensive team statistics VO returned by GET /api/teams/:code/stats."""
+
+    id: int
+    name: str
+    name_zh: str
+    code: str
+    flag: str
+    fifa_ranking: int = 0
+    confederation: str = ""
+    group_label: str = ""
+    world_cup_appearances: int = 0
+    standing: TeamStandingVO | None = None
+    finished_matches: list[TeamMatchVO] = Field(default_factory=list)
+    upcoming_matches: list[TeamMatchVO] = Field(default_factory=list)
+
+    model_config = {"from_attributes": True}

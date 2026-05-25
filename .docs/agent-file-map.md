@@ -36,6 +36,9 @@ football-web/
 │   └── page.tsx              # Standalone full-screen bracket page
 ├── stats/
 │   └── page.tsx              # Stats center page (scorer leaderboard + match statistics)
+├── teams/
+│   └── [code]/
+│       └── page.tsx          # Team detail page (team profile + group standing + finished/upcoming matches)
 ├── components/
 │   ├── dashboard/
 │   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
@@ -69,7 +72,7 @@ football-web/
 │   ├── api/                  # API module functions (one file per backend resource)
 │   │   ├── matches.ts        # getMatchDates(), getMatches(params), getMatchById(id), getLiveMatches(), apiMatchToUi()
 │   │   ├── bracket.ts        # getBracket()
-│   │   ├── teams.ts          # getTeams(params), getTeamByCode(code)
+│   │   ├── teams.ts          # getTeams(params), getTeamByCode(code), getTeamStats(code) — team detail with standing + matches
 │   │   ├── groups.ts         # getGroups(), getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)
 │   │   ├── cheers.ts         # getCheers(matchId), postCheer(matchId, side)
@@ -161,7 +164,7 @@ football-server/
 │   │   ├── __init__.py          # Re-exports AIService, TeamService, VenueService, MatchService, GroupService, BracketService, StatsService, LiveService, ConnectionManager, PromptBuilder, get_manager
 │   │   ├── ai_service.py        # AIService: Deepseek API client (stream_chat AsyncGenerator → SSEEvent objects: thinking/answer/analysis/done/error, 30s timeout, graceful error handling)
 │   │   ├── prompt_builder.py    # PromptBuilder: build_system_prompt, build_match_analysis_prompt, build_knockout_prompt, build_chat_context (bilingual zh-CN/en-US, reads skills/ markdowns)
-│   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
+│   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group, get_team_stats (lang + timezone aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
 │   │   ├── match_service.py     # MatchService: get_match_dates, get_matches (multi-filter + Redis live merge), get_match_by_id (with events + Redis live), get_live_matches (Redis live merge); uses shared app.utils.timezone
 │   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
@@ -173,7 +176,7 @@ football-server/
 │   ├── controllers/
 │   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router, ai_router, stats_router
 │   │   ├── ai_controller.py    # POST /api/ai/chat (SSE streaming: PromptBuilder + AIService.stream_chat → StreamingResponse text/event-stream)
-│   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
+│   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code/stats, GET /api/teams/:code (uses get_team_service DI)
 │   │   ├── venue_controller.py  # GET /api/venues (uses get_venue_service DI)
 │   │   ├── match_controller.py  # GET /api/matches, /dates, /live, /:id (uses get_match_service DI)
 │   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
@@ -192,7 +195,7 @@ football-server/
 │   └── schemas/
 │       ├── __init__.py          # Re-exports all schema classes
 │       ├── common.py            # ApiResponse[T] + PaginatedResponse[T] generic envelopes
-│       ├── team_schema.py       # TeamCreate/TeamUpdate DTOs + TeamResponse/TeamListResponse VOs
+│       ├── team_schema.py       # TeamCreate/TeamUpdate DTOs + TeamResponse/TeamListResponse/TeamStatsResponse VOs (standing + match VOs)
 │       ├── match_schema.py      # MatchQueryParams DTO + MatchResponse/MatchDetailResponse/MatchEventResponse VOs
 │       ├── venue_schema.py      # VenueResponse VO
 │       ├── group_schema.py      # GroupStandingResponse + GroupDetailResponse VOs

@@ -123,6 +123,7 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 | Controller | Routes | Query Params |
 |-----------|--------|-------------|
 | `team_controller` | `GET /api/teams` | `page`, `page_size`, `group` (A-L), `lang` (en/zh) |
+| `team_controller` | `GET /api/teams/{code}/stats` | `timezone` (IANA), `lang` (en/zh) — team profile with standing + finished/upcoming matches |
 | `team_controller` | `GET /api/teams/{code}` | `lang` (en/zh) |
 | `venue_controller` | `GET /api/venues` | `page`, `page_size` |
 | `match_controller` | `GET /api/matches` | `date` (YYYY-MM-DD), `stage`, `group` (A-L), `team` (code), `status`, `timezone` (IANA), `lang`, `page`, `page_size` |

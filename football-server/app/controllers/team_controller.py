@@ -1,4 +1,4 @@
-"""Team API routes — GET /api/teams, GET /api/teams/:code."""
+"""Team API routes — GET /api/teams, GET /api/teams/:code, GET /api/teams/:code/stats."""
 
 from __future__ import annotations
 
@@ -36,6 +36,23 @@ async def list_teams(
         page_size=page_size,
     )
     return ApiResponse(data=paginated)
+
+
+@router.get("/{code}/stats", summary="Get team stats by code")
+async def get_team_stats(
+    code: str,
+    timezone: str | None = Query(
+        default=None, description="Target IANA timezone for local_time conversion"
+    ),
+    lang: str = Query(default="en", description="Language: en or zh"),
+    svc: TeamService = Depends(get_team_service),
+) -> ApiResponse:
+    """Return comprehensive statistics for a team identified by its 3-letter code.
+
+    Includes team info, group standing, finished matches, and upcoming matches.
+    """
+    stats_vo = await svc.get_team_stats(code, lang=lang, timezone_name=timezone)
+    return ApiResponse(data=stats_vo)
 
 
 @router.get("/{code}", summary="Get team detail by code")

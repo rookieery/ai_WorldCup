@@ -22,6 +22,16 @@
 - **Props flow**: State drilled directly to child components
 - **Features**: Groups quick-entry link (Trophy icon → `/groups`) in Timeline view
 
+### `app/teams/[code]/page.tsx` — `TeamDetailPage`
+- **Type**: Client component (`"use client"`)
+- **State**: `timezone`, `viewMode`, `teamData` (TeamStatsData), `loading`, `error`
+- **Layout**: Header → Back link → TeamHeader + (GroupStandingCard | FinishedMatchesCard + UpcomingMatchesCard) → Footer
+- **Route**: Dynamic `/teams/[code]` — code is 3-letter team code (e.g., BRA, USA)
+- **API**: `getTeamStats(code)` from `@/lib/api/teams` — fetches team profile, standing, and match lists
+- **Sub-components**: `TeamHeader`, `GroupStandingCard`, `StatItem`, `FinishedMatchesCard`, `UpcomingMatchesCard`, `MatchRow`, `UpcomingMatchRow`
+- **i18n**: Uses `teamDetail.*` namespace keys for all text
+- **Lines**: ~570
+
 ## Dashboard Components (`components/dashboard/`)
 
 ### `header.tsx` — `Header`
@@ -134,8 +144,8 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 ### Locale Files
 | File | Language | Keys |
 |------|----------|------|
-| `locales/zh-CN.json` | 简体中文 | 125 keys, 8 namespaces |
-| `locales/en-US.json` | English | 125 keys, 8 namespaces |
+| `locales/zh-CN.json` | 简体中文 | 155+ keys, 9 namespaces (header, timeline, match, matchDetail, bracket, ai, footer, groups, stats, teamDetail, common) |
+| `locales/en-US.json` | English | 155+ keys, 9 namespaces (same structure as zh-CN) |
 
 ### Namespaces
 | Namespace | Keys | Purpose |
