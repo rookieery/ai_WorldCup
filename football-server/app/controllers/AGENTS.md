@@ -33,6 +33,12 @@
 - `GET /api/bracket` — full knockout bracket tree (R32→R16→QF→SF→3rd→F), grouped by round
 - `GET /api/bracket/predictions` — AI bracket predictions (returns TBD placeholder for Phase 3)
 
+### cheer_controller (`/api/cheers`)
+- `GET /api/cheers/{match_id}` — return current cheer counts `{home, away}` for a match
+- `POST /api/cheers/{match_id}` — submit vote (body: `{side: "home" | "away"}`); IP-based rate limiting
+- Uses `_get_cheer_service()` factory (no DB session needed; injects optional Redis client)
+- Client IP extracted from `X-Forwarded-For` header or `request.client.host`
+
 ## Common Query Params
 - `lang`: `en` (default) or `zh` — controls name language
 - `timezone`: IANA timezone string — adds `local_time` field to match data

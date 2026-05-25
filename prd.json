@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P2-01-Redis",
-      "title": "Redis 客户端连接池 + 键模式定义",
-      "description": "Redis 基础设施任务。\n\n1. 创建 `app/redis/__init__.py`\n2. 创建 `app/redis/client.py`：Redis 连接池管理\n   - 使用 redis.asyncio 创建连接池\n   - 提供 get_redis() 依赖注入函数\n   - 连接失败时优雅降级（日志警告，不阻塞启动）\n   - 支持 REDIS_ENABLED=false 时完全禁用\n3. 创建 `app/redis/keys.py`：定义所有键模式\n   - LIVE_MATCH = 'live:match:{match_id}' — 实时比分/状态/活跃度\n   - CHEERS_MATCH = 'cheers:match:{match_id}' — 球迷助威计数\n   - WS_CONNECTIONS = 'ws:connections' — 活跃 WS 连接\n   - CACHE_GROUPS = 'cache:groups' — 小组积分缓存\n   - CACHE_BRACKET = 'cache:bracket' — 对阵图缓存\n   - SCRAPER_LOCK = 'scraper:lock' — 爬虫分布式锁",
-      "passes": true
-    },
-    {
       "id": "P2-02-Cheer",
       "title": "球迷助威 Service + Controller（Redis 计数器）",
       "description": "投票功能任务。\n\n1. 创建 `app/services/cheer_service.py`：CheerService\n   - get_cheers(match_id)：从 Redis HASH 读取 home/away 计数，Redis 不可用时返回默认值\n   - vote_cheer(match_id, side)：HINCRBY 原子递增，返回更新后计数\n   - 禁止重复投票可通过 IP 限流实现（简单方案）\n2. 创建 `app/controllers/cheer_controller.py`：\n   - GET /api/cheers/:matchId — 返回当前投票数据 {home: n, away: n}\n   - POST /api/cheers/:matchId — 提交投票，body: {side: 'home' | 'away'}\n\nRedis 不可用时自动降级为内存计数（进程内 dict）",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P2-03-LiveService",

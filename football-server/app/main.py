@@ -63,6 +63,7 @@ def create_app() -> FastAPI:
     # ── Routers ──────────────────────────────────────────────────────
     from app.controllers import (
         bracket_router,
+        cheer_router,
         group_router,
         match_router,
         team_router,
@@ -74,6 +75,7 @@ def create_app() -> FastAPI:
     application.include_router(venue_router)
     application.include_router(group_router)
     application.include_router(bracket_router)
+    application.include_router(cheer_router)
 
     return application
 

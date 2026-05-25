@@ -32,6 +32,16 @@
 - TBD teams detected by code starting with "TBD"; from_group/from_position context ready for P1-16 populate
 - Supports en/zh lang and timezone conversion like other services
 
+### CheerService
+- `get_cheers(match_id)` → `CheerResponse` — returns `{match_id, home, away}` counts from Redis HASH or in-memory fallback
+- `vote_cheer(match_id, side, client_ip)` → `CheerResponse` — atomic HINCRBY increment via Redis pipeline, returns updated counts
+- IP-based rate limiting: 5-min cooldown per (match_id, client_ip); raises `BusinessError` on duplicate
+- Redis key: `cheers:match:{match_id}` (HASH with `home`/`away` fields)
+- Rate-limit key: `cheer:ratelimit:{match_id}:{ip}` (Redis: string with TTL; memory: monotonic timestamp)
+- Class-level `_shared_counts` / `_shared_rate_limits` dicts persist across per-request instances
+- `_cleanup_expired_rate_limits()` classmethod removes stale memory entries
+- No DB dependency — pure Redis/in-memory counter service
+
 ## Language Handling Pattern
 - All services accept `lang="en"` (default) or `lang="zh"`.
 - When `lang == "zh"`, the helper `_apply_team_lang()` promotes `name_zh` into the `name` field.

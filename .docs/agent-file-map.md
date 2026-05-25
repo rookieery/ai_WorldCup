@@ -147,14 +147,16 @@ football-server/
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
 │   │   ├── match_service.py     # MatchService: get_match_dates, get_matches (multi-filter), get_match_by_id (with events), get_live_matches; uses shared app.utils.timezone
 │   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
-│   │   └── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
+│   │   ├── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
+│   │   └── cheer_service.py     # CheerService: get_cheers, vote_cheer (Redis HASH + in-memory fallback, IP rate limiting)
 │   ├── controllers/
-│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router
+│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
 │   │   ├── venue_controller.py  # GET /api/venues (uses get_venue_service DI)
 │   │   ├── match_controller.py  # GET /api/matches, /dates, /live, /:id (uses get_match_service DI)
 │   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
-│   │   └── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
+│   │   ├── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
+│   │   └── cheer_controller.py  # GET /api/cheers/:matchId, POST /api/cheers/:matchId (IP rate-limited voting)
 │   ├── redis/
 │   │   ├── __init__.py          # Re-exports RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
 │   │   ├── client.py            # Redis connection pool (init_redis_pool, close_redis_pool, get_redis DI, is_redis_available)

@@ -23,12 +23,21 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- API data flow: getBracket() → BracketTree → rounds[] → BracketCard[]
-- Responsive: hidden md:block / md:hidden breakpoint split between DesktopBracket and MobileBracket
 
-## P2-01-Redis — Redis client connection pool + key patterns (COMPLETED)
-- Created `app/redis/__init__.py` — barrel exports for RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
-- Created `app/redis/client.py` — async connection pool manager using redis.asyncio, graceful degradation when REDIS_ENABLED=false or connection fails, get_redis() DI provider returns Optional[Redis]
-- Created `app/redis/keys.py` — RedisKeys class with 6 key patterns (LIVE_MATCH, CHEERS_MATCH, WS_CONNECTIONS, CACHE_GROUPS, CACHE_BRACKET, SCRAPER_LOCK)
 - Modified `app/main.py` lifespan — added init_redis_pool() on startup, close_redis_pool() on shutdown
 - Verified: all imports work, app creates without errors, lifecycle test passes (Redis disabled mode)
+
+## P2-02-Cheer — 球迷助威 Service + Controller（Redis 计数器） ✅
+- Created `app/services/cheer_service.py`: CheerService with Redis HASH counters + in-memory fallback
+  - `get_cheers(match_id)`: reads home/away counts from Redis HASH or in-memory dict
+  - `vote_cheer(match_id, side, client_ip)`: atomic HINCRBY via Redis pipeline, returns updated counts
+  - IP-based rate limiting: 5-min cooldown per (match_id, client_ip), raises BusinessError on duplicate
+  - Class-level shared stores (`_shared_counts`, `_shared_rate_limits`) persist across per-request instances
+  - `_cleanup_expired_rate_limits()` classmethod prevents unbounded memory growth
+- Created `app/controllers/cheer_controller.py`:
+  - GET /api/cheers/{match_id} — returns current cheer counts
+  - POST /api/cheers/{match_id} — submit vote with IP rate limiting
+  - Client IP extracted from X-Forwarded-For header or request.client.host
+- Registered cheer_router in `app/main.py` and `app/controllers/__init__.py`
+- Functional tests passed: GET returns zeros, POST increments, duplicate IP blocked per match, different matches allowed
+- Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md

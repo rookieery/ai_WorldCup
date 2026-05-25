@@ -2,18 +2,14 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, and **Redis infrastructure (app/redis/)** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, and **Cheer voting service/controller** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
 Redis: `app/redis/` — connection pool manager with graceful degradation (REDIS_ENABLED=false → all ops use fallbacks), key patterns via `RedisKeys` class.
-
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, and **seed data pipeline** are implemented.
-`uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
-Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
-Cheer services/controllers are not yet built.
+Cheer: `app/services/cheer_service.py` + `app/controllers/cheer_controller.py` — Redis HASH atomic counters with in-memory fallback, IP-based rate limiting.
 
 ## Utility Layer
 
@@ -58,6 +54,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `MatchService` | `get_match_dates()`, `get_matches(params, timezone_name, lang, page, page_size)`, `get_match_by_id(match_id, timezone_name, lang)`, `get_live_matches(timezone_name, lang)` | Multi-filter support (date/stage/group/team/status) with secondary in-memory filtering; timezone conversion via `zoneinfo` adds `local_time` and `host_time` fields; `get_match_dates` returns distinct dates with primary stage label |
 | `GroupService` | `get_all_groups(lang)`, `get_group_detail(group_label, timezone_name, lang)` | Returns all 12 groups standings overview or single group detail with standings + matches; standings sorted by points desc, GD desc, GF desc; lang-aware (promotes `name_zh`); validates group label A-L |
 | `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams in R32 matches carry `from_group`/`from_position` context (e.g. "1st Group A"); predictions endpoint returns placeholder for Phase 3 AI integration |
+| `CheerService` | `get_cheers(match_id)`, `vote_cheer(match_id, side, client_ip)` | Redis HASH counters (`cheers:match:{id}` with `home`/`away` fields); HINCRBY atomic increment via pipeline; IP-based rate limiting (5-min cooldown per match+IP); in-memory class-level fallback when Redis unavailable; `_cleanup_expired_rate_limits()` prevents unbounded memory growth |
 
 ## Controller Layer
 
@@ -76,6 +73,8 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 | `group_controller` | `GET /api/groups/{group}` | `timezone` (IANA), `lang` (en/zh) |
 | `bracket_controller` | `GET /api/bracket` | `timezone` (IANA), `lang` (en/zh) |
 | `bracket_controller` | `GET /api/bracket/predictions` | — |
+| `cheer_controller` | `GET /api/cheers/{match_id}` | — |
+| `cheer_controller` | `POST /api/cheers/{match_id}` | Body: `{side: "home" \| "away"}`; IP-based rate limiting via `X-Forwarded-For` |
 
 > Dependency injection is centralised in `app/dependencies.py`:
 > - `get_db` — yields `AsyncSession` with auto-commit/rollback
