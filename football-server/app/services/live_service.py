@@ -188,6 +188,107 @@ class LiveService:
             return await self._get_match_data_redis(match_id)
         return self._get_match_data_memory(match_id)
 
+    async def apply_sync_data(
+        self,
+        match_id: int,
+        *,
+        home_score: Optional[int] = None,
+        away_score: Optional[int] = None,
+        status: Optional[str] = None,
+        activity_level: Optional[int] = None,
+        events: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Apply a batch of sync data from DataSyncService in a single call.
+
+        This is more efficient than calling individual update methods
+        separately because it performs at most one Redis write + read
+        cycle.
+
+        Parameters
+        ----------
+        match_id:
+            The match to update.
+        home_score, away_score:
+            New scores (only written if not ``None``).
+        status:
+            New status (only written if not ``None``).
+        activity_level:
+            New activity level 0-100 (only written if not ``None``).
+        events:
+            Recent events list (stored in the live hash as JSON).
+
+        Returns
+        -------
+        dict
+            The complete live data after the update.
+        """
+        updates: Dict[str, str] = {}
+
+        if home_score is not None:
+            updates["home_score"] = str(home_score)
+        if away_score is not None:
+            updates["away_score"] = str(away_score)
+        if status is not None:
+            if status not in _VALID_STATUSES:
+                raise ValueError(f"Invalid match status: {status!r}")
+            updates["status"] = status
+        if activity_level is not None:
+            level = max(0, min(100, activity_level))
+            updates["activity"] = str(level)
+        if events is not None:
+            import json
+
+            updates["events"] = json.dumps(events)
+
+        if not updates:
+            # Nothing to update — return current state
+            existing = await self.get_match_live_data(match_id)
+            return existing if existing is not None else _default_live_entry(match_id)
+
+        if self._redis is not None:
+            result = await self._apply_sync_data_redis(match_id, updates)
+        else:
+            result = self._apply_sync_data_memory(match_id, updates)
+
+        # Broadcast relevant events
+        if status == "live":
+            await _broadcast_event(
+                WSEventType.MATCH_START,
+                {"match_id": match_id, "status": status},
+            )
+        elif status == "finished":
+            await _broadcast_event(
+                WSEventType.MATCH_END,
+                {
+                    "match_id": match_id,
+                    "status": status,
+                    "home_score": result.get("home_score", 0),
+                    "away_score": result.get("away_score", 0),
+                },
+            )
+            await _broadcast_event(
+                WSEventType.BRACKET_UPDATE,
+                {"match_id": match_id, "status": status},
+            )
+
+        if home_score is not None and away_score is not None:
+            await _broadcast_event(
+                WSEventType.SCORE_UPDATE,
+                {
+                    "match_id": match_id,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                },
+            )
+
+        if activity_level is not None:
+            await _broadcast_event(
+                WSEventType.ACTIVITY_UPDATE,
+                {"match_id": match_id, "activity_level": max(0, min(100, activity_level))},
+            )
+
+        return result
+
     # ── Redis implementations ───────────────────────────────────────────────
 
     async def _update_status_redis(
@@ -270,6 +371,25 @@ class LiveService:
             return None
         return _hash_to_live_data(match_id, data)
 
+    async def _apply_sync_data_redis(
+        self, match_id: int, updates: Dict[str, str]
+    ) -> Dict[str, Any]:
+        """Apply batched updates to a Redis live match hash."""
+        key = RedisKeys.LIVE_MATCH.format(match_id=match_id)
+        async with self._redis.pipeline(transaction=True) as pipe:
+            pipe.hset(key, mapping=updates)
+            pipe.hgetall(key)
+            _, data = await pipe.execute()
+
+        await self._invalidate_cache()
+        result = _hash_to_live_data(match_id, data)
+        logger.info(
+            "Match %d sync data applied (Redis): %s",
+            match_id,
+            list(updates.keys()),
+        )
+        return result
+
     async def _invalidate_cache(self) -> None:
         """Set short-lived markers to signal downstream caches are stale."""
         try:
@@ -339,6 +459,29 @@ class LiveService:
     def _get_match_data_memory(match_id: int) -> Optional[Dict[str, Any]]:
         entry = _memory_store.get(match_id)
         return dict(entry) if entry else None
+
+    @staticmethod
+    def _apply_sync_data_memory(
+        match_id: int, updates: Dict[str, str]
+    ) -> Dict[str, Any]:
+        """Apply batched updates to the in-memory live store."""
+        entry = _memory_store.setdefault(
+            match_id, _default_live_entry(match_id)
+        )
+        if "home_score" in updates:
+            entry["home_score"] = int(updates["home_score"])
+        if "away_score" in updates:
+            entry["away_score"] = int(updates["away_score"])
+        if "status" in updates:
+            entry["status"] = updates["status"]
+        if "activity" in updates:
+            entry["activity"] = int(updates["activity"])
+        logger.info(
+            "Match %d sync data applied (memory): %s",
+            match_id,
+            list(updates.keys()),
+        )
+        return dict(entry)
 
 
 # ── Module-level helpers ──────────────────────────────────────────────

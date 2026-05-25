@@ -2,9 +2,9 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER + SCRAPER INFRASTRUCTURE COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE + AI CONTROLLER + SCRAPER INFRASTRUCTURE + LIVE SCRAPER + DATA SYNC COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, **AI Controller (POST /api/ai/chat SSE endpoint)**, and **Scraper infrastructure (BaseScraper + FIFAScraper)** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, **AI Service (Deepseek API client with SSE streaming)**, **AI Controller (POST /api/ai/chat SSE endpoint)**, **Scraper infrastructure (BaseScraper + FIFAScraper)**, **Live Score Scraper (LiveScoreScraper)**, and **Data Sync Service (DataSyncService)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
@@ -47,8 +47,25 @@ Shared helpers with no business-logic coupling, located in `app/utils/`.
 |-------|--------|------------|
 | `ScrapedMatch` | external_id, home_team, away_team, kickoff_utc, stage, group_label?, venue_name?, status, home_score?, away_score? | stage ∈ {group, R32, R16, QF, SF, 3rd, F}; status ∈ {upcoming, live, finished, postponed} |
 | `ScrapedSchedule` | matches: List[ScrapedMatch], scraped_at, source_url | — |
+| `ScrapedLiveEvent` | event_type, minute (≥0), team_side, player_name? | team_side ∈ {home, away} |
+| `ScrapedLiveScore` | match_id, home_score (≥0), away_score (≥0), status, activity_level (0-100), events: List[ScrapedLiveEvent] | status ∈ {upcoming, live, finished, postponed} |
+| `ScrapedLiveScoreBatch` | matches: List[ScrapedLiveScore], scraped_at, source_url | — |
 | `ScrapedEvent` | event_type, minute (≥0), team_side, player_name? | team_side ∈ {home, away} |
 | `ScrapedMatchResult` | external_id, status, home_score (≥0), away_score (≥0), events, scraped_at, source_url | status ∈ {upcoming, live, finished, postponed} |
+
+### `app/scraping/live_score_scraper.py` — LiveScoreScraper(BaseScraper)
+- `scrape_live_scores()` → `ScrapedLiveScoreBatch` — Fetches schedule page, filters live matches, returns validated live score data with activity levels.
+- **Activity level estimation**: `_estimate_activity_level(events, current_minute)` — heuristic based on event type weights and match minute progress.
+- **Live status detection**: Accepts "live", "in_play", "inplay", "halftime", "1h", "2h", "et", "ht".
+- Reuses `_extract_next_data()` from `fifa_scraper.py`.
+
+### `app/scraping/data_sync.py` — DataSyncService
+- `sync_live_scores(batch)` → int — Syncs live scores to Redis via `LiveService`. Returns count of matches synced.
+- `sync_match_result(result)` → Optional[Match] — Syncs finished match result to SQLite (updates scores, status, events). Updates `LiveService` to reflect finished state.
+- `sync_group_standings()` → int — Recalculates all 12 group standings from finished group matches. Returns count of rows updated.
+- **Distributed lock**: `_acquire_lock()` / `_release_lock()` — Redis `SET NX EX` with Lua-script safe release (only deletes own token). Fallback to `asyncio.Lock` when Redis unavailable.
+- **Lock key**: `RedisKeys.SCRAPER_LOCK` (= `scraper:lock`), TTL: 60s.
+- **External ID resolution**: `_resolve_match_id()` queries DB first, falls back to integer parsing.
 
 ## Redis Infrastructure (`app/redis/`)
 
@@ -83,7 +100,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `GroupService` | `get_all_groups(lang)`, `get_group_detail(group_label, timezone_name, lang)` | Returns all 12 groups standings overview or single group detail with standings + matches; standings sorted by points desc, GD desc, GF desc; lang-aware (promotes `name_zh`); validates group label A-L |
 | `BracketService` | `get_full_bracket(lang, timezone_name)`, `get_bracket_by_round(round_name, lang, timezone_name)`, `get_predictions()` | Returns knockout bracket tree (R32→R16→QF→SF→3rd→F) grouped by round; single round query; TBD teams in R32 matches carry `from_group`/`from_position` context (e.g. "1st Group A"); predictions endpoint returns placeholder for Phase 3 AI integration |
 | `CheerService` | `get_cheers(match_id)`, `vote_cheer(match_id, side, client_ip)` | Redis HASH counters (`cheers:match:{id}` with `home`/`away` fields); HINCRBY atomic increment via pipeline; IP-based rate limiting (5-min cooldown per match+IP); in-memory class-level fallback when Redis unavailable; `_cleanup_expired_rate_limits()` prevents unbounded memory growth |
-| `LiveService` | `update_match_status(match_id, status)`, `update_score(match_id, home_score, away_score)`, `update_activity(match_id, level)`, `get_live_matches()`, `get_match_live_data(match_id)` | Redis HASH live state (`live:match:{id}` with `status`/`home_score`/`away_score`/`activity` fields); in-memory fallback; cache invalidation markers on status/score change; MatchService auto-merges Redis live data into query results via `_merge_live_data_batch()`; **broadcasts WebSocket events** on state changes (MATCH_START/MATCH_END/SCORE_UPDATE/ACTIVITY_UPDATE/BRACKET_UPDATE) |
+| `LiveService` | `update_match_status(match_id, status)`, `update_score(match_id, home_score, away_score)`, `update_activity(match_id, level)`, `get_live_matches()`, `get_match_live_data(match_id)`, `apply_sync_data(match_id, *, home_score?, away_score?, status?, activity_level?, events?)` | Redis HASH live state (`live:match:{id}` with `status`/`home_score`/`away_score`/`activity` fields); in-memory fallback; cache invalidation markers on status/score change; MatchService auto-merges Redis live data into query results via `_merge_live_data_batch()`; **broadcasts WebSocket events** on state changes (MATCH_START/MATCH_END/SCORE_UPDATE/ACTIVITY_UPDATE/BRACKET_UPDATE); `apply_sync_data()` is a batched update for DataSyncService with single Redis write+read cycle |
 | `ConnectionManager` | `connect(websocket, client_id)`, `disconnect(client_id)`, `subscribe(client_id, match_id)`, `unsubscribe(client_id, match_id)`, `broadcast(event_type, data)`, `broadcast_to_match(match_id, event_type, data)`, `get_active_count()` | Module-level singleton via `get_manager()`; in-process registry of active WebSocket connections; asyncio.Lock-guarded state; auto-removes broken connections; supports per-match subscription channels |
 | `AIService` | `stream_chat(messages, *, context, lang) -> AsyncGenerator[SSEEvent]`, `close()` | Deepseek API client (OpenAI-compatible `/chat/completions`, model=`deepseek-reasoner`); yields `SSEEvent` objects: `thinking` (reasoning delta), `answer` (content delta), `analysis` (structured JSON when analysis keywords detected), `done`, `error`; uses `httpx.AsyncClient` with lazy init; 30s timeout; graceful error handling (rate limit 429, timeout, generic errors → error events, never raises); no DB dependency; config from `settings.DEEPSEEK_API_KEY` / `settings.DEEPSEEK_BASE_URL` |
 

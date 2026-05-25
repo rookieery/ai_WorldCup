@@ -34,38 +34,32 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- **Build**: `next build` passes cleanly (no errors, no type issues)
-- **i18n**: Both zh-CN and en-US locales updated with full parity
 
-## P4-01-BaseScraper — Scraper Base Class + FIFA Scraper
-**Date**: 2026-05-25
-**Status**: COMPLETE
-
-### What was done
-1. **`app/scraping/base_scraper.py`** — BaseScraper class:
-   - Rate limiting via `asyncio.Semaphore` (configurable `SCRAPER_CONCURRENCY`, default 3)
-   - Retry with exponential backoff (`2**attempt` seconds, max `SCRAPER_RETRY_MAX` = 3)
-   - Exception hierarchy: `ScraperError` → `ScraperTimeoutError`, `ScraperHTTPError`, `ScraperParseError`
-   - Retryable check: retries on timeouts, connect errors, HTTP 5xx
-   - Structured logging: URL, status code, elapsed time, attempt count
-   - `httpx.AsyncClient` with lazy init, async context-manager support
-2. **`app/scraping/fifa_scraper.py`** — FIFAScraper(BaseScraper):
-   - `scrape_match_schedule()` → `ScrapedSchedule`: extracts `__NEXT_DATA__` JSON from FIFA schedule page
-   - `scrape_match_result(match_id)` → `ScrapedMatchResult`: extracts match result with events
-   - Multiple JSON path fallbacks for FIFA page structure variations
-   - Graceful degradation: returns empty data when parsing fails
-   - Configurable URLs from `settings.FIFA_SCHEDULE_URL` / `settings.FIFA_MATCH_URL`
-3. **`app/schemas/scraper_schema.py`** — Pydantic validation models:
-   - `ScrapedMatch`, `ScrapedSchedule`, `ScrapedEvent`, `ScrapedMatchResult`
-   - Field validators for stage, status, team_side
-4. **`app/config.py`** — Added scraper settings:
-   - `FIFA_SCHEDULE_URL`, `FIFA_MATCH_URL`, `SCRAPER_CONCURRENCY`, `SCRAPER_TIMEOUT`, `SCRAPER_RETRY_MAX`
-5. **`.env.example`** — Updated with new scraper config entries
-
-### Verification
-- All Python files parse without syntax errors
-- All imports work correctly (base_scraper, fifa_scraper, scraper_schema)
-- Pydantic schema validation tested (valid data passes, invalid data raises errors)
-- FIFAScraper instantiation verified with config values
 - `next build` passes cleanly (no frontend breakage)
 - No `console.log`, `print()`, or dead code in new files
+
+## P4-02-LiveScraper - 实时比分爬虫 + 数据同步服务 (COMPLETED)
+
+### Files Created
+- `football-server/app/scraping/live_score_scraper.py` — LiveScoreScraper(BaseScraper): scrape_live_scores() returns ScrapedLiveScoreBatch with activity level estimation
+- `football-server/app/scraping/data_sync.py` — DataSyncService: sync_live_scores, sync_match_result, sync_group_standings with Redis distributed lock (scraper:lock)
+
+### Files Modified
+- `football-server/app/schemas/scraper_schema.py` — Added ScrapedLiveEvent, ScrapedLiveScore, ScrapedLiveScoreBatch models
+- `football-server/app/services/live_service.py` — Added apply_sync_data() batched update method (Redis pipeline + memory fallback)
+- `football-server/app/scraping/__init__.py` — Added LiveScoreScraper, DataSyncService exports
+
+### Key Design Decisions
+- LiveScoreScraper reuses _extract_next_data() from fifa_scraper.py (DRY)
+- Activity level estimated via heuristic: event type weights + recency + match minute baseline
+- DataSyncService uses Redis SET NX EX for distributed lock with Lua-script safe release
+- Fallback to asyncio.Lock when Redis unavailable
+- Group standings recalculated from finished matches: W/D/L/GF/GA/GD/points with position re-ranking
+- apply_sync_data() in LiveService provides single Redis pipeline write+read for batched syncs
+- External ID resolution: DB lookup first, integer parsing fallback
+
+### Quality Checks
+- `next build` passes cleanly (no frontend breakage)
+- All Python files pass syntax validation
+- No `console.log`, `print()`, or dead code in new files
+- All files within 600-line hard limit

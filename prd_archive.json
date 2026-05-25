@@ -193,6 +193,24 @@
         "title": "Deepseek API 客户端 + SSE 流式输出 Service",
         "description": "AI 核心服务任务。\n\n1. 创建 `app/services/ai_service.py`：AIService\n   - __init__：初始化 httpx.AsyncClient，配置 base_url（DEEPSEEK_BASE_URL）和 api_key\n   - stream_chat(messages, context, lang) -> AsyncGenerator：核心流式方法\n     - 调用 Deepseek API（OpenAI 兼容接口），stream=True\n     - 逐 chunk 解析 SSE，区分 reasoning_content 和 content\n     - 对外 yield 统一事件格式：\n       - SSEEvent(type='thinking', content=reasoning_delta)\n       - SSEEvent(type='answer', content=answer_delta)\n       - SSEEvent(type='done')\n     - 检测到分析请求时，在 answer 完成后 yield SSEEvent(type='analysis', data=TeamAnalysis)\n   - 超时处理：30s 超时，超时时 yield error 事件\n   - 错误处理：API 限流/异常时返回友好错误消息（非抛异常中断流）\n2. 参考 D:\\code\\ai coding 项目的实现模式：async generator + SSE 事件格式",
         "passes": true
+      },
+      {
+        "id": "P3-03-AIController",
+        "title": "AI 对话 Controller（POST /api/ai/chat SSE 端点）",
+        "description": "AI 路由层任务。\n\n1. 创建 `app/controllers/ai_controller.py`：\n   - POST /api/ai/chat — SSE 流式端点\n   - 接收 ChatRequest body（messages + context + lang）\n   - 调用 PromptBuilder 构建 prompt\n   - 调用 AIService.stream_chat() 获取 async generator\n   - 使用 FastAPI StreamingResponse(content_type='text/event-stream')\n   - 将 SSEEvent 格式化为标准 SSE 行：`data: {json}\\n\\n`\n   - 流结束时发送 `data: [DONE]\\n\\n`\n2. 在 main.py 注册 ai_controller router\n\n验收：`curl -X POST http://localhost:8000/api/ai/chat -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}],\"lang\":\"zh-CN\"}'` 收到 SSE 流式响应",
+        "passes": true
+      },
+      {
+        "id": "P3-04-SSEFrontend",
+        "title": "前端：SSE 消费 + 打字机效果 + 分析卡片渲染",
+        "description": "前端 AI 对接任务。\n\n1. 创建 `football-web/lib/api/ai-chat.ts`：\n   - streamChat(messages, context)：使用 fetch + ReadableStream 消费 SSE\n   - 不使用 EventSource（需要 POST）\n   - 手动解析 `data:` 行，区分 thinking/answer/analysis/done 事件\n   - 返回 AsyncGenerator 或 callback 模式\n   - 支持 AbortController 中断\n2. 修改 `football-web/components/dashboard/ai-copilot-panel.tsx`：\n   - 替换 2s 假延迟为真实 SSE 调用\n   - 实现 thinking + answer 双队列打字机效果\n   - thinking 区域可折叠展示推理过程\n   - answer 区域逐字显示回复\n   - 收到 analysis 事件时渲染 AnalysisCard（雷达图 + 概率条 + 洞察列表）\n   - 流结束显示免责声明\n3. 快捷提问按钮：点击后自动发送对应问题的 AI 请求\n4. 连接 Zustand ai-chat store 持久化对话历史\n\n所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P4-01-BaseScraper",
+        "title": "爬虫基类（限流/重试）+ FIFA 官方数据爬虫",
+        "description": "数据采集基础设施任务。\n\n1. 创建 `app/scraping/__init__.py`\n2. 创建 `app/scraping/base_scraper.py`：BaseScraper\n   - 限流：使用 asyncio.Semaphore 控制并发请求\n   - 重试：指数退避重试（最多 3 次），仅对可重试异常重试\n   - 错误处理：网络超时、HTTP 错误、解析失败分别处理\n   - 日志：记录每次爬取的 URL、状态码、耗时\n   - 使用 httpx.AsyncClient 发起请求\n3. 创建 `app/scraping/fifa_scraper.py`：FIFAScraper(BaseScraper)\n   - scrape_match_schedule()：爬取赛程数据\n   - scrape_match_result(match_id)：爬取单场比赛结果\n   - 解析返回结构化数据（使用 Pydantic model 校验）\n   - 可配置的目标 URL（从 config 读取）",
+        "passes": true
       }
     ]
   }

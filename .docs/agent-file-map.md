@@ -161,7 +161,7 @@ football-server/
 │   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
 │   │   ├── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
 │   │   ├── cheer_service.py     # CheerService: get_cheers, vote_cheer (Redis HASH + in-memory fallback, IP rate limiting)
-│   │   ├── live_service.py      # LiveService: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data (Redis HASH + in-memory fallback, cache invalidation, WebSocket broadcast on state changes)
+│   │   ├── live_service.py      # LiveService: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data, apply_sync_data (Redis HASH + in-memory fallback, cache invalidation, WebSocket broadcast on state changes)
 │   │   └── websocket_manager.py # ConnectionManager: connect/disconnect, subscribe/unsubscribe, broadcast/broadcast_to_match, get_manager singleton
 │   ├── controllers/
 │   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router, ai_router
@@ -192,11 +192,13 @@ football-server/
 │       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VOs
 │       ├── ws_schema.py         # WSEventType enum + WSMessage VO
-│       └── scraper_schema.py   # ScrapedMatch/Schedule/Event/MatchResult VOs for scraper data validation
+│       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VOs for scraper data validation
 ├── scraping/                    # Web scraping infrastructure
-│   ├── __init__.py              # Re-exports BaseScraper, FIFAScraper
+│   ├── __init__.py              # Re-exports BaseScraper, FIFAScraper, LiveScoreScraper, DataSyncService
 │   ├── base_scraper.py          # BaseScraper: rate limiting (asyncio.Semaphore), retry with exponential backoff (max 3), structured logging, error hierarchy (ScraperError/Timeout/HTTP/Parse)
-│   └── fifa_scraper.py          # FIFAScraper(BaseScraper): scrape_match_schedule(), scrape_match_result(match_id); __NEXT_DATA__ JSON extraction from FIFA.com pages
+│   ├── fifa_scraper.py          # FIFAScraper(BaseScraper): scrape_match_schedule(), scrape_match_result(match_id); __NEXT_DATA__ JSON extraction from FIFA.com pages
+│   ├── live_score_scraper.py    # LiveScoreScraper(BaseScraper): scrape_live_scores() -> ScrapedLiveScoreBatch; activity level estimation heuristic
+│   └── data_sync.py             # DataSyncService: sync_live_scores, sync_match_result, sync_group_standings; Redis distributed lock (scraper:lock)
 ├── scripts/                     # Database seeding scripts
 │   ├── __init__.py              # Package init
 │   ├── seed_data.py             # One-click init orchestrator (seed_venues→teams→matches→bracket→standings)

@@ -51,6 +51,7 @@
 - `update_activity(match_id, level)` → `dict` — updates activity level (clamped to 0-100)
 - `get_live_matches()` → `list[dict]` — returns all matches with status=live from Redis (scan_iter) or memory
 - `get_match_live_data(match_id)` → `dict | None` — returns single match live data or None if absent
+- `apply_sync_data(match_id, *, home_score, away_score, status, activity_level, events)` → `dict` — batched update from DataSyncService; single Redis pipeline write+read; broadcasts WS events for status/score/activity changes
 - Cache invalidation: `update_match_status` and `update_score` set TTL-based markers on `cache:groups` and `cache:bracket`
 - In-memory fallback: module-level `_memory_store` dict (single-process dev only)
 - Constructor: `LiveService(redis: Optional[Redis] = None)` — same pattern as CheerService
