@@ -28,19 +28,28 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Updated .docs/agent-component-map.md: Added State Management section with store registry and usage patterns
-- Build verification: npx next build compiled successfully with no errors
 
-## P2-06-WSIntegration — 前端：WebSocket 集成 + 实时比分 + 助威投票对接
-- Created `football-web/lib/websocket.ts`: WSClient singleton with auto-connect, exponential back-off reconnection, event dispatch to Zustand live store
-- Handles all backend WSEventTypes: score_update, match_start, match_end, activity_update, cheer_update, connected (initial payload), ping, bracket_update
-- Modified `football-web/components/dashboard/match-cards-grid.tsx`:
-  - MatchCard reads real-time score/activity/cheer data from useLiveStore
-  - Cheer buttons call postCheer() API with optimistic update + rollback on failure
-  - WebSocket connection started on mount via wsClient.start()
-  - WS status indicator (Wifi/WifiOff icons) in header bar
-- Added i18n keys: match.liveUpdates, match.disconnected (en-US + zh-CN)
-- Updated .docs/agent-component-map.md: WebSocket client section, updated MatchCardsGrid docs
-- Updated .docs/agent-file-map.md: websocket.ts entry, updated match-cards-grid.tsx and live.ts descriptions
 - Updated football-web/lib/store/AGENTS.md: live.ts now references websocket.ts driver
 - Build verification: npx next build compiled successfully with no errors
+
+## P2-07-MatchDetail — 前端：比赛详情弹窗（阵容 + 进球事件 + 技术统计）
+- **Status**: ✅ PASS
+- **Date**: 2026-05-25
+- **Files Created**:
+  - `football-web/components/dashboard/match-detail-dialog.tsx` (~465 lines) — MatchDetailDialog component using shadcn/ui Dialog
+  - `football-web/components/dashboard/match-detail-helpers.tsx` (~215 lines) — Helper components + types (EventsSection, StatRow, VenueInfoItem, EventIcon, EventLabel, MatchDetailData, MatchDetailEvent)
+- **Files Modified**:
+  - `football-web/components/dashboard/match-cards-grid.tsx` — Added MatchDetailDialog import, cursor-pointer on MatchCard, onClick opens dialog with matchId, onMatchClick callback prop
+  - `football-web/components/dashboard/tournament-bracket.tsx` — Added MatchDetailDialog import, cursor-pointer on BracketCard, onClick opens dialog, onMatchClick prop threaded through DesktopBracket/MobileBracket
+  - `football-web/lib/i18n/locales/en-US.json` — Added matchDetail namespace (18 keys: goal, yellowCard, redCard, substitution, var, fanCheer, votes, matchEvents, noEvents, firstHalf, secondHalf, extraTime, matchStats, goals, yellowCards, redCards, venueInfo, venue, city, kickoff, capacity, loadError)
+  - `football-web/lib/i18n/locales/zh-CN.json` — Added matchDetail namespace (18 keys, Chinese translations)
+- **Features**:
+  - Dialog shows: match header (teams + flags + score + status badges), live activity bar, fan cheer meter (with live store merge), match events timeline grouped by half, match statistics (goals/yellow cards/red cards as dual-bar charts), venue info grid
+  - Real-time data merged from Zustand live store (scorePatch, cheerUpdate) on top of API data
+  - Cyberpunk glass-card style with glow effects, gradient overlays, LED display for live scores
+  - Cheer data fetched from API + merged with live store updates
+  - Events timeline splits into First Half / Second Half / Extra Time sections
+  - BracketCard click parses string match.id to int for dialog
+  - Dialog resets state on close, fetches fresh data on open
+- **Build verification**: npx next build compiled successfully with no errors
+- **Docs synced**: Updated .docs/agent-component-map.md and .docs/agent-file-map.md

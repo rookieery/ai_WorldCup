@@ -49,12 +49,13 @@
 - **Sub-components**: `MatchCard`, `CityIconComponent`, `EmptyState`
 - **Real-time**: Subscribes to `useLiveStore` for live score patches, cheer updates, and WS status; starts `wsClient` on mount
 - **Cheer Voting**: `MatchCard.handleCheer()` calls `postCheer(matchId, side)` API with optimistic update + rollback on failure
+- **Match Detail**: Card click opens `MatchDetailDialog` via `onMatchClick` callback (passes matchId)
 - **Features**: Live score display with WS-patched data, Big Match badge, activity bar, Fan Cheer Meter (hover expand), WS connection indicator, loading/error/empty states
 - **API mapping**: `apiMatchToUi()` converts backend `MatchApiItem` → frontend `Match` type
 - **i18n**: Uses `useTranslation()` for all visible text
 - **Types imported**: `Match`, `CityIcon` from `@/lib/types`, `LiveScorePatch`, `CheerUpdate` from `@/lib/store`
-- **Dependencies**: `cn` utility, `lucide-react` icons (incl. Wifi, WifiOff), `getMatches` + `apiMatchToUi` from API, `postCheer` from cheers API, `useLiveStore`, `wsClient`
-- **Lines**: ~513
+- **Dependencies**: `cn` utility, `lucide-react` icons (incl. Wifi, WifiOff), `getMatches` + `apiMatchToUi` from API, `postCheer` from cheers API, `useLiveStore`, `wsClient`, `MatchDetailDialog`
+- **Lines**: ~525
 
 ### `group-standings.tsx` — `GroupStandings`
 - **Data**: Fetched from API via `getGroups()` — all 12 groups (A-L) with standings
@@ -68,14 +69,32 @@
 ### `tournament-bracket.tsx` — `TournamentBracket`
 - **Data**: Fetched from API via `getBracket()` — full BracketTree (R32→R16→QF→SF→3rd→F)
 - **Sub-components**: `BracketCard`, `TeamRow`, `RoundConnector`, `DesktopBracket`, `MobileBracket`
+- **Match Detail**: BracketCard click opens `MatchDetailDialog` via `onMatchClick` callback (parseInt from string match.id)
 - **UI**: 6-round horizontal scroll with SVG connectors (desktop), vertical stack (mobile)
 - **Features**: API data fetch with loading/error/retry, TBD teams show fromGroup info, winner gold highlight, LIVE pulse, 3rd place as separate branch
 - **Responsive**: `hidden md:block` for DesktopBracket, `md:hidden` for MobileBracket
 - **All colors**: Semantic theme variables (text-gold, text-accent, bg-primary/20, etc.)
 - **All text**: Internationalized via `t()`
 - **Types imported**: `BracketMatch`, `BracketTeam`, `BracketRoundName`, `BracketTree` from `@/lib/types`
-- **Dependencies**: `cn` utility, `lucide-react` icons (Trophy, Zap, Loader2, AlertCircle, Medal), `getBracket` from API, `useTranslation` from i18n
-- **Lines**: ~413
+- **Dependencies**: `cn` utility, `lucide-react` icons (Trophy, Zap, Loader2, AlertCircle, Medal), `getBracket` from API, `useTranslation` from i18n, `MatchDetailDialog`
+- **Lines**: ~430
+
+### `match-detail-dialog.tsx` — `MatchDetailDialog`
+- **Props**: `matchId` (number | null), `open`, `onOpenChange`
+- **Data**: Fetched from API via `getMatchById(id)` + `getCheers(matchId)` on dialog open
+- **Real-time**: Merges live score patches and cheer updates from `useLiveStore`
+- **Sections**: Match header (teams + score + status), Live activity bar, Fan cheer meter, Match events timeline (1st/2nd half + extra time), Match statistics (goals/cards), Venue info
+- **Cyberpunk Style**: glass-card, glow effects, gradient overlays, LED display for live scores
+- **i18n**: Uses `useTranslation()` for all visible text (matchDetail namespace)
+- **Types imported**: `LiveScorePatch`, `CheerUpdate` from `@/lib/store`, `MatchDetailData` from `match-detail-helpers`
+- **Dependencies**: Dialog, ScrollArea, Separator (shadcn), `cn`, `lucide-react` icons, `getMatchById` from API, `getCheers` from cheers API, `useLiveStore`, helper components
+- **Lines**: ~465
+
+### `match-detail-helpers.tsx` — Helper components + types for MatchDetailDialog
+- **Exported Types**: `MatchDetailEvent`, `MatchDetailData`
+- **Components**: `EventsSection` (half-grouped event list), `StatRow` (dual-bar stat), `VenueInfoItem` (label-value pair)
+- **Internal**: `EventIcon` (event-type icon), `EventLabel` (event-type i18n label)
+- **Lines**: ~215
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
 - **State**: `messages[]`, `input`, `isTyping`, `isFocused`
@@ -114,8 +133,8 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 ### Locale Files
 | File | Language | Keys |
 |------|----------|------|
-| `locales/zh-CN.json` | 简体中文 | 107 keys, 7 namespaces |
-| `locales/en-US.json` | English | 107 keys, 7 namespaces |
+| `locales/zh-CN.json` | 简体中文 | 125 keys, 8 namespaces |
+| `locales/en-US.json` | English | 125 keys, 8 namespaces |
 
 ### Namespaces
 | Namespace | Keys | Purpose |
@@ -123,6 +142,7 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 | `header` | 8 | Title, subtitle, timezone/view labels, language labels (langZh/langEn) |
 | `timeline` | 8 | Stage labels (Group/R32/R16/QF/SF/3rd/Final/Rest) |
 | `match` | 12 | Match card labels (Live/Big Match/FT/cheer etc.) |
+| `matchDetail` | 18 | Match detail dialog labels (events, stats, venue, cheer) |
 | `bracket` | 16 | Knockout bracket labels (6 rounds, fromGroup, tbd, states) |
 | `ai` | 20 | AI copilot panel labels |
 | `footer` | 4 | Footer status bar labels |

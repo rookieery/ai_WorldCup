@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { Trophy, Zap, Loader2, AlertCircle, Medal } from "lucide-react"
 import { getBracket } from "@/lib/api/bracket"
 import { useTranslation } from "@/lib/i18n"
+import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
 import type {
   BracketMatch,
   BracketTeam,
@@ -79,7 +80,7 @@ function TeamRow({ team, isCompleted }: { team: BracketTeam; isCompleted: boolea
   )
 }
 
-function BracketCard({ match }: { match: BracketMatch }) {
+function BracketCard({ match, onClick }: { match: BracketMatch; onClick: () => void }) {
   const { t } = useTranslation()
   const isLive = match.status === "live"
   const isCompleted = match.status === "completed"
@@ -90,11 +91,15 @@ function BracketCard({ match }: { match: BracketMatch }) {
   return (
     <div
       className={cn(
-        "relative glass-card rounded-xl overflow-hidden transition-all duration-300 w-[170px]",
+        "relative glass-card rounded-xl overflow-hidden transition-all duration-300 w-[170px] cursor-pointer hover:border-primary/30",
         isLive && "border-accent glow-pulse-cyan",
         isFinal && "border-gold/50 glow-pulse-gold",
         isThirdPlace && "border-border"
       )}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick() }}
     >
       {isLive && (
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent via-primary to-accent animate-pulse" />
@@ -199,7 +204,7 @@ function RoundConnector({
 
 // ── Desktop Bracket (horizontal scroll) ──────────────────────────────────────
 
-function DesktopBracket({ data }: { data: BracketTree }) {
+function DesktopBracket({ data, onMatchClick }: { data: BracketTree; onMatchClick: (matchId: number) => void }) {
   const { t } = useTranslation()
 
   const mainRounds = data.rounds.filter((r) => r.round !== "3rd" && r.round !== "F")
@@ -223,7 +228,7 @@ function DesktopBracket({ data }: { data: BracketTree }) {
                 </div>
                 <div className="flex flex-col gap-3">
                   {round.matches.map((match) => (
-                    <BracketCard key={match.id} match={match} />
+                    <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
                   ))}
                 </div>
               </div>
@@ -258,7 +263,7 @@ function DesktopBracket({ data }: { data: BracketTree }) {
                   </div>
                 </div>
                 {finalRound.matches.map((match) => (
-                  <BracketCard key={match.id} match={match} />
+                  <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
                 ))}
               </div>
             </div>
@@ -278,7 +283,7 @@ function DesktopBracket({ data }: { data: BracketTree }) {
                 {getRoundLabel("3rd", t)}
               </div>
               {thirdPlaceRound.matches.map((match) => (
-                <BracketCard key={match.id} match={match} />
+                <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
               ))}
             </div>
           </div>
@@ -290,7 +295,7 @@ function DesktopBracket({ data }: { data: BracketTree }) {
 
 // ── Mobile Bracket (vertical stack) ──────────────────────────────────────────
 
-function MobileBracket({ data }: { data: BracketTree }) {
+function MobileBracket({ data, onMatchClick }: { data: BracketTree; onMatchClick: (matchId: number) => void }) {
   const { t } = useTranslation()
 
   return (
@@ -304,7 +309,7 @@ function MobileBracket({ data }: { data: BracketTree }) {
             </div>
             <div className="flex flex-wrap justify-center gap-3">
               {round.matches.map((match) => (
-                <BracketCard key={match.id} match={match} />
+                <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
               ))}
             </div>
           </div>
@@ -321,6 +326,8 @@ export function TournamentBracket() {
   const [data, setData] = useState<BracketTree | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [detailMatchId, setDetailMatchId] = useState<number | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
@@ -385,12 +392,12 @@ export function TournamentBracket() {
 
       {/* Desktop bracket */}
       <div className="flex-1 overflow-hidden hidden md:block">
-        <DesktopBracket data={data} />
+        <DesktopBracket data={data} onMatchClick={(id) => { setDetailMatchId(id); setDetailOpen(true) }} />
       </div>
 
       {/* Mobile bracket */}
       <div className="flex-1 overflow-y-auto md:hidden">
-        <MobileBracket data={data} />
+        <MobileBracket data={data} onMatchClick={(id) => { setDetailMatchId(id); setDetailOpen(true) }} />
       </div>
 
       {/* Legend */}
@@ -408,6 +415,12 @@ export function TournamentBracket() {
           <span>{t("bracket.advancementPath")}</span>
         </div>
       </div>
+
+      <MatchDetailDialog
+        matchId={detailMatchId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   )
 }

@@ -169,6 +169,12 @@
         "title": "前端：Zustand 全局状态管理搭建",
         "description": "前端状态架构任务。\n\n1. 安装 zustand 依赖\n2. 创建 `football-web/lib/store/preferences.ts`：用户偏好 store\n   - language（zh-CN/en-US）\n   - timezone（local/host）\n   - viewMode（timeline/bracket）\n   - theme（dark/light）\n   - 持久化到 localStorage\n3. 创建 `football-web/lib/store/matches.ts`：比赛数据 store\n   - matches 缓存（按日期索引）\n   - liveMatches 列表\n   - loading/error 状态\n   - fetchMatchesByDate(date)、fetchLiveMatches() actions\n4. 创建 `football-web/lib/store/live.ts`：实时更新 store\n   - WebSocket 连接状态\n   - 实时比分更新\n   - 活跃度更新\n   - cheer 数据更新\n5. 创建 `football-web/lib/store/ai-chat.ts`：AI 对话 store\n   - messages 列表\n   - isStreaming 状态\n   - currentStreamContent",
         "passes": true
+      },
+      {
+        "id": "P2-06-WSIntegration",
+        "title": "前端：WebSocket 集成 + 实时比分 + 助威投票对接",
+        "description": "前端实时功能对接任务。\n\n1. 创建 `football-web/lib/websocket.ts`：WebSocket 客户端管理\n   - 自动连接/重连 ws://host/api/ws/live\n   - 事件分发：监听 score_update/match_start/match_end/activity_update\n   - 更新 Zustand live store\n2. 修改 `match-cards-grid.tsx`：\n   - 从 Zustand store 读取实时比分和活跃度\n   - 收到 score_update 时自动更新对应卡片\n   - LIVE 状态脉冲动画\n3. 修改助威投票逻辑：\n   - 点击 Cheer 按钮调用 postCheer(matchId, side) API\n   - 成功后更新本地 Zustand store（乐观更新）\n   - 收到其他用户的投票更新时同步刷新",
+        "passes": true
       }
     ]
   }

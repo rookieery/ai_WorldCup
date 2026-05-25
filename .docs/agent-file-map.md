@@ -38,9 +38,11 @@ football-web/
 │   ├── dashboard/
 │   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
 │   │   ├── date-timeline.tsx # Horizontal date picker (Jun 11–Jul 19)
-│   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter + real-time WS score/cheer integration + live connection indicator
+│   │   ├── match-cards-grid.tsx  # Match card list + Fan Cheer Meter + real-time WS score/cheer integration + live connection indicator + MatchDetailDialog on click
+│   │   ├── match-detail-dialog.tsx # Match detail dialog (teams+score, events timeline, stats, cheer, venue info) — cyberpunk glass-card style
+│   │   ├── match-detail-helpers.tsx # Helper components + types for MatchDetailDialog (EventsSection, StatRow, VenueInfoItem, EventIcon/Label)
 │   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
-│   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven)
+│   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven) + MatchDetailDialog on click
 │   │   └── ai-copilot-panel.tsx   # AI chat sidebar (messages, radar chart, analysis)
 │   ├── theme-provider.tsx    # next-themes wrapper (unused in layout currently)
 │   └── ui/                   # shadcn/ui primitives (~60 components)
@@ -57,8 +59,8 @@ football-web/
 │   │   ├── use-translation.ts # useTranslation hook — thin wrapper exposing { t, locale, setLocale }
 │   │   ├── types.ts          # Locale union type + LocaleMessages interface (mirrors JSON shape)
 │   │   └── locales/
-│   │       ├── zh-CN.json    # Chinese translations (83 keys across 6 namespaces)
-│   │       └── en-US.json    # English translations (83 keys, full zh-CN parity)
+│   │       ├── zh-CN.json    # Chinese translations (125 keys across 8 namespaces)
+│   │       └── en-US.json    # English translations (125 keys, full zh-CN parity)
 │   ├── api/                  # API module functions (one file per backend resource)
 │   │   ├── matches.ts        # getMatchDates(), getMatches(params), getMatchById(id), getLiveMatches(), apiMatchToUi()
 │   │   ├── bracket.ts        # getBracket()

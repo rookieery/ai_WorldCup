@@ -369,3 +369,16 @@
 - Created lib/store/index.ts: Barrel re-exports for all stores and exported types
 - Created lib/store/AGENTS.md: Store architecture documentation
 - Updated .docs/agent-file-map.md: Added lib/store/ to file tree
+- Updated .docs/agent-component-map.md: Added State Management section with store registry and usage patterns
+- Build verification: npx next build compiled successfully with no errors
+## P2-06-WSIntegration — 前端：WebSocket 集成 + 实时比分 + 助威投票对接
+- Created `football-web/lib/websocket.ts`: WSClient singleton with auto-connect, exponential back-off reconnection, event dispatch to Zustand live store
+- Handles all backend WSEventTypes: score_update, match_start, match_end, activity_update, cheer_update, connected (initial payload), ping, bracket_update
+- Modified `football-web/components/dashboard/match-cards-grid.tsx`:
+  - MatchCard reads real-time score/activity/cheer data from useLiveStore
+  - Cheer buttons call postCheer() API with optimistic update + rollback on failure
+  - WebSocket connection started on mount via wsClient.start()
+  - WS status indicator (Wifi/WifiOff icons) in header bar
+- Added i18n keys: match.liveUpdates, match.disconnected (en-US + zh-CN)
+- Updated .docs/agent-component-map.md: WebSocket client section, updated MatchCardsGrid docs
+- Updated .docs/agent-file-map.md: websocket.ts entry, updated match-cards-grid.tsx and live.ts descriptions

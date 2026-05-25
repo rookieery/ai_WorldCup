@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P2-06-WSIntegration",
-      "title": "前端：WebSocket 集成 + 实时比分 + 助威投票对接",
-      "description": "前端实时功能对接任务。\n\n1. 创建 `football-web/lib/websocket.ts`：WebSocket 客户端管理\n   - 自动连接/重连 ws://host/api/ws/live\n   - 事件分发：监听 score_update/match_start/match_end/activity_update\n   - 更新 Zustand live store\n2. 修改 `match-cards-grid.tsx`：\n   - 从 Zustand store 读取实时比分和活跃度\n   - 收到 score_update 时自动更新对应卡片\n   - LIVE 状态脉冲动画\n3. 修改助威投票逻辑：\n   - 点击 Cheer 按钮调用 postCheer(matchId, side) API\n   - 成功后更新本地 Zustand store（乐观更新）\n   - 收到其他用户的投票更新时同步刷新",
-      "passes": true
-    },
-    {
       "id": "P2-07-MatchDetail",
       "title": "前端：比赛详情弹窗（阵容 + 进球事件 + 技术统计）",
       "description": "新增交互功能任务。\n\n1. 创建 `football-web/components/dashboard/match-detail-dialog.tsx`：\n   - 使用 shadcn/ui Dialog 组件\n   - 展示：比赛信息头（双方队伍 + 比分 + 状态 + 时间 + 场馆）\n   - 比赛事件时间线（进球、黄/红牌、换人、VAR）\n   - 技术统计区域（控球率、射门、角球等，如有数据）\n   - 球迷助威投票展示\n   - 赛博朋克风格（glass-card + 发光效果）\n2. 修改 match-cards-grid.tsx：卡片点击时打开 MatchDetailDialog，传入 matchId\n3. 修改 tournament-bracket.tsx：对阵卡片点击同样打开详情弹窗\n4. 调用 getMatchById(id) API 获取详情数据\n\n所有文案使用 t() 国际化",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P3-01-PromptBuilder",

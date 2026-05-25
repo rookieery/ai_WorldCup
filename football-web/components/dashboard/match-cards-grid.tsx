@@ -24,6 +24,7 @@ import { useLiveStore } from "@/lib/store"
 import type { LiveScorePatch, CheerUpdate } from "@/lib/store"
 import { wsClient } from "@/lib/websocket"
 import type { Match, CityIcon } from "@/lib/types"
+import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
 
 const CityIconComponent = ({ type }: { type: CityIcon }) => {
   switch (type) {
@@ -42,9 +43,10 @@ const CityIconComponent = ({ type }: { type: CityIcon }) => {
 
 interface MatchCardProps {
   match: Match
+  onMatchClick: (matchId: number) => void
 }
 
-function MatchCard({ match }: MatchCardProps) {
+function MatchCard({ match, onMatchClick }: MatchCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [cheeringSide, setCheeringSide] = useState<"home" | "away" | null>(null)
   const { t } = useTranslation()
@@ -124,12 +126,13 @@ function MatchCard({ match }: MatchCardProps) {
   return (
     <div
       className={cn(
-        "group relative glass-card rounded-2xl overflow-hidden transition-all duration-500",
+        "group relative glass-card rounded-2xl overflow-hidden transition-all duration-500 cursor-pointer",
         isLive && "border-2 border-pulse-cyan",
         isBigMatch && !isLive && "border-2 border-[#FFD700]/50 glow-pulse-gold",
         !isLive && !isBigMatch && "border border-glass-border hover:border-[#00F0FF]/30",
         isHovered && "card-3d"
       )}
+      onClick={() => onMatchClick(match.id)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -396,6 +399,8 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const [detailMatchId, setDetailMatchId] = useState<number | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const wsStatus = useLiveStore((s) => s.wsStatus)
   const wsStarted = useRef(false)
 
@@ -429,6 +434,11 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
   useEffect(() => {
     fetchMatches()
   }, [fetchMatches])
+
+  const handleMatchClick = useCallback((matchId: number) => {
+    setDetailMatchId(matchId)
+    setDetailOpen(true)
+  }, [])
 
   return (
     <div className="flex-1 p-6">
@@ -503,10 +513,16 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
       {!loading && !error && matches.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           {matches.map((match) => (
-            <MatchCard key={match.id} match={match} />
+            <MatchCard key={match.id} match={match} onMatchClick={handleMatchClick} />
           ))}
         </div>
       )}
+
+      <MatchDetailDialog
+        matchId={detailMatchId}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </div>
   )
 }
