@@ -56,6 +56,19 @@
 - Constructor: `LiveService(redis: Optional[Redis] = None)` — same pattern as CheerService
 - No DB dependency — pure Redis/in-memory state service
 
+### AIService
+- `stream_chat(messages, *, context, lang) -> AsyncGenerator[SSEEvent]` — calls Deepseek API (OpenAI-compatible `/chat/completions`), streams SSE, yields `SSEEvent` objects
+- Event types yielded: `thinking` (reasoning delta), `answer` (content delta), `analysis` (structured JSON when analysis keywords detected), `done`, `error`
+- Uses `httpx.AsyncClient` with lazy init via `_get_client()`; 30s timeout
+- Error handling: 429 rate limit → friendly error; timeout → error event; other exceptions → generic error (never raises, always yields error SSEEvent)
+- No API key → yields `error` event immediately with "no_key" message
+- Analysis detection: checks user message for analysis keywords (bilingual zh-CN/en-US); if detected, buffers answer and attempts JSON extraction post-stream
+- `_extract_analysis_from_answer()` searches for embedded JSON with `team_code` key
+- Model: `deepseek-reasoner` (supports `reasoning_content` delta field)
+- No DB dependency — pure HTTP client service
+- DI: `get_ai_service()` in `app/dependencies.py` — no DB session needed
+- Config: reads `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` from `app.config.settings`
+
 ## Language Handling Pattern
 - All services accept `lang="en"` (default) or `lang="zh"`.
 - When `lang == "zh"`, the helper `_apply_team_lang()` promotes `name_zh` into the `name` field.

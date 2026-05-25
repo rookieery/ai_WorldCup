@@ -125,7 +125,7 @@ football-server/
 │   ├── __init__.py              # Package init (empty)
 │   ├── config.py                # Pydantic Settings: all env vars with defaults (incl. REDIS_URL, REDIS_ENABLED)
 │   ├── main.py                  # FastAPI app factory (lifespan: DB + Redis init/close, middleware, routers, /docs)
-│   ├── dependencies.py          # DI providers: get_db, get_*_service, get_language; Redis DI via app.redis.get_redis
+│   ├── dependencies.py          # DI providers: get_db, get_*_service, get_ai_service, get_language; Redis DI via app.redis.get_redis
 │   ├── exceptions/
 │   │   ├── __init__.py          # Re-exports all exception classes
 │   │   └── exceptions.py        # AppException hierarchy (NotFound, Validation, Business, ExternalService)
@@ -151,7 +151,8 @@ football-server/
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   ├── services/
-│   │   ├── __init__.py          # Re-exports TeamService, VenueService, MatchService, GroupService, BracketService, LiveService, ConnectionManager, PromptBuilder, get_manager
+│   │   ├── __init__.py          # Re-exports AIService, TeamService, VenueService, MatchService, GroupService, BracketService, LiveService, ConnectionManager, PromptBuilder, get_manager
+│   │   ├── ai_service.py        # AIService: Deepseek API client (stream_chat AsyncGenerator → SSEEvent objects: thinking/answer/analysis/done/error, 30s timeout, graceful error handling)
 │   │   ├── prompt_builder.py    # PromptBuilder: build_system_prompt, build_match_analysis_prompt, build_knockout_prompt, build_chat_context (bilingual zh-CN/en-US, reads skills/ markdowns)
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)

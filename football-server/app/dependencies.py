@@ -134,3 +134,10 @@ def get_bracket_service(session: AsyncSession = Depends(get_db)) -> "BracketServ
     from app.services.bracket_service import BracketService
 
     return BracketService(session)
+
+
+def get_ai_service() -> "AIService":
+    """Create an ``AIService`` (no DB session needed — pure HTTP client)."""
+    from app.services.ai_service import AIService
+
+    return AIService()

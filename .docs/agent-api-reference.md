@@ -2,9 +2,9 @@
 
 > Backend API contracts. Full spec is in `football-web/REQUIREMENTS.md` section VII.
 
-## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET COMPLETE
+## Status: APP FACTORY + DI + UTILS + SEED DATA + FRONTEND API CLIENT + REDIS INFRASTRUCTURE + CHEER SERVICE + LIVE SERVICE + WEBSOCKET + AI SERVICE COMPLETE
 
-Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, and **WebSocket manager + controller** are implemented.
+Backend scaffold, exception hierarchy, middleware, ORM models, Pydantic schemas, repositories, services, controllers, **app factory (main.py)**, **dependency injection (dependencies.py)**, **run.py entry point**, **utility modules (utils/)**, **seed data pipeline**, **frontend API client layer**, **Redis infrastructure (app/redis/)**, **Cheer voting service/controller**, **Live Service**, **WebSocket manager + controller**, and **AI Service (Deepseek API client with SSE streaming)** are implemented.
 `uvicorn app.main:app --reload` starts successfully; `/docs` shows OpenAPI with all registered routes.
 Seed data: `python -m scripts.seed_data` — one-click init (16 venues, 48 teams, 104 matches, bracket linkage, 48 group standings).
 Frontend API client: `football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — typed fetch wrapper with `ApiResponse<T>` unwrapping, language headers, timeout, and unified error handling.
@@ -59,6 +59,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `CheerService` | `get_cheers(match_id)`, `vote_cheer(match_id, side, client_ip)` | Redis HASH counters (`cheers:match:{id}` with `home`/`away` fields); HINCRBY atomic increment via pipeline; IP-based rate limiting (5-min cooldown per match+IP); in-memory class-level fallback when Redis unavailable; `_cleanup_expired_rate_limits()` prevents unbounded memory growth |
 | `LiveService` | `update_match_status(match_id, status)`, `update_score(match_id, home_score, away_score)`, `update_activity(match_id, level)`, `get_live_matches()`, `get_match_live_data(match_id)` | Redis HASH live state (`live:match:{id}` with `status`/`home_score`/`away_score`/`activity` fields); in-memory fallback; cache invalidation markers on status/score change; MatchService auto-merges Redis live data into query results via `_merge_live_data_batch()`; **broadcasts WebSocket events** on state changes (MATCH_START/MATCH_END/SCORE_UPDATE/ACTIVITY_UPDATE/BRACKET_UPDATE) |
 | `ConnectionManager` | `connect(websocket, client_id)`, `disconnect(client_id)`, `subscribe(client_id, match_id)`, `unsubscribe(client_id, match_id)`, `broadcast(event_type, data)`, `broadcast_to_match(match_id, event_type, data)`, `get_active_count()` | Module-level singleton via `get_manager()`; in-process registry of active WebSocket connections; asyncio.Lock-guarded state; auto-removes broken connections; supports per-match subscription channels |
+| `AIService` | `stream_chat(messages, *, context, lang) -> AsyncGenerator[SSEEvent]`, `close()` | Deepseek API client (OpenAI-compatible `/chat/completions`, model=`deepseek-reasoner`); yields `SSEEvent` objects: `thinking` (reasoning delta), `answer` (content delta), `analysis` (structured JSON when analysis keywords detected), `done`, `error`; uses `httpx.AsyncClient` with lazy init; 30s timeout; graceful error handling (rate limit 429, timeout, generic errors → error events, never raises); no DB dependency; config from `settings.DEEPSEEK_API_KEY` / `settings.DEEPSEEK_BASE_URL` |
 
 ## Controller Layer
 
@@ -84,7 +85,7 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 > Dependency injection is centralised in `app/dependencies.py`:
 > - `get_db` — yields `AsyncSession` with auto-commit/rollback
 > - `get_language` — extracts lang from query param or `Accept-Language` header
-> - `get_team_service`, `get_match_service`, `get_venue_service`, `get_group_service`, `get_bracket_service` — service factory functions
+> - `get_team_service`, `get_match_service`, `get_venue_service`, `get_group_service`, `get_bracket_service`, `get_ai_service` — service factory functions
 > - `get_redis` (from `app/redis/client.py`) — returns `Optional[Redis]` (`None` when Redis unavailable)
 > Engine lifecycle managed by `main.py` lifespan (init on startup, dispose on shutdown).
 > Redis pool lifecycle also managed by `main.py` lifespan (init_redis_pool on startup, close_redis_pool on shutdown).
