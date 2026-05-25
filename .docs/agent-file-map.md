@@ -34,6 +34,8 @@ football-web/
 │           └── page.tsx      # Single group detail page (standings + match list)
 ├── bracket/
 │   └── page.tsx              # Standalone full-screen bracket page
+├── stats/
+│   └── page.tsx              # Stats center page (scorer leaderboard + match statistics)
 ├── components/
 │   ├── dashboard/
 │   │   ├── header.tsx        # Top bar (language switch + timezone + view mode toggles, i18n-aware)
@@ -44,6 +46,9 @@ football-web/
 │   │   ├── group-standings.tsx   # Group standings grid (12 groups A-L, qualified highlight)
 │   │   ├── tournament-bracket.tsx # Full 6-round knockout bracket (R32→R16→QF→SF→3rd→F, API-driven) + MatchDetailDialog on click
 │   │   └── ai-copilot-panel.tsx   # AI chat sidebar (real SSE streaming, typewriter effect, thinking block, analysis card, Zustand store)
+│   ├── stats/
+│   │   ├── scorers-table.tsx    # Scorers leaderboard table (sortable by goals/assists, cyberpunk glass-card, top-3 highlight)
+│   │   └── match-stats-card.tsx # Match statistics card (upcoming/live/finished counts with progress bars)
 │   ├── theme-provider.tsx    # next-themes wrapper (unused in layout currently)
 │   └── ui/                   # shadcn/ui primitives (~60 components)
 ├── hooks/
@@ -67,7 +72,8 @@ football-web/
 │   │   ├── teams.ts          # getTeams(params), getTeamByCode(code)
 │   │   ├── groups.ts         # getGroups(), getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)
-│   │   └── cheers.ts         # getCheers(matchId), postCheer(matchId, side)
+│   │   ├── cheers.ts         # getCheers(matchId), postCheer(matchId, side)
+│   │   ├── stats.ts          # getScorers(params) — scorer leaderboard data
 │   │   └── ai-chat.ts        # streamChat() SSE consumer (fetch+ReadableStream, POST /api/ai/chat)
 │   ├── store/                # Zustand global state stores
 │   │   ├── index.ts          # Barrel re-exports for all stores
@@ -152,7 +158,7 @@ football-server/
 │   │   ├── group_repo.py        # GroupRepository: get_by_group_label (sorted by points), get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository: get_by_match (ordered by minute)
 │   ├── services/
-│   │   ├── __init__.py          # Re-exports AIService, TeamService, VenueService, MatchService, GroupService, BracketService, LiveService, ConnectionManager, PromptBuilder, get_manager
+│   │   ├── __init__.py          # Re-exports AIService, TeamService, VenueService, MatchService, GroupService, BracketService, StatsService, LiveService, ConnectionManager, PromptBuilder, get_manager
 │   │   ├── ai_service.py        # AIService: Deepseek API client (stream_chat AsyncGenerator → SSEEvent objects: thinking/answer/analysis/done/error, 30s timeout, graceful error handling)
 │   │   ├── prompt_builder.py    # PromptBuilder: build_system_prompt, build_match_analysis_prompt, build_knockout_prompt, build_chat_context (bilingual zh-CN/en-US, reads skills/ markdowns)
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group (lang-aware)
@@ -161,10 +167,11 @@ football-server/
 │   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
 │   │   ├── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
 │   │   ├── cheer_service.py     # CheerService: get_cheers, vote_cheer (Redis HASH + in-memory fallback, IP rate limiting)
+│   │   ├── stats_service.py     # StatsService: get_scorers (aggregated goal leaderboard from MatchEventRepository)
 │   │   ├── live_service.py      # LiveService: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data, apply_sync_data (Redis HASH + in-memory fallback, cache invalidation, WebSocket broadcast on state changes)
 │   │   └── websocket_manager.py # ConnectionManager: connect/disconnect, subscribe/unsubscribe, broadcast/broadcast_to_match, get_manager singleton
 │   ├── controllers/
-│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router, ai_router
+│   │   ├── __init__.py          # Re-exports team_router, venue_router, match_router, group_router, bracket_router, cheer_router, ws_router, ai_router, stats_router
 │   │   ├── ai_controller.py    # POST /api/ai/chat (SSE streaming: PromptBuilder + AIService.stream_chat → StreamingResponse text/event-stream)
 │   │   ├── team_controller.py   # GET /api/teams, GET /api/teams/:code (uses get_team_service DI)
 │   │   ├── venue_controller.py  # GET /api/venues (uses get_venue_service DI)
@@ -172,6 +179,7 @@ football-server/
 │   │   ├── group_controller.py  # GET /api/groups, /:group (uses get_group_service DI)
 │   │   ├── bracket_controller.py # GET /api/bracket, /predictions (uses get_bracket_service DI)
 │   │   ├── cheer_controller.py  # GET /api/cheers/:matchId, POST /api/cheers/:matchId (IP rate-limited voting)
+│   │   ├── stats_controller.py  # GET /api/stats/scorers (scorer leaderboard, uses StatsService DI)
 │   │   └── ws_controller.py     # WS /ws/live (WebSocket endpoint: initial payload, subscribe/unsubscribe, ping/pong keep-alive)
 │   ├── redis/
 │   │   ├── __init__.py          # Re-exports RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
@@ -190,6 +198,7 @@ football-server/
 │       ├── group_schema.py      # GroupStandingResponse + GroupDetailResponse VOs
 │       ├── bracket_schema.py    # BracketTeam/Match/Round/TreeResponse VOs (TBD support)
 │       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
+│       ├── stats_schema.py      # ScorerItem VO (rank, player_name, team info, goals, assists)
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VOs
 │       ├── ws_schema.py         # WSEventType enum + WSMessage VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VOs for scraper data validation

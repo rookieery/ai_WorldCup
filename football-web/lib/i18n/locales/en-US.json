@@ -135,6 +135,24 @@
     "errorLoading": "Failed to load group data",
     "qualified": "Qualified"
   },
+  "stats": {
+    "title": "Statistics Center",
+    "subtitle": "Top scorers and match data",
+    "scorersTitle": "Top Scorers",
+    "rank": "#",
+    "player": "Player",
+    "team": "Team",
+    "goals": "Goals",
+    "assists": "Assists",
+    "sortByGoals": "Sort by Goals",
+    "sortByAssists": "Sort by Assists",
+    "matchStats": "Match Statistics",
+    "noData": "No statistics data available yet",
+    "errorLoading": "Failed to load statistics data",
+    "goldenBoot": "Golden Boot Race",
+    "topScorer": "Top Scorer",
+    "total": "Total"
+  },
   "common": {
     "weekdayMon": "Mon",
     "weekdayTue": "Tue",

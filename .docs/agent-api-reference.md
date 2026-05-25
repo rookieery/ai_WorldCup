@@ -114,6 +114,7 @@ All services receive an `AsyncSession` at construction; they delegate to reposit
 | `LiveService` | `update_match_status(match_id, status)`, `update_score(match_id, home_score, away_score)`, `update_activity(match_id, level)`, `get_live_matches()`, `get_match_live_data(match_id)`, `apply_sync_data(match_id, *, home_score?, away_score?, status?, activity_level?, events?)` | Redis HASH live state (`live:match:{id}` with `status`/`home_score`/`away_score`/`activity` fields); in-memory fallback; cache invalidation markers on status/score change; MatchService auto-merges Redis live data into query results via `_merge_live_data_batch()`; **broadcasts WebSocket events** on state changes (MATCH_START/MATCH_END/SCORE_UPDATE/ACTIVITY_UPDATE/BRACKET_UPDATE); `apply_sync_data()` is a batched update for DataSyncService with single Redis write+read cycle |
 | `ConnectionManager` | `connect(websocket, client_id)`, `disconnect(client_id)`, `subscribe(client_id, match_id)`, `unsubscribe(client_id, match_id)`, `broadcast(event_type, data)`, `broadcast_to_match(match_id, event_type, data)`, `get_active_count()` | Module-level singleton via `get_manager()`; in-process registry of active WebSocket connections; asyncio.Lock-guarded state; auto-removes broken connections; supports per-match subscription channels |
 | `AIService` | `stream_chat(messages, *, context, lang) -> AsyncGenerator[SSEEvent]`, `close()` | Deepseek API client (OpenAI-compatible `/chat/completions`, model=`deepseek-reasoner`); yields `SSEEvent` objects: `thinking` (reasoning delta), `answer` (content delta), `analysis` (structured JSON when analysis keywords detected), `done`, `error`; uses `httpx.AsyncClient` with lazy init; 30s timeout; graceful error handling (rate limit 429, timeout, generic errors → error events, never raises); no DB dependency; config from `settings.DEEPSEEK_API_KEY` / `settings.DEEPSEEK_BASE_URL` |
+| `StatsService` | `get_scorers(lang, limit)` | Aggregates goal events from MatchEventRepository, enriches with team info; returns list of scorer dicts (rank, player_name, team_code, team_name, team_name_zh, team_flag, goals, assists); lang-aware (promotes name_zh) |
 
 ## Controller Layer
 
@@ -136,6 +137,7 @@ Controllers use FastAPI `APIRouter` with `Depends(get_*_service)` from `app/depe
 | `cheer_controller` | `POST /api/cheers/{match_id}` | Body: `{side: "home" \| "away"}`; IP-based rate limiting via `X-Forwarded-For` |
 | `ws_controller` | `WS /ws/live` | WebSocket: initial payload (connected + live_matches), subscribe/unsubscribe by matchId, 30s ping keep-alive, auto-cleanup on disconnect |
 | `ai_controller` | `POST /api/ai/chat` | Body: `ChatRequest` (`messages`, `context?`, `lang`); SSE streaming response; events: `thinking`, `answer`, `analysis`, `done`, `error`; terminated with `data: [DONE]\n\n` |
+| `stats_controller` | `GET /api/stats/scorers` | `lang` (en/zh), `limit` (1-100, default 50) |
 
 > Dependency injection is centralised in `app/dependencies.py`:
 > - `get_db` — yields `AsyncSession` with auto-commit/rollback
@@ -156,7 +158,9 @@ Each repo receives an `AsyncSession` at construction; callers control the sessio
 | `MatchRepository` | `get_by_date(date)`, `get_by_stage(stage)`, `get_by_status(status)`, `get_live_matches()`, `get_bracket_matches()`, `get_by_group_label(group)`, `get_by_team_code(code)`, `get_match_dates()` | All paginated except `get_live_matches` / `get_bracket_matches` / `get_match_dates` |
 | `VenueRepository` | — (base CRUD only) | |
 | `GroupRepository` | `get_by_group_label(group)` (sorted: pts desc, GD desc, GF desc), `get_group_matches(group)` | Returns both standings and matches for a group |
-| `MatchEventRepository` | `get_by_match(match_id)` (sorted by minute asc) | |
+| `MatchEventRepository` | `get_by_match(match_id)` (sorted by minute asc), `get_scorers_leaderboard(limit)` (aggregated goal counts per player with team info) | |
+
+**MatchEventRepository.get_scorers_leaderboard**: Aggregates goal events (`goal`, `penalty`) per player, joins through Match → Team to resolve team info (code, name, name_zh, flag). Returns rows with: player_name, goals, team_code, team_name, team_name_zh, team_flag. Ordered by goals desc.
 
 **BaseRepository[T] methods**: `get_by_id`, `get_by_id_optional`, `get_all(page, page_size, filters, order_by)`, `create(data)`, `update(entity_id, data)`, `delete(entity_id)`
 
@@ -215,6 +219,8 @@ Exception mapping: `NotFoundError→404`, `ValidationError→422`, `BusinessErro
 │   └── POST /:matchId           # Submit fan vote
 ├── /ai
 │   └── POST /chat               # AI chat (SSE streaming)
+├── /stats
+│   └── GET /scorers              # Scorer leaderboard (IMPLEMENTED)
 └── /ws
     └── /live                    # WebSocket real-time events (IMPLEMENTED)
 ```

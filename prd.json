@@ -2,16 +2,10 @@
   "branchName": "feature/world-cup",
   "stories": [
     {
-      "id": "P4-03-BGTask",
-      "title": "后台定时任务集成（main.py lifespan 启动爬虫调度）",
-      "description": "后台任务调度任务。\n\n1. 修改 `app/main.py`：在 lifespan 中添加后台任务\n   - 启动时创建 asyncio.Task 运行爬虫调度器\n   - 调度器按配置间隔执行：\n     - 每 30s：同步 live 比分（仅当有进行中比赛时）\n     - 每 5min：同步已完成比赛结果\n     - 每 1h：重新计算小组积分\n   - 关闭时取消后台任务并等待完成\n2. 可通过 SCRAPER_ENABLED=false 完全禁用爬虫\n3. 爬虫执行状态通过日志输出（标准 logging，非 print）\n\n验收：启动后端后，如启用爬虫，后台开始定时采集，比分更新通过 WebSocket 推送到前端",
-      "passes": true
-    },
-    {
       "id": "P4-04-StatsPage",
       "title": "前端：射手榜 / 数据统计中心页面",
       "description": "新增功能页面任务。\n\n1. 后端新增 API（如需）：GET /api/stats/scorers — 射手榜数据\n2. 创建 `football-web/app/stats/page.tsx`：数据统计中心页\n3. 创建 `football-web/components/stats/scorers-table.tsx`：射手榜组件\n   - 表格展示：排名、球员名、球队、进球数、助攻数\n   - 支持按进球数/助攻数排序\n4. 创建 `football-web/components/stats/match-stats-card.tsx`：比赛统计卡\n5. 赛博朋克风格，glass-card 布局\n6. 所有文案使用 t() 国际化",
-      "passes": false
+      "passes": true
     },
     {
       "id": "P4-05-TeamDetail",

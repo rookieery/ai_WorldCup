@@ -135,6 +135,24 @@
     "errorLoading": "加载小组数据失败",
     "qualified": "晋级区"
   },
+  "stats": {
+    "title": "数据统计中心",
+    "subtitle": "射手榜与比赛数据",
+    "scorersTitle": "射手榜",
+    "rank": "排名",
+    "player": "球员",
+    "team": "球队",
+    "goals": "进球",
+    "assists": "助攻",
+    "sortByGoals": "按进球排序",
+    "sortByAssists": "按助攻排序",
+    "matchStats": "比赛统计",
+    "noData": "暂无统计数据",
+    "errorLoading": "加载统计数据失败",
+    "goldenBoot": "金靴争夺",
+    "topScorer": "最佳射手",
+    "total": "总计"
+  },
   "common": {
     "weekdayMon": "周一",
     "weekdayTue": "周二",

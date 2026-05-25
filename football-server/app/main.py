@@ -100,6 +100,7 @@ def create_app() -> FastAPI:
         cheer_router,
         group_router,
         match_router,
+        stats_router,
         team_router,
         venue_router,
         ws_router,
@@ -113,6 +114,7 @@ def create_app() -> FastAPI:
     application.include_router(cheer_router)
     application.include_router(ws_router)
     application.include_router(ai_router)
+    application.include_router(stats_router)
 
     return application
 
