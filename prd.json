@@ -1,11 +1,4 @@
 {
   "branchName": "feature/world-cup",
-  "stories": [
-    {
-      "id": "P4-06-MobileAI",
-      "title": "前端：移动端 AI Copilot 适配（FAB 入口 + 抽屉展开）",
-      "description": "移动端适配任务。\n\n1. 修改 AI Copilot 相关组件：\n   - 在 lg 断点以下隐藏侧边栏\n   - 新增浮动操作按钮（FAB）：右下角，chat 图标，点击后打开 AI 面板\n   - 移动端 AI 面板以 Sheet（底部抽屉）方式展开\n   - 使用 shadcn/ui Sheet 组件\n2. 确保移动端聊天体验：\n   - 输入框固定在底部\n   - 消息列表可滚动\n   - 打字机效果正常显示\n   - 雷达图/概率条在小屏幕下可读\n3. 所有文案使用 t() 国际化",
-      "passes": true
-    }
-  ]
+  "stories": []
 }

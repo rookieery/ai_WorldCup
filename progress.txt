@@ -3,28 +3,6 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- No console.log or dead code
-- Follows existing codebase patterns (glass-card, Header component, API client pattern)
 
-## P4-06-MobileAI — Mobile AI Copilot adaptation (FAB + Sheet)
-**Date**: 2026-05-25
-**Status**: ✅ Complete
-
-### Changes
-1. **New component**: `football-web/components/dashboard/ai-copilot-mobile.tsx`
-   - FAB button (fixed bottom-right, `lg:hidden`) with MessageCircle icon + streaming pulse indicator
-   - Sheet (bottom drawer, `h-[88vh]`) wrapping `AICopilotPanel` for full mobile chat experience
-   - Accessible sr-only SheetHeader for Radix a11y compliance
-
-2. **Modified**: `football-web/app/page.tsx`
-   - Added `AICopilotMobile` import and rendered it between main content and footer
-   - Desktop sidebar (`hidden lg:block`) and mobile FAB (`lg:hidden`) are mutually exclusive
-
-3. **i18n updates**:
-   - Added `ai.fabLabel`, `ai.sheetTitle`, `ai.sheetDescription` to both `en-US.json` and `zh-CN.json`
-   - Updated `lib/i18n/types.ts` LocaleMessages interface with new keys
-
-### Verification
-- `npm run build` passes cleanly (Next.js 16.2.6 Turbopack, 0 errors)
 - FAB renders correctly in SSR output (verified via curl)
 - Uses existing Zustand `useAIChatStore` for state sharing between mobile/desktop views
