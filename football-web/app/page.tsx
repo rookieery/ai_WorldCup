@@ -16,7 +16,7 @@ type ViewMode = "timeline" | "bracket"
 
 export default function WorldCupDashboard() {
   const [timezone, setTimezone] = useState<TimezoneOption>("local")
-  const [viewMode, setViewMode] = useState<ViewMode>("bracket")
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline")
   const [selectedDate, setSelectedDate] = useState("")
   const { t } = useTranslation()
 

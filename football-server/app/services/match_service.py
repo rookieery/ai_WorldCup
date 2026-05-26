@@ -53,7 +53,7 @@ class MatchService:
         Each item contains ``date`` (ISO-8601) and ``stage``.
         """
         rows = await self._match_repo.get_match_dates()
-        return [{"date": d.isoformat(), "stage": s} for d, s in rows]
+        return [{"date": str(d), "stage": s} for d, s in rows]
 
     async def get_matches(
         self,

@@ -17,7 +17,7 @@ ai_WorldCup/
 ├── data/                     # Raw tournament data
 ├── skills/                   # AI prediction skill definitions
 ├── football-web/             # Next.js frontend (MAIN APP)
-└── football-server/          # Backend (EMPTY — not yet started)
+└── football-server/          # Backend (FastAPI + SQLite + Redis)
 ```
 
 ## football-web/ — Frontend (Next.js 16 + React 19)
@@ -26,7 +26,7 @@ ai_WorldCup/
 football-web/
 ├── app/
 │   ├── layout.tsx            # Root layout (dark theme, Geist fonts, Analytics)
-│   ├── page.tsx              # Single-page dashboard (all state lives here, Groups quick-entry link, Mobile AI Copilot FAB+Sheet)
+│   ├── page.tsx              # Single-page dashboard (default view: timeline; all state lives here, Groups quick-entry link, Mobile AI Copilot FAB+Sheet)
 │   ├── globals.css           # CSS variables, animations, glassmorphism utilities
 │   └── groups/
 │       ├── page.tsx          # Groups overview page (all 12 groups standings grid)
@@ -167,7 +167,7 @@ football-server/
 │   │   ├── prompt_builder.py    # PromptBuilder: build_system_prompt, build_match_analysis_prompt, build_knockout_prompt, build_chat_context (bilingual zh-CN/en-US, reads skills/ markdowns)
 │   │   ├── team_service.py      # TeamService: get_all_teams, get_team_by_code, get_teams_by_group, get_team_stats (lang + timezone aware)
 │   │   ├── venue_service.py     # VenueService: get_all_venues (paginated)
-│   │   ├── match_service.py     # MatchService: get_match_dates, get_matches (multi-filter + Redis live merge), get_match_by_id (with events + Redis live), get_live_matches (Redis live merge); uses shared app.utils.timezone
+│   │   ├── match_service.py     # MatchService: get_match_dates (SQLite str→date compat), get_matches (multi-filter + Redis live merge), get_match_by_id (with events + Redis live), get_live_matches (Redis live merge); uses shared app.utils.timezone
 │   │   ├── group_service.py     # GroupService: get_all_groups (12 groups standings), get_group_detail (standings + matches); lang + timezone aware (shared utils)
 │   │   ├── bracket_service.py   # BracketService: get_full_bracket (R32→F tree), get_bracket_by_round, get_predictions (TBD placeholder); uses shared app.utils.timezone
 │   │   ├── cheer_service.py     # CheerService: get_cheers, vote_cheer (Redis HASH + in-memory fallback, IP rate limiting)
