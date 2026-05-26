@@ -134,6 +134,7 @@
     "viewDetail": "查看详情",
     "groupMatches": "小组赛程",
     "backToGroups": "返回小组总览",
+    "backToTimeline": "返回时间线",
     "noGroups": "暂无小组数据",
     "errorLoading": "加载小组数据失败",
     "qualified": "晋级区"

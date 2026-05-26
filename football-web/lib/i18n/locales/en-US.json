@@ -134,6 +134,7 @@
     "viewDetail": "View Detail",
     "groupMatches": "Group Matches",
     "backToGroups": "Back to Groups",
+    "backToTimeline": "Back to Timeline",
     "noGroups": "No group data available",
     "errorLoading": "Failed to load group data",
     "qualified": "Qualified"

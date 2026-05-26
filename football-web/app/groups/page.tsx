@@ -1,9 +1,26 @@
 "use client"
 
-import { I18nProvider } from "@/lib/i18n"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+import { I18nProvider, useTranslation } from "@/lib/i18n"
 import { Header } from "@/components/dashboard/header"
 import { GroupStandings } from "@/components/dashboard/group-standings"
 import { useState } from "react"
+
+function BackToTimelineLink() {
+  const { t } = useTranslation()
+  return (
+    <div className="px-6 pt-4">
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl glass-card border border-glass-border hover:border-primary/30 transition-all text-sm font-medium text-foreground hover:text-primary group/back"
+      >
+        <ArrowLeft className="h-4 w-4 text-primary transition-transform group-hover/back:-translate-x-1" />
+        <span>{t("groups.backToTimeline")}</span>
+      </Link>
+    </div>
+  )
+}
 
 type TimezoneOption = "local" | "host"
 type ViewMode = "timeline" | "bracket"
@@ -45,6 +62,7 @@ export default function GroupsPage() {
         />
 
         <main className="flex-1 flex flex-col min-w-0">
+          <BackToTimelineLink />
           <GroupStandings />
         </main>
 

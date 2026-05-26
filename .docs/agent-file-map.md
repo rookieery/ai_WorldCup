@@ -29,7 +29,7 @@ football-web/
 │   ├── page.tsx              # Single-page dashboard (default view: timeline; all state lives here, Groups quick-entry link, Mobile AI Copilot FAB+Sheet)
 │   ├── globals.css           # CSS variables, animations, glassmorphism utilities
 │   └── groups/
-│       ├── page.tsx          # Groups overview page (all 12 groups standings grid)
+│       ├── page.tsx          # Groups overview page (all 12 groups standings grid, back-to-timeline navigation link)
 │       └── [group]/
 │           └── page.tsx      # Single group detail page (standings + match list)
 ├── bracket/
