@@ -26,6 +26,20 @@ import { wsClient } from "@/lib/websocket"
 import type { Match, CityIcon } from "@/lib/types"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
 
+/** Map a backend stage value to its i18n key. */
+function stageKey(stage: string): string {
+  const map: Record<string, string> = {
+    group: "timeline.stageGroup",
+    R32: "timeline.stageR32",
+    R16: "timeline.stageR16",
+    QF: "timeline.stageQF",
+    SF: "timeline.stageSF",
+    "3rd": "timeline.stage3rd",
+    F: "timeline.stageFinal",
+  }
+  return map[stage] ?? stage
+}
+
 const CityIconComponent = ({ type }: { type: CityIcon }) => {
   switch (type) {
     case "palm":
@@ -123,6 +137,10 @@ function MatchCard({ match, onMatchClick }: MatchCardProps) {
   const isBigMatch = match.isBigMatch
   const isFinished = liveStatus === "finished"
 
+  const stageLabel = match.stage === "group" && match.groupLabel
+    ? `${t("matchDetail.groupStage")} ${match.groupLabel}`
+    : t(stageKey(match.stage))
+
   return (
     <div
       className={cn(
@@ -170,7 +188,7 @@ function MatchCard({ match, onMatchClick }: MatchCardProps) {
                   : "bg-[#CCFF00]/10 text-[#CCFF00] border border-[#CCFF00]/20"
             )}
           >
-            {match.stage}
+            {stageLabel}
           </span>
 
           {isLive && (
@@ -395,7 +413,7 @@ interface MatchCardsGridProps {
 }
 
 export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
@@ -429,7 +447,7 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
     } finally {
       setLoading(false)
     }
-  }, [selectedDate, timezone])
+  }, [selectedDate, timezone, locale])
 
   useEffect(() => {
     fetchMatches()

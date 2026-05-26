@@ -15,8 +15,11 @@ class Venue(TimestampMixin, Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
+    name_zh: Mapped[str] = mapped_column(String(150), nullable=False, default="")
     city: Mapped[str] = mapped_column(String(100), nullable=False)
+    city_zh: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     country: Mapped[str] = mapped_column(String(100), nullable=False)
+    country_zh: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     timezone: Mapped[str] = mapped_column(String(50), nullable=False)
     utc_offset: Mapped[str] = mapped_column(String(10), nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

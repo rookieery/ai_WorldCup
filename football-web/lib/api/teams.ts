@@ -93,7 +93,7 @@ export async function getTeams(params: GetTeamsParams = {}): Promise<TeamsListRe
     page: params.page,
     page_size: params.pageSize,
     group: params.group,
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<TeamsListResponse>(`/api/teams${query}`)
@@ -106,7 +106,7 @@ export async function getTeamByCode(code: string): Promise<TeamFullDetail> {
   const lang = getApiClientLanguage()
 
   const query = buildQueryString({
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<TeamFullDetail>(`/api/teams/${code}${query}`)
@@ -119,7 +119,7 @@ export async function getTeamStats(code: string): Promise<TeamStatsData> {
   const lang = getApiClientLanguage()
 
   const query = buildQueryString({
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<TeamStatsData>(`/api/teams/${code}/stats${query}`)

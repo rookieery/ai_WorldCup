@@ -21,8 +21,11 @@ interface MatchDetailTeam {
 interface MatchDetailVenue {
   id: number
   name: string
+  name_zh: string
   city: string
+  city_zh: string
   country: string
+  country_zh: string
   timezone: string
   utc_offset: string
   capacity: number

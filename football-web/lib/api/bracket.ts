@@ -100,7 +100,7 @@ export async function getBracket(options?: {
 
   const query = buildQueryString({
     timezone: options?.timezone,
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   const raw = await apiRequest<BackendBracketTree>(`/api/bracket${query}`)

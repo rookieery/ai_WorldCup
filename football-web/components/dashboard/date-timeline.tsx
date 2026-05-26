@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback, useState } from "react"
+import { useEffect, useRef, useCallback, useState, useMemo } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -22,30 +22,23 @@ function stageKey(stage: string): string {
   return map[stage] ?? "timeline.stageRest"
 }
 
-/** Display-friendly short stage label (always English abbreviation for compactness). */
-function stageAbbr(stage: string): string {
-  const map: Record<string, string> = {
-    group: "Group",
-    R32: "R32",
-    R16: "R16",
-    QF: "QF",
-    SF: "SF",
-    "3rd": "3rd",
-    F: "Final",
-  }
-  return map[stage] ?? "Rest"
-}
-
 interface DateTimelineProps {
   selectedDate: string
   onDateSelect: (date: string) => void
 }
 
+interface RawDateItem {
+  isoDate: string
+  stage: string
+  isToday: boolean
+}
+
 interface DateItem {
-  isoDate: string      // "2026-06-11"
-  label: string        // "Jun 11"
-  dayOfWeek: string    // "Wed"
-  stage: string        // backend stage key
+  isoDate: string
+  label: string
+  dayOfWeek: string
+  stage: string
+  stageLabel: string
   isToday: boolean
 }
 
@@ -75,10 +68,23 @@ function formatDayOfWeek(d: Date, t: (k: string) => string): string {
 }
 
 export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [dates, setDates] = useState<DateItem[]>([])
+  const [rawDates, setRawDates] = useState<RawDateItem[]>([])
   const [loading, setLoading] = useState(true)
+
+  const dates = useMemo<DateItem[]>(() =>
+    rawDates.map((item) => {
+      const d = new Date(item.isoDate + "T00:00:00")
+      return {
+        ...item,
+        label: formatDateLabel(d, t),
+        dayOfWeek: formatDayOfWeek(d, t),
+        stageLabel: t(stageKey(item.stage)),
+      }
+    }),
+    [rawDates, t],
+  )
 
   // ── Fetch match dates from API ──────────────────────────────────────────
   useEffect(() => {
@@ -93,19 +99,16 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        const items: DateItem[] = raw.map((entry) => {
+        const items: RawDateItem[] = raw.map((entry) => {
           const d = new Date(entry.date + "T00:00:00")
-          const isToday = d.getTime() === today.getTime()
           return {
             isoDate: entry.date,
-            label: formatDateLabel(d, t),
-            dayOfWeek: formatDayOfWeek(d, t),
             stage: entry.stage,
-            isToday,
+            isToday: d.getTime() === today.getTime(),
           }
         })
 
-        setDates(items)
+        setRawDates(items)
 
         // Auto-select today, or the nearest future date with matches
         const todayItem = items.find((i) => i.isToday)
@@ -132,7 +135,7 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
     fetchDates()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [locale])
 
   // ── Scroll to selected / today on first render ─────────────────────────
   useEffect(() => {
@@ -227,7 +230,7 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
                   getStageColor(item.stage, isSelected)
                 )}
               >
-                {stageAbbr(item.stage)}
+                {item.stageLabel}
               </span>
               <span
                 className={cn(

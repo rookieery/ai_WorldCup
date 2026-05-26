@@ -35,7 +35,7 @@ export async function getScorers(
   const lang = getApiClientLanguage()
 
   const query = buildQueryString({
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
     limit: params.limit,
   })
 

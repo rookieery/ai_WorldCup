@@ -124,7 +124,7 @@ All API responses (success and error) follow: `{"code": int, "data": T | null, "
 Base (DeclarativeBase)
 └── TimestampMixin (created_at, updated_at)
     ├── Team (id, name UNIQUE, name_zh, code UNIQUE, flag, fifa_ranking, group_label, confederation, world_cup_appearances)
-    ├── Venue (id, name, city, country, timezone, utc_offset, capacity)
+    ├── Venue (id, name, name_zh, city, city_zh, country, country_zh, timezone, utc_offset, capacity)
     ├── Match (id, external_id UNIQUE, home/away_team_id FK→Team, venue_id FK→Venue, stage, group_label, round, match_day, kickoff_utc, status, home/away_score, is_big_match, activity_level, next_match_id FK→Match(self), position)
     ├── GroupStanding (id, team_id FK UNIQUE→Team, group_label, played, won, drawn, lost, goals_for, goals_against, goal_difference, points, position)
     └── MatchEvent (id, match_id FK→Match, event_type, minute, team_side, player_name)
@@ -156,7 +156,7 @@ match_schema.py
 └── MatchDetailResponse (VO) # Extends MatchResponse + events list
 
 venue_schema.py
-└── VenueResponse (VO)       # name, city, country, timezone, utc_offset, capacity
+└── VenueResponse (VO)       # name, name_zh, city, city_zh, country, country_zh, timezone, utc_offset, capacity
 
 group_schema.py
 ├── GroupStandingResponse (VO) # team + stats (played/won/drawn/lost/GF/GA/GD/pts/pos)
@@ -189,6 +189,7 @@ All response models use `from_attributes = True` for seamless ORM → VO convers
 - **DB URL**: Dynamically resolved from `app.config.settings.DATABASE_URL`
 - **Batch mode**: `render_as_batch=True` for SQLite ALTER TABLE support
 - **Initial migration** (`001_initial_schema.py`): Creates teams, venues, group_standings, matches, match_events with all FK constraints
+- **Venue zh migration** (`002_venue_zh_fields.py`): Adds `name_zh`, `city_zh`, `country_zh` columns to venues table
 - **Commands**: `alembic upgrade head` / `alembic downgrade base`
 
 ## Key Implementation Gaps

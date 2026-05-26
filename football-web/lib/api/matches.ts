@@ -40,8 +40,11 @@ export interface MatchApiItem {
   venue: {
     id: number
     name: string
+    name_zh: string
     city: string
+    city_zh: string
     country: string
+    country_zh: string
     timezone: string
     utc_offset: string
     capacity: number
@@ -90,8 +93,11 @@ interface MatchDetail {
   venue: {
     id: number
     name: string
+    name_zh: string
     city: string
+    city_zh: string
     country: string
+    country_zh: string
     timezone: string
     utc_offset: string
     capacity: number
@@ -146,7 +152,7 @@ export async function getMatches(params: GetMatchesParams = {}): Promise<MatchLi
     status: params.status,
     team: params.teamCode,
     timezone: params.timezone,
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
     page: params.page,
     page_size: params.pageSize,
   })
@@ -165,7 +171,7 @@ export async function getMatchById(
 
   const query = buildQueryString({
     timezone: options?.timezone,
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<MatchDetail>(`/api/matches/${id}${query}`)
@@ -181,7 +187,7 @@ export async function getLiveMatches(options?: {
 
   const query = buildQueryString({
     timezone: options?.timezone,
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<MatchApiItem[]>(`/api/matches/live${query}`)
@@ -220,7 +226,8 @@ export function apiMatchToUi(m: MatchApiItem): import("@/lib/types").Match {
     venue: m.venue.name,
     hostCity: m.venue.city,
     cityIcon: inferCityIcon(m.venue.city),
-    stage: m.stage === "group" && m.group_label ? `Group ${m.group_label}` : m.stage,
+    stage: m.stage,
+    groupLabel: m.group_label ?? undefined,
     status: m.status as import("@/lib/types").MatchStatus,
     score1: m.home_score ?? undefined,
     score2: m.away_score ?? undefined,

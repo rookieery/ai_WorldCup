@@ -64,7 +64,7 @@ football-web/
 │   ├── websocket.ts          # WebSocket client singleton (auto-connect/reconnect, event dispatch to Zustand live store)
 │   ├── i18n/                 # Internationalization infrastructure
 │   │   ├── index.ts          # Barrel exports (I18nProvider, useI18n, useTranslation, types)
-│   │   ├── context.tsx       # I18nProvider (React Context: locale state, t() function, localStorage persistence)
+│   │   ├── context.tsx       # I18nProvider (React Context: locale state, t() function, localStorage persistence + API language sync + store cache invalidation on locale change)
 │   │   ├── use-translation.ts # useTranslation hook — thin wrapper exposing { t, locale, setLocale }
 │   │   ├── types.ts          # Locale union type + LocaleMessages interface (mirrors JSON shape)
 │   │   └── locales/
@@ -82,7 +82,7 @@ football-web/
 │   ├── store/                # Zustand global state stores
 │   │   ├── index.ts          # Barrel re-exports for all stores
 │   │   ├── preferences.ts    # User preferences (language, timezone, viewMode, theme) — localStorage persisted
-│   │   ├── matches.ts        # Match data cache (by date + live) with fetch actions + TTL
+│   │   ├── matches.ts        # Match data cache (by date + live) with fetch actions + TTL + invalidateAll() for locale switch
 │   │   ├── live.ts           # Real-time WebSocket state (scores, cheer updates, WS connection status) — driven by websocket.ts events
 │   │   └── ai-chat.ts        # AI chat messages + streaming state (content buffers, analysis payload)
 │   └── types/                # Shared TypeScript type definitions
@@ -131,7 +131,8 @@ football-server/
 │   ├── env.py                   # Async migration runner (reads settings.DATABASE_URL)
 │   ├── script.py.mako           # Migration script template
 │   └── versions/
-│       └── 001_initial_schema.py  # Initial migration: 5 tables + FK relationships
+│       ├── 001_initial_schema.py  # Initial migration: 5 tables + FK relationships
+│       └── 002_venue_zh_fields.py # Add name_zh, city_zh, country_zh to venues table
 ├── app/
 │   ├── __init__.py              # Package init (empty)
 │   ├── config.py                # Pydantic Settings: all env vars with defaults (incl. REDIS_URL, REDIS_ENABLED, SCRAPER_*, scraper intervals)
@@ -220,7 +221,7 @@ football-server/
 │   ├── seed_teams.py            # Seed 48 teams (idempotent upsert by code)
 │   ├── team_data.py             # 48-team roster data (bilingual, FIFA rankings, confederations)
 │   ├── seed_venues.py           # Seed 16 venues (idempotent upsert by name)
-│   ├── venue_data.py            # 16-venue roster data (city, country, IANA timezone, capacity)
+│   ├── venue_data.py            # 16-venue roster data (city, country, IANA timezone, capacity + Chinese translations)
 │   └── seed_matches.py          # Seed 104 matches (72 group + 32 knockout, bracket linkage, TBD placeholder team)
 └── scalable-beaming-riddle.md   # Backend architecture plan
 ```

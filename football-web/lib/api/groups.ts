@@ -88,7 +88,7 @@ export async function getGroups(): Promise<GroupOverview[]> {
   const lang = getApiClientLanguage()
 
   const query = buildQueryString({
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<GroupOverview[]>(`/api/groups${query}`)
@@ -105,7 +105,7 @@ export async function getGroupDetail(
 
   const query = buildQueryString({
     timezone: options?.timezone,
-    lang: lang === "zh-CN" ? "zh" : "en",
+    lang,
   })
 
   return apiRequest<GroupDetail>(`/api/groups/${group}${query}`)

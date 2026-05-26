@@ -259,6 +259,7 @@ def _match_to_vo(
 
     _apply_team_lang(data, "home_team", lang)
     _apply_team_lang(data, "away_team", lang)
+    _apply_venue_lang(data, lang)
 
     if timezone_name:
         try:
@@ -289,6 +290,7 @@ def _match_detail_to_vo(
 
     _apply_team_lang(data, "home_team", lang)
     _apply_team_lang(data, "away_team", lang)
+    _apply_venue_lang(data, lang)
 
     event_vos = [MatchEventResponse.model_validate(e).model_dump() for e in events]
     data["events"] = event_vos
@@ -315,6 +317,15 @@ def _apply_team_lang(data: dict, team_key: str, lang: str) -> None:
     if lang == "zh" and team_key in data and data[team_key]:
         team_data = data[team_key]
         team_data["name"] = team_data.get("name_zh", team_data["name"])
+
+
+def _apply_venue_lang(data: dict, lang: str) -> None:
+    """Promote ``name_zh``, ``city_zh``, ``country_zh`` when language is Chinese."""
+    if lang == "zh" and "venue" in data and data["venue"]:
+        venue = data["venue"]
+        venue["name"] = venue.get("name_zh") or venue["name"]
+        venue["city"] = venue.get("city_zh") or venue["city"]
+        venue["country"] = venue.get("country_zh") or venue["country"]
 
 
 def _apply_live_override(

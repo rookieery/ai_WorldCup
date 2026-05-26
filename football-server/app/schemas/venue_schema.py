@@ -10,8 +10,11 @@ class VenueResponse(BaseModel):
 
     id: int
     name: str
+    name_zh: str = ""
     city: str
+    city_zh: str = ""
     country: str
+    country_zh: str = ""
     timezone: str = Field(description="IANA timezone identifier (e.g. America/New_York)")
     utc_offset: str = Field(description="UTC offset string (e.g. -05:00)")
     capacity: int = Field(default=0, ge=0, description="Stadium seating capacity")

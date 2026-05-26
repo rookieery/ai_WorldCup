@@ -37,6 +37,20 @@ import type { MatchDetailData } from "@/components/dashboard/match-detail-helper
 
 // ── Match Detail Dialog ────────────────────────────────────────────────────────
 
+/** Map a backend stage value to its i18n key. */
+function stageKey(stage: string): string {
+  const map: Record<string, string> = {
+    group: "timeline.stageGroup",
+    R32: "timeline.stageR32",
+    R16: "timeline.stageR16",
+    QF: "timeline.stageQF",
+    SF: "timeline.stageSF",
+    "3rd": "timeline.stage3rd",
+    F: "timeline.stageFinal",
+  }
+  return map[stage] ?? stage
+}
+
 export function MatchDetailDialog({
   matchId,
   open,
@@ -200,7 +214,7 @@ export function MatchDetailDialog({
                       )}>
                         {data.stage === "group" && data.group_label
                           ? `${t("matchDetail.groupStage")} ${data.group_label}`
-                          : data.stage}
+                          : t(stageKey(data.stage))}
                       </span>
 
                       <div className="flex items-center gap-2">

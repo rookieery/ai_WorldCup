@@ -34,6 +34,8 @@ interface MatchesState {
   upsertMatch: (date: string, match: Match) => void
   /** Update a live match's score / status in-place. */
   updateLiveMatch: (matchId: number, patch: Partial<Match>) => void
+  /** Clear all cached data (e.g. when locale changes so data must be re-fetched). */
+  invalidateAll: () => void
 }
 
 // ── Cache TTL ───────────────────────────────────────────────────────────────────
@@ -144,5 +146,9 @@ export const useMatchesStore = create<MatchesState>()((set, get) => ({
         m.id === matchId ? { ...m, ...patch } : m,
       ),
     }))
+  },
+
+  invalidateAll: () => {
+    set({ byDate: {}, liveMatches: [] })
   },
 }))

@@ -21,6 +21,7 @@ export interface Match {
   hostCity: string
   cityIcon: CityIcon
   stage: string
+  groupLabel?: string
   status: MatchStatus
   score1?: number
   score2?: number

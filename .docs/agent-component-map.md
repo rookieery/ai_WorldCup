@@ -45,27 +45,31 @@
 ### `date-timeline.tsx` — `DateTimeline`
 - **Props**: `selectedDate`, `onDateSelect`
 - **Data**: Fetched from API via `getMatchDates()` — dynamic match dates with stage labels
+- **Format separation**: Raw date data (`rawDates` state) separated from formatted labels (`useMemo` derived from `t`) — re-formats automatically on locale change
+- **Locale re-fetch**: `useEffect` depends on `locale` — re-fetches date list from API when language changes (stage labels are server-localized)
 - **Auto-select**: On mount, selects today or nearest future match date
 - **Auto-scroll**: Scrolls selected date into view on first render
 - **UI**: Horizontal scroll with arrow nav, stage-colored date pills
 - **Stage colors**: Group=lime, R32/R16=cyan, QF/SF=magenta, 3rd/Final=gold
-- **i18n**: Uses `useTranslation()` for month/weekday labels and loading text
+- **Stage labels**: Uses `stageKey()` + `t()` for localized stage abbreviations (小组赛/32强/etc.)
+- **i18n**: Uses `useTranslation()` for month/weekday labels, stage labels, and loading text
 - **Dependencies**: `Button` (shadcn), `cn` utility, `getMatchDates` from API
-- **Lines**: ~210
+- **Lines**: ~260
 
 ### `match-cards-grid.tsx` — `MatchCardsGrid`
 - **Props**: `selectedDate`, `timezone` ("local" | "host")
-- **Data**: Fetched from API via `getMatches({ date, timezone })` — dynamic, date-driven
+- **Data**: Fetched from API via `getMatches({ date, timezone })` — dynamic, date-driven; re-fetches on locale change (depends on `locale`)
 - **Sub-components**: `MatchCard`, `CityIconComponent`, `EmptyState`
 - **Real-time**: Subscribes to `useLiveStore` for live score patches, cheer updates, and WS status; starts `wsClient` on mount
 - **Cheer Voting**: `MatchCard.handleCheer()` calls `postCheer(matchId, side)` API with optimistic update + rollback on failure
 - **Match Detail**: Card click opens `MatchDetailDialog` via `onMatchClick` callback (passes matchId)
+- **Stage labels**: Uses `stageKey()` + `t()` for localized stage badges; group stages show "小组 A" format
 - **Features**: Live score display with WS-patched data, Big Match badge, activity bar, Fan Cheer Meter (hover expand), WS connection indicator, loading/error/empty states
-- **API mapping**: `apiMatchToUi()` converts backend `MatchApiItem` → frontend `Match` type
-- **i18n**: Uses `useTranslation()` for all visible text
+- **API mapping**: `apiMatchToUi()` converts backend `MatchApiItem` → frontend `Match` type (preserves raw `stage` + `groupLabel` separately for i18n)
+- **i18n**: Uses `useTranslation()` for all visible text including stage labels
 - **Types imported**: `Match`, `CityIcon` from `@/lib/types`, `LiveScorePatch`, `CheerUpdate` from `@/lib/store`
 - **Dependencies**: `cn` utility, `lucide-react` icons (incl. Wifi, WifiOff), `getMatches` + `apiMatchToUi` from API, `postCheer` from cheers API, `useLiveStore`, `wsClient`, `MatchDetailDialog`
-- **Lines**: ~525
+- **Lines**: ~540
 
 ### `group-standings.tsx` — `GroupStandings`
 - **Data**: Fetched from API via `getGroups()` — all 12 groups (A-L) with standings
@@ -94,17 +98,18 @@
 - **Data**: Fetched from API via `getMatchById(id)` + `getCheers(matchId)` on dialog open
 - **Real-time**: Merges live score patches and cheer updates from `useLiveStore`
 - **Sections**: Match header (teams + score + status), Live activity bar, Fan cheer meter, Match events timeline (1st/2nd half + extra time), Match statistics (goals/cards), Venue info
+- **Stage labels**: Uses `stageKey()` + `t()` for localized stage badges (小组赛/32强/etc.)
 - **Cyberpunk Style**: glass-card, glow effects, gradient overlays, LED display for live scores
-- **i18n**: Uses `useTranslation()` for all visible text (matchDetail namespace)
+- **i18n**: Uses `useTranslation()` for all visible text (matchDetail + timeline namespaces)
 - **Types imported**: `LiveScorePatch`, `CheerUpdate` from `@/lib/store`, `MatchDetailData` from `match-detail-helpers`
 - **Dependencies**: Dialog, ScrollArea, Separator (shadcn), `cn`, `lucide-react` icons, `getMatchById` from API, `getCheers` from cheers API, `useLiveStore`, helper components
-- **Lines**: ~465
+- **Lines**: ~480
 
 ### `match-detail-helpers.tsx` — Helper components + types for MatchDetailDialog
-- **Exported Types**: `MatchDetailEvent`, `MatchDetailData`
+- **Exported Types**: `MatchDetailEvent`, `MatchDetailData` (venue includes `name_zh`, `city_zh`, `country_zh` fields)
 - **Components**: `EventsSection` (half-grouped event list), `StatRow` (dual-bar stat), `VenueInfoItem` (label-value pair)
 - **Internal**: `EventIcon` (event-type icon), `EventLabel` (event-type i18n label)
-- **Lines**: ~215
+- **Lines**: ~218
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
 - **State**: Connected to Zustand `useAIChatStore` + local `input`, `isFocused`, `thinkingCollapsed`, `errorMessage`, `showDisclaimer`
@@ -149,6 +154,7 @@ Types are centralized in `lib/types/` and re-exported from `@/lib/types`. Import
 - **Persistence**: `localStorage` key `worldcup-locale`
 - **Auto-detection**: Reads `navigator.language` on first visit (zh* → zh-CN, else en-US)
 - **Language mapping**: zh-CN → `document.documentElement.lang = "zh"`, en-US → `"en"`
+- **API sync**: Calls `setApiClientLanguage()` on locale change so all API requests carry correct `lang` param and `Accept-Language` header
 
 ### Locale Files
 | File | Language | Keys |

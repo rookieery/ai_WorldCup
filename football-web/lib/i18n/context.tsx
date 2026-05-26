@@ -11,6 +11,8 @@ import {
 import type { Locale, LocaleMessages } from "./types"
 import zhCN from "./locales/zh-CN.json"
 import enUS from "./locales/en-US.json"
+import { setApiClientLanguage } from "@/lib/api-client"
+import { useMatchesStore } from "@/lib/store"
 
 const localeMap: Record<Locale, LocaleMessages> = {
   "zh-CN": zhCN as LocaleMessages,
@@ -62,12 +64,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (detected !== locale) {
       setLocaleState(detected)
     }
+    setApiClientLanguage(detected === "zh-CN" ? "zh" : "en")
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale)
     localStorage.setItem(STORAGE_KEY, newLocale)
     document.documentElement.lang = newLocale === "zh-CN" ? "zh" : "en"
+    setApiClientLanguage(newLocale === "zh-CN" ? "zh" : "en")
+    useMatchesStore.getState().invalidateAll()
   }, [])
 
   useEffect(() => {
