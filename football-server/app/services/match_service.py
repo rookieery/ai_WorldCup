@@ -47,12 +47,16 @@ class MatchService:
 
     # ── public methods ─────────────────────────────────────────────────────
 
-    async def get_match_dates(self) -> list[dict]:
+    async def get_match_dates(
+        self,
+        timezone_name: Optional[str] = None,
+    ) -> list[dict]:
         """Return all distinct match dates with their primary stage label.
 
         Each item contains ``date`` (ISO-8601) and ``stage``.
+        When *timezone_name* is given, dates are computed in that timezone.
         """
-        rows = await self._match_repo.get_match_dates()
+        rows = await self._match_repo.get_match_dates(timezone_name=timezone_name)
         return [{"date": str(d), "stage": s} for d, s in rows]
 
     async def get_matches(
@@ -80,10 +84,12 @@ class MatchService:
         if params.date:
             target_date = date.fromisoformat(params.date)
             matches, total = await self._match_repo.get_by_date(
-                target_date, page=page, page_size=page_size
+                target_date, timezone_name=timezone_name,
+                page=page, page_size=page_size,
             )
             matches, total = self._apply_secondary_filters(
-                matches, total, params, primary="date"
+                matches, total, params, primary="date",
+                timezone_name=timezone_name,
             )
         elif params.team:
             matches, total = await self._match_repo.get_by_team_code(
@@ -216,13 +222,24 @@ class MatchService:
         total: int,
         params: MatchQueryParams,
         primary: str,
+        *,
+        timezone_name: Optional[str] = None,
     ) -> tuple[list, int]:
         """Apply remaining filters in-memory after the primary repo query."""
         result = list(matches)
 
         if primary != "date" and params.date:
             target = date.fromisoformat(params.date)
-            result = [m for m in result if m.kickoff_utc.date() == target]
+            if timezone_name:
+                from zoneinfo import ZoneInfo
+                tz = ZoneInfo(timezone_name)
+                utc = ZoneInfo("UTC")
+                result = [
+                    m for m in result
+                    if m.kickoff_utc.replace(tzinfo=utc).astimezone(tz).date() == target
+                ]
+            else:
+                result = [m for m in result if m.kickoff_utc.date() == target]
 
         if primary != "team" and params.team:
             code = params.team.upper()

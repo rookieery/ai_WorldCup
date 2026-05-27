@@ -53,10 +53,13 @@ async def list_matches(
 
 @router.get("/dates", summary="Get all match dates with stage labels")
 async def get_match_dates(
+    timezone: str | None = Query(
+        default=None, description="Target IANA timezone for date grouping"
+    ),
     svc: MatchService = Depends(get_match_service),
 ) -> ApiResponse:
     """Return all dates that have matches, with their primary stage label."""
-    dates = await svc.get_match_dates()
+    dates = await svc.get_match_dates(timezone_name=timezone)
     return ApiResponse(data=dates)
 
 

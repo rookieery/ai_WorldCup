@@ -135,9 +135,14 @@ interface GetMatchesParams extends MatchQueryParams {
 /**
  * Fetch all match dates with their primary stage label.
  * Returns a sorted list of { date, stage } objects.
+ * When timezone is provided, dates are computed in that timezone.
  */
-export async function getMatchDates(): Promise<MatchDateInfo[]> {
-  return apiRequest<MatchDateInfo[]>("/api/matches/dates")
+export async function getMatchDates(options?: {
+  timezone?: string
+}): Promise<MatchDateInfo[]> {
+  const lang = getApiClientLanguage()
+  const query = buildQueryString({ timezone: options?.timezone, lang })
+  return apiRequest<MatchDateInfo[]>(`/api/matches/dates${query}`)
 }
 
 /**

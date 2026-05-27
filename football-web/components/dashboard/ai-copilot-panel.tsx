@@ -9,6 +9,7 @@ import { useTranslation } from "@/lib/i18n"
 import { useAIChatStore, usePreferencesStore } from "@/lib/store"
 import { streamChat, type ChatMessageItem } from "@/lib/api/ai-chat"
 import { TeamFlag } from "@/lib/flags"
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import type { TeamAnalysis, TeamStats } from "@/lib/types"
 
 // ── Quick Prompts ──────────────────────────────────────────────────────────────
@@ -217,7 +218,7 @@ function ThinkingIndicator({ message }: { message: string }) {
 function TypewriterText({ text, streaming }: { text: string; streaming: boolean }) {
   return (
     <span>
-      {text}
+      <MarkdownRenderer content={text} />
       {streaming && (
         <span className="inline-block w-[2px] h-[1em] bg-[#00F0FF] ml-[1px] animate-pulse align-text-bottom" />
       )}
@@ -253,8 +254,8 @@ function ThinkingBlock({
         )}
       </button>
       {!collapsed && (
-        <div className="text-[11px] text-muted-foreground/60 bg-secondary/20 border border-glass-border rounded-lg p-3 leading-relaxed whitespace-pre-wrap">
-          {content}
+        <div className="text-[11px] text-muted-foreground/60 bg-secondary/20 border border-glass-border rounded-lg p-3 leading-relaxed">
+          <MarkdownRenderer content={content} />
         </div>
       )}
     </div>
@@ -479,7 +480,11 @@ export function AICopilotPanel() {
                     : "bg-secondary/30 border border-glass-border text-foreground backdrop-blur-sm"
                 )}
               >
-                {message.content}
+                {message.role === "assistant" ? (
+                  <MarkdownRenderer content={message.content} />
+                ) : (
+                  message.content
+                )}
                 {message.type === "analysis" && message.analysisData && (
                   <AnalysisCard data={message.analysisData} t={t} />
                 )}

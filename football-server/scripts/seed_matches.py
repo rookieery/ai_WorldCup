@@ -27,55 +27,136 @@ from app.utils.markdown_parser import MarkdownParser
 
 logger = logging.getLogger(__name__)
 
-# ── Kickoff time slots (UTC hours) per match-day density ───────────────────────
-
-_SLOTS: dict[int, list[int]] = {
-    2: [18, 21],
-    4: [13, 16, 19, 22],
-    6: [12, 15, 17, 19, 21, 23],
-    8: [12, 14, 16, 17, 19, 20, 22, 23],
+# ── Real FIFA 2026 group-stage schedule ───────────────────────────────────────
+# Keyed by external_id, value is (kickoff_utc, venue_name).
+# Source: FIFA official schedule + Roadtrips.com (EST→UTC via EDT UTC-4).
+_GROUP_MATCH_DATA: dict[str, tuple[datetime, str]] = {
+    # Group A
+    "A_M1": (datetime(2026, 6, 11, 19, 0), "Estadio Azteca"),          # Mexico vs South Africa  13:00 local
+    "A_M2": (datetime(2026, 6, 12, 2, 0),  "Estadio Akron"),           # South Korea vs Czechia  20:00 local
+    "A_M3": (datetime(2026, 6, 19, 1, 0),  "Estadio Akron"),           # Mexico vs South Korea   19:00 local
+    "A_M4": (datetime(2026, 6, 18, 16, 0), "Mercedes-Benz Stadium"),   # Czechia vs South Africa 12:00 local
+    "A_M5": (datetime(2026, 6, 25, 1, 0),  "Estadio Azteca"),          # Czechia vs Mexico       19:00 local
+    "A_M6": (datetime(2026, 6, 25, 1, 0),  "Estadio BBVA"),            # South Africa vs Korea   19:00 local
+    # Group B
+    "B_M1": (datetime(2026, 6, 12, 19, 0), "BMO Field"),               # Canada vs Bosnia        15:00 local
+    "B_M2": (datetime(2026, 6, 13, 19, 0), "Levi's Stadium"),          # Qatar vs Switzerland    12:00 local
+    "B_M3": (datetime(2026, 6, 18, 22, 0), "BC Place"),                # Canada vs Qatar         15:00 local
+    "B_M4": (datetime(2026, 6, 18, 19, 0), "SoFi Stadium"),            # Switzerland vs Bosnia   12:00 local
+    "B_M5": (datetime(2026, 6, 24, 19, 0), "BC Place"),                # Switzerland vs Canada   12:00 local
+    "B_M6": (datetime(2026, 6, 24, 19, 0), "Lumen Field"),             # Bosnia vs Qatar         12:00 local
+    # Group C
+    "C_M1": (datetime(2026, 6, 13, 22, 0), "MetLife Stadium"),         # Brazil vs Morocco       18:00 local
+    "C_M2": (datetime(2026, 6, 14, 1, 0),  "Gillette Stadium"),        # Haiti vs Scotland       21:00 local
+    "C_M3": (datetime(2026, 6, 20, 1, 0),  "Lincoln Financial Field"), # Brazil vs Haiti         21:00 local
+    "C_M4": (datetime(2026, 6, 19, 22, 0), "Gillette Stadium"),        # Scotland vs Morocco     18:00 local
+    "C_M5": (datetime(2026, 6, 24, 22, 0), "Hard Rock Stadium"),       # Scotland vs Brazil      18:00 local
+    "C_M6": (datetime(2026, 6, 24, 22, 0), "Mercedes-Benz Stadium"),   # Morocco vs Haiti        18:00 local
+    # Group D
+    "D_M1": (datetime(2026, 6, 13, 1, 0),  "SoFi Stadium"),            # USA vs Paraguay         18:00 local
+    "D_M2": (datetime(2026, 6, 13, 4, 0),  "BC Place"),                # Australia vs Türkiye    21:00 local
+    "D_M3": (datetime(2026, 6, 19, 19, 0), "Lumen Field"),             # USA vs Australia        12:00 local
+    "D_M4": (datetime(2026, 6, 20, 3, 0),  "Levi's Stadium"),          # Türkiye vs Paraguay     20:00 local
+    "D_M5": (datetime(2026, 6, 26, 2, 0),  "SoFi Stadium"),            # Türkiye vs USA          19:00 local
+    "D_M6": (datetime(2026, 6, 26, 2, 0),  "Levi's Stadium"),          # Paraguay vs Australia   19:00 local
+    # Group E
+    "E_M1": (datetime(2026, 6, 14, 17, 0), "NRG Stadium"),             # Germany vs Curaçao      12:00 local
+    "E_M2": (datetime(2026, 6, 14, 23, 0), "Lincoln Financial Field"), # Ivory Coast vs Ecuador  19:00 local
+    "E_M3": (datetime(2026, 6, 20, 20, 0), "BMO Field"),               # Germany vs Ivory Coast  16:00 local
+    "E_M4": (datetime(2026, 6, 21, 0, 0),  "Arrowhead Stadium"),       # Ecuador vs Curaçao      19:00 local
+    "E_M5": (datetime(2026, 6, 25, 20, 0), "Lincoln Financial Field"), # Curaçao vs Ivory Coast  16:00 local
+    "E_M6": (datetime(2026, 6, 25, 20, 0), "MetLife Stadium"),         # Ecuador vs Germany      16:00 local
+    # Group F
+    "F_M1": (datetime(2026, 6, 14, 20, 0), "AT&T Stadium"),            # Netherlands vs Japan    15:00 local
+    "F_M2": (datetime(2026, 6, 15, 2, 0),  "Estadio BBVA"),            # Sweden vs Tunisia       20:00 local
+    "F_M3": (datetime(2026, 6, 20, 17, 0), "NRG Stadium"),             # Netherlands vs Sweden   12:00 local
+    "F_M4": (datetime(2026, 6, 21, 4, 0),  "Estadio BBVA"),            # Tunisia vs Japan        22:00 local
+    "F_M5": (datetime(2026, 6, 25, 23, 0), "Arrowhead Stadium"),       # Tunisia vs Netherlands  18:00 local
+    "F_M6": (datetime(2026, 6, 25, 23, 0), "AT&T Stadium"),            # Japan vs Sweden         18:00 local
+    # Group G
+    "G_M1": (datetime(2026, 6, 15, 19, 0), "Lumen Field"),             # Belgium vs Egypt        12:00 local
+    "G_M2": (datetime(2026, 6, 16, 1, 0),  "SoFi Stadium"),            # Iran vs New Zealand     18:00 local
+    "G_M3": (datetime(2026, 6, 21, 19, 0), "SoFi Stadium"),            # Belgium vs Iran         12:00 local
+    "G_M4": (datetime(2026, 6, 22, 1, 0),  "BC Place"),                # New Zealand vs Egypt    18:00 local
+    "G_M5": (datetime(2026, 6, 27, 3, 0),  "BC Place"),                # New Zealand vs Belgium  20:00 local
+    "G_M6": (datetime(2026, 6, 27, 3, 0),  "Lumen Field"),             # Egypt vs Iran           20:00 local
+    # Group H
+    "H_M1": (datetime(2026, 6, 15, 16, 0), "Mercedes-Benz Stadium"),   # Spain vs Cape Verde     12:00 local
+    "H_M2": (datetime(2026, 6, 15, 22, 0), "Hard Rock Stadium"),       # Saudi Arabia vs Uruguay 18:00 local
+    "H_M3": (datetime(2026, 6, 21, 16, 0), "Mercedes-Benz Stadium"),   # Spain vs Saudi Arabia   12:00 local
+    "H_M4": (datetime(2026, 6, 21, 22, 0), "Hard Rock Stadium"),       # Uruguay vs Cape Verde   18:00 local
+    "H_M5": (datetime(2026, 6, 27, 0, 0),  "Estadio Akron"),           # Uruguay vs Spain        18:00 local
+    "H_M6": (datetime(2026, 6, 27, 0, 0),  "NRG Stadium"),             # Cape Verde vs Saudi     19:00 local
+    # Group I
+    "I_M1": (datetime(2026, 6, 16, 19, 0), "MetLife Stadium"),         # France vs Senegal       15:00 local
+    "I_M2": (datetime(2026, 6, 16, 22, 0), "Gillette Stadium"),        # Iraq vs Norway          18:00 local
+    "I_M3": (datetime(2026, 6, 22, 21, 0), "Lincoln Financial Field"), # France vs Iraq          17:00 local
+    "I_M4": (datetime(2026, 6, 23, 0, 0),  "MetLife Stadium"),         # Norway vs Senegal       20:00 local
+    "I_M5": (datetime(2026, 6, 26, 19, 0), "Gillette Stadium"),        # Norway vs France        15:00 local
+    "I_M6": (datetime(2026, 6, 26, 19, 0), "BMO Field"),               # Senegal vs Iraq         15:00 local
+    # Group J
+    "J_M1": (datetime(2026, 6, 17, 1, 0),  "Arrowhead Stadium"),       # Argentina vs Algeria    20:00 local
+    "J_M2": (datetime(2026, 6, 17, 4, 0),  "Levi's Stadium"),          # Austria vs Jordan       21:00 local
+    "J_M3": (datetime(2026, 6, 22, 17, 0), "AT&T Stadium"),            # Argentina vs Austria    12:00 local
+    "J_M4": (datetime(2026, 6, 23, 3, 0),  "Levi's Stadium"),          # Jordan vs Algeria       20:00 local
+    "J_M5": (datetime(2026, 6, 28, 2, 0),  "Arrowhead Stadium"),       # Algeria vs Austria      21:00 local
+    "J_M6": (datetime(2026, 6, 28, 2, 0),  "AT&T Stadium"),            # Jordan vs Argentina     21:00 local
+    # Group K
+    "K_M1": (datetime(2026, 6, 17, 17, 0), "NRG Stadium"),             # Portugal vs Congo DR    12:00 local
+    "K_M2": (datetime(2026, 6, 18, 2, 0),  "Estadio Azteca"),          # Uzbekistan vs Colombia  20:00 local
+    "K_M3": (datetime(2026, 6, 23, 17, 0), "NRG Stadium"),             # Portugal vs Uzbekistan  12:00 local
+    "K_M4": (datetime(2026, 6, 24, 2, 0),  "Estadio Akron"),           # Colombia vs Congo DR    20:00 local
+    "K_M5": (datetime(2026, 6, 27, 23, 30),"Hard Rock Stadium"),       # Colombia vs Portugal    19:30 local
+    "K_M6": (datetime(2026, 6, 27, 23, 30),"Mercedes-Benz Stadium"),   # Congo DR vs Uzbekistan  19:30 local
+    # Group L
+    "L_M1": (datetime(2026, 6, 17, 20, 0), "AT&T Stadium"),            # England vs Croatia      15:00 local
+    "L_M2": (datetime(2026, 6, 17, 23, 0), "BMO Field"),               # Ghana vs Panama         19:00 local
+    "L_M3": (datetime(2026, 6, 23, 20, 0), "Gillette Stadium"),        # England vs Ghana        16:00 local
+    "L_M4": (datetime(2026, 6, 23, 23, 0), "BMO Field"),               # Panama vs Croatia       19:00 local
+    "L_M5": (datetime(2026, 6, 27, 21, 0), "MetLife Stadium"),         # Panama vs England       17:00 local
+    "L_M6": (datetime(2026, 6, 27, 21, 0), "Lincoln Financial Field"), # Croatia vs Ghana        17:00 local
 }
 
 # ── Knockout schedule definitions ──────────────────────────────────────────────
 
 _KNOCKOUT_DEFS: list[dict[str, Any]] = [
-    # Round of 32 — 16 matches (4 days x 4/day)
-    {"ext": "R32_01", "stage": "R32", "d": date(2026, 6, 28), "h": 13},
-    {"ext": "R32_02", "stage": "R32", "d": date(2026, 6, 28), "h": 16},
-    {"ext": "R32_03", "stage": "R32", "d": date(2026, 6, 28), "h": 19},
-    {"ext": "R32_04", "stage": "R32", "d": date(2026, 6, 28), "h": 22},
-    {"ext": "R32_05", "stage": "R32", "d": date(2026, 6, 29), "h": 13},
-    {"ext": "R32_06", "stage": "R32", "d": date(2026, 6, 29), "h": 16},
-    {"ext": "R32_07", "stage": "R32", "d": date(2026, 6, 29), "h": 19},
-    {"ext": "R32_08", "stage": "R32", "d": date(2026, 6, 29), "h": 22},
-    {"ext": "R32_09", "stage": "R32", "d": date(2026, 6, 30), "h": 13},
-    {"ext": "R32_10", "stage": "R32", "d": date(2026, 6, 30), "h": 16},
-    {"ext": "R32_11", "stage": "R32", "d": date(2026, 6, 30), "h": 19},
-    {"ext": "R32_12", "stage": "R32", "d": date(2026, 6, 30), "h": 22},
-    {"ext": "R32_13", "stage": "R32", "d": date(2026, 7, 1), "h": 13},
-    {"ext": "R32_14", "stage": "R32", "d": date(2026, 7, 1), "h": 16},
-    {"ext": "R32_15", "stage": "R32", "d": date(2026, 7, 1), "h": 19},
-    {"ext": "R32_16", "stage": "R32", "d": date(2026, 7, 1), "h": 22},
+    # Round of 32 — 16 matches (6 days, real FIFA 2026 schedule)
+    {"ext": "R32_01", "stage": "R32", "d": date(2026, 6, 28), "h": 19},
+    {"ext": "R32_02", "stage": "R32", "d": date(2026, 6, 29), "h": 17},
+    {"ext": "R32_03", "stage": "R32", "d": date(2026, 6, 29), "h": 21},
+    {"ext": "R32_04", "stage": "R32", "d": date(2026, 6, 29), "h": 13},
+    {"ext": "R32_05", "stage": "R32", "d": date(2026, 6, 30), "h": 21},
+    {"ext": "R32_06", "stage": "R32", "d": date(2026, 6, 30), "h": 13},
+    {"ext": "R32_07", "stage": "R32", "d": date(2026, 6, 30), "h": 17},
+    {"ext": "R32_08", "stage": "R32", "d": date(2026, 7, 1), "h": 16},
+    {"ext": "R32_09", "stage": "R32", "d": date(2026, 7, 1), "h": 20},
+    {"ext": "R32_10", "stage": "R32", "d": date(2026, 7, 1), "h": 13},
+    {"ext": "R32_11", "stage": "R32", "d": date(2026, 7, 2), "h": 19},
+    {"ext": "R32_12", "stage": "R32", "d": date(2026, 7, 2), "h": 15},
+    {"ext": "R32_13", "stage": "R32", "d": date(2026, 7, 2), "h": 23},
+    {"ext": "R32_14", "stage": "R32", "d": date(2026, 7, 3), "h": 18},
+    {"ext": "R32_15", "stage": "R32", "d": date(2026, 7, 3), "h": 22},
+    {"ext": "R32_16", "stage": "R32", "d": date(2026, 7, 3), "h": 14},
     # Round of 16 — 8 matches (4 days x 2/day)
-    {"ext": "R16_01", "stage": "R16", "d": date(2026, 7, 4), "h": 18},
-    {"ext": "R16_02", "stage": "R16", "d": date(2026, 7, 4), "h": 21},
-    {"ext": "R16_03", "stage": "R16", "d": date(2026, 7, 5), "h": 18},
-    {"ext": "R16_04", "stage": "R16", "d": date(2026, 7, 5), "h": 21},
-    {"ext": "R16_05", "stage": "R16", "d": date(2026, 7, 7), "h": 18},
-    {"ext": "R16_06", "stage": "R16", "d": date(2026, 7, 7), "h": 21},
-    {"ext": "R16_07", "stage": "R16", "d": date(2026, 7, 8), "h": 18},
-    {"ext": "R16_08", "stage": "R16", "d": date(2026, 7, 8), "h": 21},
-    # Quarter-finals — 4 matches (2 days x 2/day)
-    {"ext": "QF_01", "stage": "QF", "d": date(2026, 7, 10), "h": 18},
-    {"ext": "QF_02", "stage": "QF", "d": date(2026, 7, 10), "h": 21},
-    {"ext": "QF_03", "stage": "QF", "d": date(2026, 7, 11), "h": 18},
-    {"ext": "QF_04", "stage": "QF", "d": date(2026, 7, 11), "h": 21},
-    # Semi-finals — 2 matches
-    {"ext": "SF_01", "stage": "SF", "d": date(2026, 7, 14), "h": 20},
-    {"ext": "SF_02", "stage": "SF", "d": date(2026, 7, 15), "h": 20},
-    # Third-place match — 1 match
-    {"ext": "3RD_01", "stage": "3rd", "d": date(2026, 7, 18), "h": 20},
-    # Final — 1 match
+    {"ext": "R16_01", "stage": "R16", "d": date(2026, 7, 4), "h": 21},
+    {"ext": "R16_02", "stage": "R16", "d": date(2026, 7, 4), "h": 17},
+    {"ext": "R16_03", "stage": "R16", "d": date(2026, 7, 5), "h": 20},
+    {"ext": "R16_04", "stage": "R16", "d": date(2026, 7, 6), "h": 19},
+    {"ext": "R16_05", "stage": "R16", "d": date(2026, 7, 6), "h": 23},
+    {"ext": "R16_06", "stage": "R16", "d": date(2026, 7, 7), "h": 16},
+    {"ext": "R16_07", "stage": "R16", "d": date(2026, 7, 7), "h": 20},
+    {"ext": "R16_08", "stage": "R16", "d": date(2026, 7, 8), "h": 16},
+    # Quarter-finals — 4 matches (real FIFA: Jul 9-11, offset for bracket display)
+    {"ext": "QF_01", "stage": "QF", "d": date(2026, 7, 9), "h": 20},
+    {"ext": "QF_02", "stage": "QF", "d": date(2026, 7, 10), "h": 19},
+    {"ext": "QF_03", "stage": "QF", "d": date(2026, 7, 11), "h": 21},
+    {"ext": "QF_04", "stage": "QF", "d": date(2026, 7, 12), "h": 1},
+    # Semi-finals
+    {"ext": "SF_01", "stage": "SF", "d": date(2026, 7, 14), "h": 19},
+    {"ext": "SF_02", "stage": "SF", "d": date(2026, 7, 15), "h": 19},
+    # Third-place match
+    {"ext": "3RD_01", "stage": "3rd", "d": date(2026, 7, 18), "h": 21},
+    # Final
     {"ext": "F_01", "stage": "F", "d": date(2026, 7, 19), "h": 19},
 ]
 
@@ -89,13 +170,14 @@ _ROUND_NAMES: dict[str, str] = {
 }
 
 # Venue overrides for high-profile knockout matches (keyed by external_id).
+# Real FIFA 2026 venues for later knockout rounds.
 _VENUE_OVERRIDES: dict[str, str] = {
-    "QF_01": "Mercedes-Benz Stadium",
-    "QF_02": "Lincoln Financial Field",
-    "QF_03": "NRG Stadium",
-    "QF_04": "Lumen Field",
+    "QF_01": "Gillette Stadium",
+    "QF_02": "SoFi Stadium",
+    "QF_03": "Hard Rock Stadium",
+    "QF_04": "Arrowhead Stadium",
     "SF_01": "AT&T Stadium",
-    "SF_02": "SoFi Stadium",
+    "SF_02": "Mercedes-Benz Stadium",
     "3RD_01": "Hard Rock Stadium",
     "F_01": "MetLife Stadium",
 }
@@ -126,12 +208,6 @@ _BRACKET_LINKS: list[tuple[str, str, int]] = [
 
 
 # ── Helper functions ───────────────────────────────────────────────────────────
-
-
-def _kickoff_hours(match_count: int) -> list[int]:
-    """Return UTC kickoff hours for *match_count* matches on one day."""
-    key = min(k for k in _SLOTS if k >= match_count)
-    return _SLOTS[key][:match_count]
 
 
 async def _ensure_tbd_team(session: AsyncSession) -> int:
@@ -255,7 +331,6 @@ async def seed_matches(session: AsyncSession) -> dict[str, int]:
 
     for d in sorted_dates:
         day_matches = by_date[d]
-        hours = _kickoff_hours(len(day_matches))
 
         for slot, pm in enumerate(day_matches):
             group_counter[pm.group_label] += 1
@@ -268,17 +343,17 @@ async def seed_matches(session: AsyncSession) -> dict[str, int]:
             if away_id is None:
                 raise ValueError(f"Unknown away team: {pm.away_team_zh!r}")
 
-            # Opening match at Estadio Azteca; others round-robin
-            if ext_id == "A_M1":
-                vid = venue_by_name.get("Estadio Azteca", venues[0].id)
+            match_info = _GROUP_MATCH_DATA.get(ext_id)
+            if match_info:
+                kickoff, venue_name = match_info
+                vid = venue_by_name.get(venue_name, venues[0].id)
             else:
                 vid = venues[venue_idx % len(venues)].id
                 venue_idx += 1
-
-            kickoff = datetime(
-                pm.match_date.year, pm.match_date.month,
-                pm.match_date.day, hours[slot], 0,
-            )
+                kickoff = datetime(
+                    pm.match_date.year, pm.match_date.month,
+                    pm.match_date.day, 18, 0,
+                )
 
             data: dict[str, Any] = {
                 "external_id": ext_id,

@@ -158,7 +158,7 @@ football-server/
 │   │   ├── __init__.py          # 统一导出所有 Repository 类
 │   │   ├── base.py              # BaseRepository[T] 泛型 CRUD（get_by_id、get_all、create、update、delete）
 │   │   ├── team_repo.py         # TeamRepository：get_by_code、get_by_group
-│   │   ├── match_repo.py        # MatchRepository：get_by_date、get_by_stage、get_by_status、get_live_matches、get_bracket_matches、get_by_group_label、get_by_team_code、get_match_dates
+│   │   ├── match_repo.py        # MatchRepository：get_by_date(支持timezone)、get_by_stage、get_by_status、get_live_matches、get_bracket_matches、get_by_group_label、get_by_team_code、get_match_dates(支持timezone)
 │   │   ├── venue_repo.py        # VenueRepository：仅继承基础 CRUD
 │   │   ├── group_repo.py        # GroupRepository：get_by_group_label（按积分排序）、get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository：get_by_match（按分钟排序）
@@ -222,6 +222,6 @@ football-server/
 │   ├── team_data.py             # 48 支球队数据（双语、FIFA 排名、大洲）
 │   ├── seed_venues.py           # 种子 16 座球场（按 name 幂等 upsert）
 │   ├── venue_data.py            # 16 座球场数据（城市、国家、IANA 时区、容量 + 中文翻译）
-│   └── seed_matches.py          # 种子 104 场比赛（72 场小组赛 + 32 场淘汰赛、对阵链接、TBD 占位球队）
+│   └── seed_matches.py          # 种子 104 场比赛（真实 FIFA 2026 开球时间 + 场馆、对阵链接、TBD 占位球队）
 └── scalable-beaming-riddle.md   # 后端架构方案
 ```

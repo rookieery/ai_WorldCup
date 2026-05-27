@@ -93,7 +93,8 @@ export function DateTimeline({ selectedDate, onDateSelect }: DateTimelineProps) 
     async function fetchDates() {
       setLoading(true)
       try {
-        const raw: MatchDateInfo[] = await getMatchDates()
+        const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone
+        const raw: MatchDateInfo[] = await getMatchDates({ timezone: tzName })
         if (cancelled) return
 
         const today = new Date()

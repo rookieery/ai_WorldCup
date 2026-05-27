@@ -111,13 +111,14 @@
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
 - **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`
 - **子组件**：`MiniRadarChart`、`AnalysisCard`、`ThinkingIndicator`、`TypewriterText`、`ThinkingBlock`
+- **Markdown 渲染**：所有 AI 助手消息（历史消息、流式响应、思维块）通过 `MarkdownRenderer`（`react-markdown` + `remark-gfm`）渲染为富文本；用户消息保持纯文本
 - **数据**：通过 `streamChat()` 来自 `@/lib/api/ai-chat` 的真实 SSE 流式；store 管理消息
 - **AI 集成**：通过 fetch+ReadableStream SSE 消费者 POST 到 `/api/ai/chat`；打字机光标效果；可折叠思维块；错误 + 免责声明状态
 - **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子（跟随 `language` 变化自动重置，仅限无用户消息时）、AbortController 支持
 - **i18n**：所有文本通过 `t()`（ai 命名空间）
 - **导入类型**：`TeamAnalysis`、`TeamStats` 来自 `@/lib/types`；`ChatMessageItem` 来自 `@/lib/api/ai-chat`
-- **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`
-- **行数**：~570
+- **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`、`MarkdownRenderer`
+- **行数**：~585
 
 ### `ai-copilot-mobile.tsx` — `AICopilotMobile`
 - **状态**：本地 `open`（Sheet 可见性），从 `useAIChatStore` 读取 `isStreaming`
@@ -129,6 +130,17 @@
 - **行数**：~79
 
 ## 共享组件
+
+### `components/ui/markdown-renderer.tsx` — `MarkdownRenderer`
+- **功能**：将 Markdown 文本渲染为带样式的富文本，专为 AI 聊天消息设计
+- **Props**：`content`（Markdown 字符串）、`className`（可选）
+- **依赖**：`react-markdown`、`remark-gfm`（GFM 表格、删除线等扩展）
+- **样式映射**：所有元素使用项目语义化变量（`text-foreground`、`text-accent`、`bg-secondary`、`border-glass-border` 等）
+  - 标题（h1-h3）、段落、有序/无序列表、粗体、斜体
+  - 引用块（`border-accent/40` 左边框）
+  - 行内代码（`text-accent` + `bg-secondary/50`）、代码块（`bg-secondary/40` + `border-glass-border`）
+  - 表格（玻璃边框）、链接（`text-accent`）、分割线
+- **使用方**：`AICopilotPanel`（历史消息、流式响应、思维块）
 
 ### `lib/flags.tsx` — `TeamFlag` 国旗图片组件
 - **功能**：将 FIFA 3 字母代码（如 BRA、USA）映射为 flagcdn.com 上的国旗图片，替代原有 emoji 国旗

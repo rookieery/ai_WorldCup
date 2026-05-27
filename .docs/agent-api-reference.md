@@ -107,7 +107,7 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 |------|------|------|
 | `TeamService` | `get_all_teams(page, page_size, group, lang)`、`get_team_by_code(code, lang)`、`get_teams_by_group(group_label, lang)` | 支持 `lang="zh"` 将 `name_zh` 提升到 `name` 字段 |
 | `VenueService` | `get_all_venues(page, page_size)` | 返回含时区信息的场馆 |
-| `MatchService` | `get_match_dates()`、`get_matches(params, timezone_name, lang, page, page_size)`、`get_match_by_id(match_id, timezone_name, lang)`、`get_live_matches(timezone_name, lang)` | 多条件筛选（日期/阶段/小组/球队/状态）含二次内存过滤；通过 `zoneinfo` 进行时区转换，添加 `local_time` 和 `host_time` 字段；`get_match_dates` 返回不同日期及主阶段标签；语言感知（为球队提升 `name_zh`，为场馆提升 `name_zh`/`city_zh`/`country_zh`）；**Redis 可用时自动合并实时数据**（status/score/activity_level）到查询结果 |
+| `MatchService` | `get_match_dates(timezone_name)`、`get_matches(params, timezone_name, lang, page, page_size)`、`get_match_by_id(match_id, timezone_name, lang)`、`get_live_matches(timezone_name, lang)` | 多条件筛选（日期/阶段/小组/球队/状态）含二次内存过滤（时区感知）；通过 `zoneinfo` 进行时区转换，添加 `local_time` 和 `host_time` 字段；`get_match_dates` 返回不同日期及主阶段标签（支持时区分组）；**日期筛选支持时区感知**：传入 `timezone_name` 时按用户本地日期过滤，否则按 UTC；语言感知（为球队提升 `name_zh`，为场馆提升 `name_zh`/`city_zh`/`country_zh`）；**Redis 可用时自动合并实时数据**（status/score/activity_level）到查询结果 |
 | `GroupService` | `get_all_groups(lang)`、`get_group_detail(group_label, timezone_name, lang)` | 返回所有 12 组积分榜概览或单组详情含积分榜 + 比赛；积分榜按积分降序、净胜球降序、进球数降序排列；语言感知（提升 `name_zh`）；验证组标签 A-L |
 | `BracketService` | `get_full_bracket(lang, timezone_name)`、`get_bracket_by_round(round_name, lang, timezone_name)`、`get_predictions()` | 返回淘汰赛对阵树（R32→R16→QF→SF→3rd→F）按轮次分组；单轮查询；R32 中的 TBD 球队携带 `from_group`/`from_position` 上下文（如"1st Group A"）；预测端点返回第三阶段 AI 集成的占位 |
 | `CheerService` | `get_cheers(match_id)`、`vote_cheer(match_id, side, client_ip)` | Redis HASH 计数器（`cheers:match:{id}` 含 `home`/`away` 字段）；通过 pipeline 的 HINCRBY 原子递增；基于 IP 的频率限制（每场比赛+IP 5 分钟冷却）；Redis 不可用时使用类级别内存降级；`_cleanup_expired_rate_limits()` 防止内存无限增长 |
@@ -127,7 +127,7 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 | `team_controller` | `GET /api/teams/{code}` | `lang`（en/zh） |
 | `venue_controller` | `GET /api/venues` | `page`、`page_size` |
 | `match_controller` | `GET /api/matches` | `date`（YYYY-MM-DD）、`stage`、`group`（A-L）、`team`（code）、`status`、`timezone`（IANA）、`lang`、`page`、`page_size` |
-| `match_controller` | `GET /api/matches/dates` | — |
+| `match_controller` | `GET /api/matches/dates` | `timezone`（IANA，时区感知日期分组） |
 | `match_controller` | `GET /api/matches/live` | `timezone`（IANA）、`lang` |
 | `match_controller` | `GET /api/matches/{id}` | `timezone`（IANA）、`lang` |
 | `group_controller` | `GET /api/groups` | `lang`（en/zh） |

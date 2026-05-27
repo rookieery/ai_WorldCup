@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from zoneinfo import ZoneInfo
 
 from app.models.match import Match
 from app.repositories.base import BaseRepository
@@ -33,14 +34,32 @@ class MatchRepository(BaseRepository[Match]):
         self,
         target_date: date,
         *,
+        timezone_name: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[Sequence[Match], int]:
-        """Return matches whose ``kickoff_utc`` falls on *target_date* (UTC)."""
-        start = datetime(target_date.year, target_date.month, target_date.day)
-        end = datetime(
-            target_date.year, target_date.month, target_date.day, 23, 59, 59
-        )
+        """Return matches whose ``kickoff_utc`` falls on *target_date*.
+
+        When *timezone_name* is provided, the date is interpreted in that
+        timezone — e.g. ``2026-06-12`` in ``Asia/Shanghai`` maps to the UTC
+        range ``2026-06-11 16:00`` – ``2026-06-12 15:59:59``.
+        """
+        if timezone_name:
+            tz = ZoneInfo(timezone_name)
+            local_start = datetime(
+                target_date.year, target_date.month, target_date.day, tzinfo=tz
+            )
+            local_end = datetime(
+                target_date.year, target_date.month, target_date.day,
+                23, 59, 59, tzinfo=tz,
+            )
+            start = local_start.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            end = local_end.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+        else:
+            start = datetime(target_date.year, target_date.month, target_date.day)
+            end = datetime(
+                target_date.year, target_date.month, target_date.day, 23, 59, 59
+            )
         stmt = self._base_query().where(
             and_(
                 self.model.kickoff_utc >= start,
@@ -142,14 +161,46 @@ class MatchRepository(BaseRepository[Match]):
         )
         return result.unique().scalars().all(), total
 
-    async def get_match_dates(self) -> List[Tuple[date, str]]:
+    async def get_match_dates(
+        self,
+        timezone_name: Optional[str] = None,
+    ) -> List[Tuple[date, str]]:
         """Return distinct match dates with their primary stage label.
 
-        Returns a list of ``(match_date, stage)`` tuples ordered by date.
-        When a date has multiple stages the one with highest precedence wins
-        (Final > SF > QF > R16 > R32 > group).
+        When *timezone_name* is provided, dates are computed in that timezone
+        instead of UTC. Returns a list of ``(match_date, stage)`` tuples
+        ordered by date.  When a date has multiple stages the one with
+        highest precedence wins (Final > SF > QF > R16 > R32 > group).
         """
         stage_order = ["group", "R32", "R16", "QF", "SF", "3rd", "F"]
+
+        if timezone_name:
+            tz = ZoneInfo(timezone_name)
+            utc = ZoneInfo("UTC")
+            stmt = (
+                select(self.model.kickoff_utc, self.model.stage)
+                .order_by(self.model.kickoff_utc.asc())
+            )
+            rows = (await self.session.execute(stmt)).all()
+
+            date_map: Dict[date, str] = {}
+            for kickoff_utc, stage in rows:
+                local_dt = kickoff_utc.replace(tzinfo=utc).astimezone(tz)
+                local_date = local_dt.date()
+                if local_date not in date_map:
+                    date_map[local_date] = stage
+                else:
+                    existing_idx = (
+                        stage_order.index(date_map[local_date])
+                        if date_map[local_date] in stage_order else -1
+                    )
+                    new_idx = stage_order.index(stage) if stage in stage_order else -1
+                    if new_idx > existing_idx:
+                        date_map[local_date] = stage
+
+            return sorted(date_map.items())
+
+        # UTC-based grouping (no timezone)
         stmt = (
             select(
                 func.date(self.model.kickoff_utc).label("match_date"),
@@ -164,7 +215,6 @@ class MatchRepository(BaseRepository[Match]):
         )
         rows = (await self.session.execute(stmt)).all()
 
-        # Merge rows per date — keep highest-precedence stage
         date_map: Dict[date, str] = {}
         for match_date, stage, _cnt in rows:
             if match_date not in date_map:
