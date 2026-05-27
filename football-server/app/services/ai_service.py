@@ -1,7 +1,7 @@
 """AI chat service — Deepseek API client with SSE streaming.
 
 Provides the core ``stream_chat`` async generator that calls the Deepseek
-reasoning model (OpenAI-compatible), parses the streaming response into
+V4 Pro model (OpenAI-compatible), parses the streaming response into
 structured ``SSEEvent`` objects (thinking / answer / analysis / done / error),
 and gracefully handles timeouts and API rate-limits.
 """
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _DEEPSEEK_CHAT_PATH = "/chat/completions"
-_DEFAULT_MODEL = "deepseek-reasoner"
+_DEFAULT_MODEL = "deepseek-v4-pro"
 _TIMEOUT_SECONDS = 30.0
 
 # Patterns that indicate the user is requesting a structured team analysis

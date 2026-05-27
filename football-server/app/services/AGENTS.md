@@ -66,7 +66,7 @@
 - No API key → yields `error` event immediately with "no_key" message
 - Analysis detection: checks user message for analysis keywords (bilingual zh-CN/en-US); if detected, buffers answer and attempts JSON extraction post-stream
 - `_extract_analysis_from_answer()` searches for embedded JSON with `team_code` key
-- Model: `deepseek-reasoner` (supports `reasoning_content` delta field)
+- Model: `deepseek-v4-pro` (supports `reasoning_content` delta field)
 - No DB dependency — pure HTTP client service
 - DI: `get_ai_service()` in `app/dependencies.py` — no DB session needed
 - Config: reads `DEEPSEEK_API_KEY` and `DEEPSEEK_BASE_URL` from `app.config.settings`
