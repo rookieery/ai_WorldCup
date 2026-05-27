@@ -6,10 +6,10 @@
 
 ### `app/page.tsx` — `WorldCupDashboard`
 - **类型**：客户端组件（`"use client"`）
-- **状态**：`timezone`、`viewMode`、`selectedDate`（均为 `useState`）
-- **布局**：Header → 主区域（时间线|对阵图）+ AI 侧边栏 → Footer
+- **状态**：`timezone`、`viewMode`、`selectedDate`（均为 `useState`）、`agentPanelWidth`（AI 侧边栏宽度，`useRef` + `useCallback` 实现拖拽缩放）
+- **布局**：Header → 主区域（时间线|对阵图）+ AI 侧边栏（可拖拽分割线缩放，min=340px，max=33.33vw）→ Footer
 - **Props 流向**：状态直接传递给子组件
-- **功能**：时间线视图中的小组赛快捷入口（Trophy 图标 → `/groups`）；移动端 AI 助手（`AICopilotMobile`）含 FAB + 底部抽屉 Sheet
+- **功能**：时间线视图中的小组赛快捷入口（Trophy 图标 → `/groups`）；移动端 AI 助手（`AICopilotMobile`）含 FAB + 底部抽屉 Sheet；桌面端 AI 侧边栏支持拖拽分割线调整宽度
 
 ### `app/bracket/page.tsx` — `BracketPage`
 - **类型**：客户端组件（`"use client"`）

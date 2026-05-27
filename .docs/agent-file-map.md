@@ -26,7 +26,7 @@ ai_WorldCup/
 football-web/
 ├── app/
 │   ├── layout.tsx            # 根布局（暗色主题，Geist 字体，Analytics）
-│   ├── page.tsx              # 单页仪表盘（默认视图：时间线；所有状态在此管理，小组赛快捷入口，移动端 AI 助手 FAB+Sheet）
+│   ├── page.tsx              # 单页仪表盘（默认视图：时间线；所有状态在此管理，小组赛快捷入口，移动端 AI 助手 FAB+Sheet，AI 侧边栏可拖拽缩放 min=340px max=33.33vw）
 │   ├── globals.css           # CSS 变量、动画、毛玻璃工具类（.glass-card 40%透明 / .glass-card-opaque 95%不透明用于弹窗）
 │   └── groups/
 │       ├── page.tsx          # 小组赛总览页（12 组积分榜网格，返回时间线导航）
