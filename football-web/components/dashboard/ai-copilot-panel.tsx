@@ -294,16 +294,28 @@ export function AICopilotPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, currentStreamContent, currentThinkingContent, isStreaming])
 
-  // Seed the initial welcome message on first mount
-  const seededRef = useRef(false)
+  // Seed the initial welcome message; re-seed when language changes
+  // and no real conversation has started yet.
   useEffect(() => {
-    if (!seededRef.current && messages.length === 0) {
-      seededRef.current = true
-      useAIChatStore.getState().startStreaming()
-      useAIChatStore.getState().appendStreamContent(t("ai.welcomeMessage"))
-      useAIChatStore.getState().finishStreaming()
+    const store = useAIChatStore.getState()
+    const hasConversation = store.messages.some((m) => m.role === "user")
+    if (hasConversation) return
+
+    const welcomeText = t("ai.welcomeMessage")
+    if (store.messages.length === 0) {
+      store.startStreaming()
+      store.appendStreamContent(welcomeText)
+      store.finishStreaming()
+    } else if (
+      store.messages.length === 1 &&
+      store.messages[0].role === "assistant" &&
+      store.messages[0].content !== welcomeText
+    ) {
+      useAIChatStore.setState((s) => ({
+        messages: [{ ...s.messages[0], content: welcomeText }],
+      }))
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [language, t]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendMessage = useCallback(
     (content: string) => {

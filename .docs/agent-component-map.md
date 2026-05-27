@@ -113,7 +113,7 @@
 - **子组件**：`MiniRadarChart`、`AnalysisCard`、`ThinkingIndicator`、`TypewriterText`、`ThinkingBlock`
 - **数据**：通过 `streamChat()` 来自 `@/lib/api/ai-chat` 的真实 SSE 流式；store 管理消息
 - **AI 集成**：通过 fetch+ReadableStream SSE 消费者 POST 到 `/api/ai/chat`；打字机光标效果；可折叠思维块；错误 + 免责声明状态
-- **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子、AbortController 支持
+- **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子（跟随 `language` 变化自动重置，仅限无用户消息时）、AbortController 支持
 - **i18n**：所有文本通过 `t()`（ai 命名空间）
 - **导入类型**：`TeamAnalysis`、`TeamStats` 来自 `@/lib/types`；`ChatMessageItem` 来自 `@/lib/api/ai-chat`
 - **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`
