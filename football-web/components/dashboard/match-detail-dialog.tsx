@@ -34,6 +34,7 @@ import {
   VenueInfoItem,
 } from "@/components/dashboard/match-detail-helpers"
 import type { MatchDetailData } from "@/components/dashboard/match-detail-helpers"
+import { TeamFlag } from "@/lib/flags"
 
 // ── Match Detail Dialog ────────────────────────────────────────────────────────
 
@@ -49,6 +50,12 @@ function stageKey(stage: string): string {
     F: "timeline.stageFinal",
   }
   return map[stage] ?? stage
+}
+
+interface MatchDetailDialogProps {
+  matchId: number | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 export function MatchDetailDialog({
@@ -244,13 +251,10 @@ export function MatchDetailDialog({
                     <div className="flex items-center justify-between gap-6">
                       {/* Home Team */}
                       <div className="flex flex-col items-center gap-2 flex-1">
-                        <div className="w-16 h-16 rounded-2xl bg-secondary/50 border border-glass-border flex items-center justify-center text-3xl">
-                          {data.home_team.flag}
+                        <div className="w-16 h-16 rounded-2xl bg-secondary/50 border border-glass-border flex items-center justify-center overflow-hidden">
+                          <TeamFlag code={data.home_team.code} size={48} />
                         </div>
-                        <div className="text-center">
-                          <p className="font-bold text-foreground text-lg">{data.home_team.code}</p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[120px]">{data.home_team.name}</p>
-                        </div>
+                        <p className="font-bold text-foreground text-lg truncate max-w-[140px]">{data.home_team.name}</p>
                       </div>
 
                       {/* Score */}
@@ -272,13 +276,10 @@ export function MatchDetailDialog({
 
                       {/* Away Team */}
                       <div className="flex flex-col items-center gap-2 flex-1">
-                        <div className="w-16 h-16 rounded-2xl bg-secondary/50 border border-glass-border flex items-center justify-center text-3xl">
-                          {data.away_team.flag}
+                        <div className="w-16 h-16 rounded-2xl bg-secondary/50 border border-glass-border flex items-center justify-center overflow-hidden">
+                          <TeamFlag code={data.away_team.code} size={48} />
                         </div>
-                        <div className="text-center">
-                          <p className="font-bold text-foreground text-lg">{data.away_team.code}</p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[120px]">{data.away_team.name}</p>
-                        </div>
+                        <p className="font-bold text-foreground text-lg truncate max-w-[140px]">{data.away_team.name}</p>
                       </div>
                     </div>
 

@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { TeamFlag } from "@/lib/flags"
 
 // ── Types (local, matching API response) ────────────────────────────────────
 
@@ -152,7 +153,7 @@ function GroupCard({ group }: { group: GroupOverview }) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span className="text-base">{row.team.flag}</span>
+                    <TeamFlag code={row.team.code} size={18} className="rounded-sm" />
                     <span className="text-sm font-medium text-foreground truncate max-w-[80px]">
                       {teamName(row.team)}
                     </span>

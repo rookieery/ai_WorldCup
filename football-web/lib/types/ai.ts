@@ -18,6 +18,7 @@ export interface TeamStats {
 
 export interface TeamAnalysisSide {
   name: string
+  code?: string
   flag: string
   stats: TeamStats
   winProbability: number

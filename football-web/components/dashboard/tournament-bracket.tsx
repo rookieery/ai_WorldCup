@@ -12,6 +12,7 @@ import type {
   BracketRoundName,
   BracketTree,
 } from "@/lib/types"
+import { TeamFlag } from "@/lib/flags"
 
 // ── Round config ──────────────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ function TeamRow({ team, isCompleted }: { team: BracketTeam; isCompleted: boolea
         team.isWinner && isCompleted && "bg-primary/10"
       )}
     >
-      <span className="text-base leading-none">{team.flag}</span>
+      <TeamFlag code={team.code} size={18} className="rounded-sm" />
       <span
         className={cn(
           "flex-1 font-medium text-xs truncate",

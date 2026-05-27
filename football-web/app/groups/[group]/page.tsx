@@ -16,6 +16,7 @@ import {
   MapPin,
 } from "lucide-react"
 import Link from "next/link"
+import { TeamFlag } from "@/lib/flags"
 import {
   Table,
   TableBody,
@@ -269,7 +270,7 @@ function GroupDetailContent() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">{row.team.flag}</span>
+                      <TeamFlag code={row.team.code} size={24} className="rounded-sm" />
                       <div>
                         <span className="text-sm font-bold text-foreground">
                           {teamName(row.team)}
@@ -375,7 +376,7 @@ function GroupDetailContent() {
                   {/* Teams & Score */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-lg">{match.home_team.flag}</span>
+                      <TeamFlag code={match.home_team.code} size={20} className="rounded-sm" />
                       <span className="text-sm font-medium text-foreground truncate">
                         {teamName(match.home_team)}
                       </span>
@@ -401,7 +402,7 @@ function GroupDetailContent() {
                       <span className="text-sm font-medium text-foreground truncate">
                         {teamName(match.away_team)}
                       </span>
-                      <span className="text-lg">{match.away_team.flag}</span>
+                      <TeamFlag code={match.away_team.code} size={20} className="rounded-sm" />
                     </div>
                   </div>
 

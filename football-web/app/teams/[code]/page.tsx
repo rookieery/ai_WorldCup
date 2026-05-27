@@ -14,6 +14,7 @@ import {
 import { Header } from "@/components/dashboard/header"
 import { useTranslation } from "@/lib/i18n"
 import { getTeamStats, type TeamStatsData } from "@/lib/api/teams"
+import { TeamFlag } from "@/lib/flags"
 
 type TimezoneOption = "local" | "host"
 type ViewMode = "timeline" | "bracket"
@@ -205,7 +206,7 @@ function TeamHeader({ team, t }: TeamHeaderProps) {
   return (
     <div className="glass-card rounded-xl border border-glass-border p-6">
       <div className="flex items-center gap-6 flex-wrap">
-        <div className="text-5xl">{team.flag}</div>
+        <TeamFlag code={team.code} size={56} className="rounded-lg" />
         <div className="flex-1 min-w-0">
           <h1 className="text-3xl font-bold text-foreground mb-1">
             {team.name}

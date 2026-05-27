@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { useTranslation } from "@/lib/i18n"
 import { useAIChatStore, usePreferencesStore } from "@/lib/store"
 import { streamChat, type ChatMessageItem } from "@/lib/api/ai-chat"
+import { TeamFlag } from "@/lib/flags"
 import type { TeamAnalysis, TeamStats } from "@/lib/types"
 
 // ── Quick Prompts ──────────────────────────────────────────────────────────────
@@ -121,7 +122,7 @@ function AnalysisCard({ data, t }: { data: TeamAnalysis; t: (key: string) => str
           {t("ai.winProbability")}
         </p>
         <div className="flex items-center gap-2">
-          <span className="text-lg">{data.team1.flag}</span>
+          <TeamFlag code={data.team1.code ?? data.team1.name} size={20} className="rounded-sm" />
           <div className="flex-1 h-8 rounded-lg overflow-hidden flex relative">
             <div
               className="bg-gradient-to-r from-[#CCFF00] to-[#CCFF00]/70 flex items-center justify-end pr-2 transition-all duration-500"
@@ -142,7 +143,7 @@ function AnalysisCard({ data, t }: { data: TeamAnalysis; t: (key: string) => str
               <span className="text-xs font-bold text-[#020617]">{data.team2.winProbability}%</span>
             </div>
           </div>
-          <span className="text-lg">{data.team2.flag}</span>
+          <TeamFlag code={data.team2.code ?? data.team2.name} size={20} className="rounded-sm" />
         </div>
       </div>
 

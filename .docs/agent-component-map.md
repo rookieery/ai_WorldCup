@@ -60,6 +60,7 @@
 - **比赛详情**：卡片点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（传递 matchId）
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段徽章；小组赛显示"小组 A"格式
 - **功能**：实时比分显示（WS 补丁数据）、焦点战徽章、活动条、球迷助威计（悬停展开）、WS 连接指示器、加载/错误/空状态
+- **队伍名称层级**：仅显示一行完整国名（text-lg font-bold），无球队代码，确保对阵双方一目了然
 - **API 映射**：`apiMatchToUi()` 将后端 `MatchApiItem` → 前端 `Match` 类型（保留原始 `stage` + `groupLabel` 用于 i18n）
 - **i18n**：使用 `useTranslation()` 管理所有可见文本含阶段标签
 - **导入类型**：`Match`、`CityIcon` 来自 `@/lib/types`，`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`
@@ -93,6 +94,7 @@
 - **数据**：弹窗打开时通过 `getMatchById(id)` + `getCheers(matchId)` 从 API 获取
 - **实时数据**：合并来自 `useLiveStore` 的实时比分补丁和助威更新
 - **区块**：比赛头部（队伍+比分+状态）、实时活动条、球迷助威计、比赛事件时间线（上半场/下半场+加时）、比赛统计（进球/红黄牌）、场馆信息
+- **队伍名称层级**：与 MatchCard 一致，仅显示一行完整国名（text-lg font-bold）
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段徽章（小组赛/32强等）
 - **赛博朋克风格**：毛玻璃卡片、发光效果、渐变叠加、实时比分的 LED 显示
 - **i18n**：使用 `useTranslation()` 管理所有可见文本（matchDetail + timeline 命名空间）
@@ -127,6 +129,13 @@
 - **行数**：~79
 
 ## 共享组件
+
+### `lib/flags.tsx` — `TeamFlag` 国旗图片组件
+- **功能**：将 FIFA 3 字母代码（如 BRA、USA）映射为 flagcdn.com 上的国旗图片，替代原有 emoji 国旗
+- **映射**：内置 FIFA→ISO2 映射（48 支 2026 世界杯队伍）+ 英文名→ISO2 兜底映射（用于 AI 分析等无 code 的场景）
+- **CDN**：`https://flagcdn.com/w{size}/{iso2}.webp`，使用 `next/image` + `unoptimized` 模式
+- **Props**：`code`（FIFA 3 字母代码或英文队名）、`size`（像素，默认 48）、`className`
+- **特殊处理**：英格兰 `gb-eng`、苏格兰 `gb-sct`
 
 ### `components/ui/dialog.tsx` — Dialog 基础组件（shadcn/ui）
 - **遮罩层**：`DialogOverlay` — `bg-black/80`（80% 不透明黑色遮罩，含 fade 动画）
@@ -228,7 +237,7 @@ const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
 | `lib/types/team.ts` | `Team`、`TeamDetail`、`TeamStanding` | 球队基础结构、API 详情、小组积分行 |
 | `lib/types/match.ts` | `Match`、`MatchStatus`、`CityIcon`、`MatchEvent`、`MatchEventType`、`MatchQueryParams` | 比赛卡片数据、事件时间线、API 查询过滤 |
 | `lib/types/bracket.ts` | `BracketTeam`、`BracketMatch`、`BracketRound`、`BracketTree`、`BracketRoundName`、`BracketMatchStatus` | 淘汰赛对阵树（R32→F） |
-| `lib/types/ai.ts` | `Message`、`MessageRole`、`MessageType`、`TeamAnalysis`、`TeamAnalysisSide`、`TeamStats`、`SSEEvent`、`SSEEventType` | AI 聊天消息、分析载荷、SSE 流式 |
+| `lib/types/ai.ts` | `Message`、`MessageRole`、`MessageType`、`TeamAnalysis`、`TeamAnalysisSide`（含可选 `code`）、`TeamStats`、`SSEEvent`、`SSEEventType` | AI 聊天消息、分析载荷、SSE 流式 |
 | `lib/types/api.ts` | `ApiResponse<T>`、`PaginatedResponse<T>`、`ApiError` | 标准 API 信封类型 |
 
 ## 状态管理（`lib/store/`）— Zustand

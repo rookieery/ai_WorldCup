@@ -25,6 +25,7 @@ import type { LiveScorePatch, CheerUpdate } from "@/lib/store"
 import { wsClient } from "@/lib/websocket"
 import type { Match, CityIcon } from "@/lib/types"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
+import { TeamFlag } from "@/lib/flags"
 
 /** Map a backend stage value to its i18n key. */
 function stageKey(stage: string): string {
@@ -221,13 +222,10 @@ function MatchCard({ match, onMatchClick }: MatchCardProps) {
         <div className="flex items-center justify-between gap-4 mb-4">
           {/* Team 1 */}
           <div className="flex items-center gap-3 flex-1">
-            <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-glass-border flex items-center justify-center text-2xl">
-              {match.team1.flag}
+            <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-glass-border flex items-center justify-center overflow-hidden">
+              <TeamFlag code={match.team1.code} size={40} />
             </div>
-            <div>
-              <p className="font-bold text-foreground text-lg">{match.team1.code}</p>
-              <p className="text-xs text-muted-foreground">{match.team1.name}</p>
-            </div>
+            <p className="font-bold text-foreground text-lg">{match.team1.name}</p>
           </div>
 
           {/* Score / VS */}
@@ -251,12 +249,9 @@ function MatchCard({ match, onMatchClick }: MatchCardProps) {
 
           {/* Team 2 */}
           <div className="flex items-center gap-3 flex-1 justify-end text-right">
-            <div>
-              <p className="font-bold text-foreground text-lg">{match.team2.code}</p>
-              <p className="text-xs text-muted-foreground">{match.team2.name}</p>
-            </div>
-            <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-glass-border flex items-center justify-center text-2xl">
-              {match.team2.flag}
+            <p className="font-bold text-foreground text-lg">{match.team2.name}</p>
+            <div className="w-14 h-14 rounded-xl bg-secondary/50 border border-glass-border flex items-center justify-center overflow-hidden">
+              <TeamFlag code={match.team2.code} size={40} />
             </div>
           </div>
         </div>
