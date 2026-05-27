@@ -127,7 +127,7 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 | `team_controller` | `GET /api/teams/{code}` | `lang`（en/zh） |
 | `venue_controller` | `GET /api/venues` | `page`、`page_size` |
 | `match_controller` | `GET /api/matches` | `date`（YYYY-MM-DD）、`stage`、`group`（A-L）、`team`（code）、`status`、`timezone`（IANA）、`lang`、`page`、`page_size` |
-| `match_controller` | `GET /api/matches/dates` | `timezone`（IANA，时区感知日期分组） |
+| `match_controller` | `GET /api/matches/dates` | `timezone`（IANA，时区感知日期分组）— 前端自动发送用户本地时区 |
 | `match_controller` | `GET /api/matches/live` | `timezone`（IANA）、`lang` |
 | `match_controller` | `GET /api/matches/{id}` | `timezone`（IANA）、`lang` |
 | `group_controller` | `GET /api/groups` | `lang`（en/zh） |

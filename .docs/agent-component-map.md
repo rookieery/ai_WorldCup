@@ -39,7 +39,7 @@
 
 ### `date-timeline.tsx` — `DateTimeline`
 - **Props**：`selectedDate`、`onDateSelect`
-- **数据**：通过 `getMatchDates()` 从 API 获取 — 动态比赛日期含阶段标签
+- **数据**：通过 `getMatchDates({ timezone })` 从 API 获取 — 动态比赛日期含阶段标签；自动发送用户本地时区（`Intl.DateTimeFormat().resolvedOptions().timeZone`）
 - **格式分离**：原始日期数据（`rawDates` 状态）与格式化标签（`useMemo` 从 `t` 派生）分离 — locale 切换时自动重新格式化
 - **Locale 重新获取**：`useEffect` 依赖 `locale` — 语言变更时重新从 API 获取日期列表（阶段标签由服务端本地化）
 - **自动选中**：挂载时选中今天或最近的未来比赛日
@@ -48,7 +48,7 @@
 - **阶段颜色**：小组赛=lime、R32/R16=cyan、QF/SF=magenta、3rd/Final=gold
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段缩写（小组赛/32强等）
 - **i18n**：使用 `useTranslation()` 管理月/星期标签、阶段标签和加载文本
-- **依赖**：`Button`（shadcn）、`cn` 工具、`getMatchDates` API
+- **依赖**：`Button`（shadcn）、`cn` 工具、`getMatchDates` API（含 timezone 参数）
 - **行数**：~260
 
 ### `match-cards-grid.tsx` — `MatchCardsGrid`
@@ -223,7 +223,7 @@ function MyComponent() {
 ### API 模块（`lib/api/`）
 | 模块 | 函数 | 后端端点 |
 |------|------|----------|
-| `matches.ts` | `getMatchDates()`、`getMatches(params)`、`getMatchById(id, opts)`、`getLiveMatches(opts)`、`apiMatchToUi(item)` | `GET /api/matches/dates`、`GET /api/matches`、`GET /api/matches/:id`、`GET /api/matches/live` |
+| `matches.ts` | `getMatchDates(options?)`（含 timezone 参数）、`getMatches(params)`、`getMatchById(id, opts)`、`getLiveMatches(opts)`、`apiMatchToUi(item)` | `GET /api/matches/dates`、`GET /api/matches`、`GET /api/matches/:id`、`GET /api/matches/live` |
 | `bracket.ts` | `getBracket(opts)` — 映射后端 VO 字段（`round_name`→`round`、`home_team`→`team1`、`stage`→`round`、`id:int`→`id:string`） | `GET /api/bracket` |
 | `teams.ts` | `getTeams(params)`、`getTeamByCode(code)` | `GET /api/teams`、`GET /api/teams/:code` |
 | `groups.ts` | `getGroups()`、`getGroupDetail(group, opts)` | `GET /api/groups`、`GET /api/groups/:group` |

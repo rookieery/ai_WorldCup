@@ -71,7 +71,7 @@ football-web/
 │   │       ├── zh-CN.json    # 中文翻译（155+ 键，11 个命名空间）
 │   │       └── en-US.json    # 英文翻译（155+ 键，与 zh-CN 完全对齐）
 │   ├── api/                  # API 模块函数（每个后端资源一个文件）
-│   │   ├── matches.ts        # getMatchDates()、getMatches(params)、getMatchById(id)、getLiveMatches()、apiMatchToUi()
+│   │   ├── matches.ts        # getMatchDates(options?)（含 timezone 参数）、getMatches(params)、getMatchById(id)、getLiveMatches()、apiMatchToUi()
 │   │   ├── bracket.ts        # getBracket() — 包含后端→前端字段映射层（round_name→round、home_team→team1 等）
 │   │   ├── teams.ts          # getTeams(params)、getTeamByCode(code)、getTeamStats(code) — 球队详情含积分 + 比赛
 │   │   ├── groups.ts         # getGroups()、getGroupDetail(group)
