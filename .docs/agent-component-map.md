@@ -133,7 +133,7 @@
 ### `lib/flags.tsx` — `TeamFlag` 国旗图片组件
 - **功能**：将 FIFA 3 字母代码（如 BRA、USA）映射为 flagcdn.com 上的国旗图片，替代原有 emoji 国旗
 - **映射**：内置 FIFA→ISO2 映射（48 支 2026 世界杯队伍）+ 英文名→ISO2 兜底映射（用于 AI 分析等无 code 的场景）
-- **CDN**：`https://flagcdn.com/w{size}/{iso2}.webp`，使用 `next/image` + `unoptimized` 模式
+- **CDN**：`https://flagcdn.com/w{size}/{iso2}.webp`，使用 `next/image` + `unoptimized` 模式；`snapToValidWidth()` 将像素宽度向上取整到 CDN 合法宽度（20/40/80/160/320/640/1280）
 - **Props**：`code`（FIFA 3 字母代码或英文队名）、`size`（像素，默认 48）、`className`
 - **特殊处理**：英格兰 `gb-eng`、苏格兰 `gb-sct`
 

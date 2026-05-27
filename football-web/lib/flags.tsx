@@ -108,6 +108,16 @@ const NAME_TO_ISO: Record<string, string> = {
   panama: "pa",
 }
 
+/** flagcdn.com only serves these specific widths. */
+const VALID_WIDTHS = [20, 40, 80, 160, 320, 640, 1280]
+
+function snapToValidWidth(px: number): number {
+  for (const w of VALID_WIDTHS) {
+    if (w >= px) return w
+  }
+  return VALID_WIDTHS[VALID_WIDTHS.length - 1]
+}
+
 function resolveIso(codeOrName: string): string | undefined {
   const upper = codeOrName.toUpperCase()
   if (FIFA_TO_ISO[upper]) return FIFA_TO_ISO[upper]
@@ -128,9 +138,11 @@ export function TeamFlag({ code, size = 48, className }: TeamFlagProps) {
     )
   }
 
+  const cdnWidth = snapToValidWidth(size * 2)
+
   return (
     <Image
-      src={`https://flagcdn.com/w${size * 2}/${iso}.webp`}
+      src={`https://flagcdn.com/w${cdnWidth}/${iso}.webp`}
       alt={`${code} flag`}
       width={size}
       height={size}
