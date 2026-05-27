@@ -148,7 +148,7 @@ export function MatchDetailDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="glass-card border-glass-border max-w-2xl p-0 gap-0 overflow-hidden"
+        className="glass-card-opaque border-glass-border max-w-2xl p-0 gap-0 overflow-hidden"
         showCloseButton={false}
       >
         {/* Close button overlay */}

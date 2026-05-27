@@ -128,13 +128,19 @@
 
 ## 共享组件
 
+### `components/ui/dialog.tsx` — Dialog 基础组件（shadcn/ui）
+- **遮罩层**：`DialogOverlay` — `bg-black/80`（80% 不透明黑色遮罩，含 fade 动画）
+- **内容层**：`DialogContent` — 默认 `bg-background`，可被外部 className 覆盖
+- **扩展**：`showCloseButton` prop 控制是否显示右上角关闭按钮
+- **使用方**：`MatchDetailDialog` 使用 `glass-card-opaque` 替代默认样式
+
 ### `components/theme-provider.tsx`
 - `next-themes` 封装（ThemeProvider）。**当前 layout.tsx 中未使用。**
 
 ### `components/ui/` — shadcn/ui 基础组件
 约 60 个已安装组件。仪表盘中使用的核心组件：
 - `button.tsx`、`input.tsx`、`switch.tsx`、`label.tsx`
-- 部分已安装但未使用（accordion、dialog、tabs、table 等）
+- `dialog.tsx`（含自定义遮罩层透明度配置）
 
 ## 类型定义
 
@@ -310,7 +316,8 @@ wsClient.stop()
 | 强调色 | `--accent`（`#00F0FF`） | 赛博青，实时指示器 |
 | 品红 | `--magenta`（`#FF00E5`） | 半决赛阶段，装饰 |
 | 金色 | `--gold`（`#FFD700`） | 焦点战、决赛、高级元素 |
-| 毛玻璃卡片 | `.glass-card` | `backdrop-filter: blur(20px)` |
+| 毛玻璃卡片 | `.glass-card` | `backdrop-filter: blur(20px)`，40% 透明度 |
+| 毛玻璃卡片（不透明） | `.glass-card-opaque` | 95% 不透明度，用于弹窗/对话框防止内容穿透 |
 | 毛玻璃边框 | `--glass-border` | `rgba(255,255,255,0.08)` |
 | 比分字体 | `.font-score` | Geist Mono，等宽数字 |
 | LED 显示 | `.led-display` | 实时比分文字阴影发光 |
