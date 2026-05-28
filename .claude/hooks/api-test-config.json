@@ -1,0 +1,26 @@
+{
+  "baseUrl": "http://localhost:8000/api",
+  "healthEndpoint": "http://localhost:8000/api/health",
+  "healthTimeout": 3000,
+  "requestTimeout": 5000,
+  "filePatterns": {
+    "frontend": ["football-web/src/", "football-web/lib/", "/api/", "apiService", "api/"],
+    "backend": ["controllers/", "_controller.py", "/controller/", "routers/", "_router.py"]
+  },
+  "routePrefixMap": {
+    "team": "/api/teams",
+    "teams": "/api/teams",
+    "match": "/api/matches",
+    "matches": "/api/matches",
+    "venue": "/api/venues",
+    "venues": "/api/venues",
+    "group": "/api/groups",
+    "groups": "/api/groups",
+    "bracket": "/api/bracket",
+    "cheer": "/api/cheers",
+    "cheers": "/api/cheers",
+    "ai": "/api/ai",
+    "ws": "/api/ws"
+  },
+  "authToken": ""
+}

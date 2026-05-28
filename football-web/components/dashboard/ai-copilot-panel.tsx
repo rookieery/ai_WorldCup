@@ -1,90 +1,34 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Send, Sparkles, Bot, User, Zap, Hexagon, TrendingUp, Shield, Target, Footprints, Activity } from "lucide-react"
+import { useState, useRef, useCallback, useEffect } from "react"
+import { Send, Sparkles, Bot, User, Zap, Hexagon, TrendingUp, Shield, Target, Footprints, Activity, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/lib/i18n"
+import { useAIChatStore, usePreferencesStore } from "@/lib/store"
+import { streamChat, type ChatMessageItem } from "@/lib/api/ai-chat"
+import { TeamFlag } from "@/lib/flags"
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import type { TeamAnalysis, TeamStats } from "@/lib/types"
 
-const quickPrompts = [
-  { label: "Who plays tomorrow?", icon: "📅" },
-  { label: "Mexico win probability?", icon: "🇲🇽" },
-  { label: "Top scorers so far", icon: "⚽" },
-  { label: "Bracket predictions", icon: "🏆" },
+// ── Quick Prompts ──────────────────────────────────────────────────────────────
+
+interface QuickPromptDef {
+  i18nKey: string
+  icon: string
+}
+
+const quickPromptDefs: QuickPromptDef[] = [
+  { i18nKey: "ai.quickPrompt1", icon: "📅" },
+  { i18nKey: "ai.quickPrompt2", icon: "🇲🇽" },
+  { i18nKey: "ai.quickPrompt3", icon: "⚽" },
+  { i18nKey: "ai.quickPrompt4", icon: "🏆" },
 ]
 
-interface Message {
-  id: number
-  role: "user" | "assistant"
-  content: string
-  type?: "text" | "analysis"
-  analysisData?: TeamAnalysis
-}
+// ── Mini Radar Chart ───────────────────────────────────────────────────────────
 
-interface TeamAnalysis {
-  team1: {
-    name: string
-    flag: string
-    stats: { attack: number; defense: number; possession: number; setpieces: number; form: number }
-    winProbability: number
-  }
-  team2: {
-    name: string
-    flag: string
-    stats: { attack: number; defense: number; possession: number; setpieces: number; form: number }
-    winProbability: number
-  }
-  drawProbability: number
-  keyInsights: string[]
-}
-
-const brazilFranceAnalysis: TeamAnalysis = {
-  team1: {
-    name: "Brazil",
-    flag: "🇧🇷",
-    stats: { attack: 92, defense: 78, possession: 68, setpieces: 75, form: 88 },
-    winProbability: 42,
-  },
-  team2: {
-    name: "France",
-    flag: "🇫🇷",
-    stats: { attack: 89, defense: 85, possession: 62, setpieces: 82, form: 85 },
-    winProbability: 35,
-  },
-  drawProbability: 23,
-  keyInsights: [
-    "Brazil has 15% higher attack rating in open play",
-    "France leads in set-piece conversion (82% vs 75%)",
-    "Historical H2H: Brazil 5W, France 4W, 3D",
-    "Mbappé vs Vinícius Jr - key matchup to watch",
-  ],
-}
-
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    role: "assistant",
-    content:
-      "Welcome to World Cup 2026! I'm your AI Copilot, powered by advanced match analytics. Ask me about live scores, predictions, player stats, or tournament insights.",
-    type: "text",
-  },
-  {
-    id: 2,
-    role: "user",
-    content: "Analyze the Brazil vs France matchup",
-    type: "text",
-  },
-  {
-    id: 3,
-    role: "assistant",
-    content: "Here's my comprehensive analysis of the Brazil vs France semi-final:",
-    type: "analysis",
-    analysisData: brazilFranceAnalysis,
-  },
-]
-
-// Mini Radar Chart Component
-function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defense: number; possession: number; setpieces: number; form: number }; color: string; label: string }) {
+function MiniRadarChart({ stats, color, label }: { stats: TeamStats; color: string; label: string }) {
   const centerX = 60
   const centerY = 60
   const radius = 45
@@ -106,7 +50,7 @@ function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defe
   }
 
   const points = categories.map((cat) =>
-    getPoint(stats[cat.key as keyof typeof stats], cat.angle)
+    getPoint(stats[cat.key as keyof TeamStats], cat.angle)
   )
 
   const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z"
@@ -114,7 +58,6 @@ function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defe
   return (
     <div className="relative">
       <svg width="120" height="120" viewBox="0 0 120 120">
-        {/* Background circles */}
         {[0.25, 0.5, 0.75, 1].map((scale) => (
           <polygon
             key={scale}
@@ -130,7 +73,6 @@ function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defe
           />
         ))}
 
-        {/* Axis lines */}
         {categories.map((cat) => {
           const p = getPoint(100, cat.angle)
           return (
@@ -146,7 +88,6 @@ function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defe
           )
         })}
 
-        {/* Data polygon */}
         <path
           d={pathD}
           fill={`${color}20`}
@@ -155,7 +96,6 @@ function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defe
           className="drop-shadow-[0_0_6px_rgba(0,240,255,0.5)]"
         />
 
-        {/* Data points */}
         {points.map((p, i) => (
           <circle
             key={i}
@@ -172,15 +112,18 @@ function MiniRadarChart({ stats, color, label }: { stats: { attack: number; defe
   )
 }
 
-// Analysis Card Component
-function AnalysisCard({ data }: { data: TeamAnalysis }) {
+// ── Analysis Card ──────────────────────────────────────────────────────────────
+
+function AnalysisCard({ data, t }: { data: TeamAnalysis; t: (key: string) => string }) {
   return (
     <div className="space-y-4 mt-2">
       {/* Win Probability Bar */}
       <div className="space-y-2">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Win Probability</p>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+          {t("ai.winProbability")}
+        </p>
         <div className="flex items-center gap-2">
-          <span className="text-lg">{data.team1.flag}</span>
+          <TeamFlag code={data.team1.code ?? data.team1.name} size={20} className="rounded-sm" />
           <div className="flex-1 h-8 rounded-lg overflow-hidden flex relative">
             <div
               className="bg-gradient-to-r from-[#CCFF00] to-[#CCFF00]/70 flex items-center justify-end pr-2 transition-all duration-500"
@@ -192,7 +135,7 @@ function AnalysisCard({ data }: { data: TeamAnalysis }) {
               className="bg-secondary/50 flex items-center justify-center transition-all duration-500"
               style={{ width: `${data.drawProbability}%` }}
             >
-              <span className="text-[10px] font-medium text-muted-foreground">Draw</span>
+              <span className="text-[10px] font-medium text-muted-foreground">{t("ai.draw")}</span>
             </div>
             <div
               className="bg-gradient-to-l from-[#00F0FF] to-[#00F0FF]/70 flex items-center justify-start pl-2 transition-all duration-500"
@@ -201,7 +144,7 @@ function AnalysisCard({ data }: { data: TeamAnalysis }) {
               <span className="text-xs font-bold text-[#020617]">{data.team2.winProbability}%</span>
             </div>
           </div>
-          <span className="text-lg">{data.team2.flag}</span>
+          <TeamFlag code={data.team2.code ?? data.team2.name} size={20} className="rounded-sm" />
         </div>
       </div>
 
@@ -219,7 +162,7 @@ function AnalysisCard({ data }: { data: TeamAnalysis }) {
       <div className="space-y-2">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium flex items-center gap-1.5">
           <Zap className="h-3 w-3 text-[#CCFF00]" />
-          Key Insights
+          {t("ai.keyInsights")}
         </p>
         <ul className="space-y-1.5">
           {data.keyInsights.map((insight, i) => (
@@ -234,14 +177,14 @@ function AnalysisCard({ data }: { data: TeamAnalysis }) {
       {/* Stats Legend */}
       <div className="flex flex-wrap gap-2 pt-2 border-t border-glass-border">
         {[
-          { icon: Target, label: "ATK", color: "#FF00E5" },
-          { icon: Shield, label: "DEF", color: "#00F0FF" },
-          { icon: Footprints, label: "POSS", color: "#CCFF00" },
-          { icon: TrendingUp, label: "FORM", color: "#FFD700" },
+          { icon: Target, labelKey: "ai.statATK", color: "#FF00E5" },
+          { icon: Shield, labelKey: "ai.statDEF", color: "#00F0FF" },
+          { icon: Footprints, labelKey: "ai.statPOSS", color: "#CCFF00" },
+          { icon: TrendingUp, labelKey: "ai.statFORM", color: "#FFD700" },
         ].map((stat) => (
-          <div key={stat.label} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <div key={stat.labelKey} className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <stat.icon className="h-3 w-3" style={{ color: stat.color }} />
-            <span>{stat.label}</span>
+            <span>{t(stat.labelKey)}</span>
           </div>
         ))}
       </div>
@@ -249,8 +192,9 @@ function AnalysisCard({ data }: { data: TeamAnalysis }) {
   )
 }
 
-// Thinking Indicator Component
-function ThinkingIndicator() {
+// ── Thinking Indicator ─────────────────────────────────────────────────────────
+
+function ThinkingIndicator({ message }: { message: string }) {
   return (
     <div className="flex gap-3">
       <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/20 border border-[#00F0FF]/30 flex items-center justify-center">
@@ -262,51 +206,206 @@ function ThinkingIndicator() {
           <div className="w-2 h-2 rounded-full bg-[#00F0FF] animate-pulse" style={{ animationDelay: "150ms" }} />
           <div className="w-2 h-2 rounded-full bg-[#00F0FF] animate-pulse" style={{ animationDelay: "300ms" }} />
         </div>
-        <span className="text-sm text-muted-foreground">Processing query...</span>
+        <span className="text-sm text-muted-foreground">{message}</span>
       </div>
     </div>
   )
 }
 
+// ── Typewriter Text ────────────────────────────────────────────────────────────
+
+/** Renders text with a cursor blink at the end while streaming. */
+function TypewriterText({ text, streaming }: { text: string; streaming: boolean }) {
+  return (
+    <span>
+      <MarkdownRenderer content={text} />
+      {streaming && (
+        <span className="inline-block w-[2px] h-[1em] bg-[#00F0FF] ml-[1px] animate-pulse align-text-bottom" />
+      )}
+    </span>
+  )
+}
+
+// ── Thinking Block (collapsible) ───────────────────────────────────────────────
+
+function ThinkingBlock({
+  content,
+  collapsed,
+  onToggle,
+  t,
+}: {
+  content: string
+  collapsed: boolean
+  onToggle: () => void
+  t: (key: string) => string
+}) {
+  return (
+    <div className="mb-2">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70 hover:text-muted-foreground transition-colors mb-1"
+      >
+        <Zap className="h-3 w-3 text-[#CCFF00]/60" />
+        {t("ai.thinkingLabel")}
+        {collapsed ? (
+          <ChevronDown className="h-3 w-3" />
+        ) : (
+          <ChevronUp className="h-3 w-3" />
+        )}
+      </button>
+      {!collapsed && (
+        <div className="text-[11px] text-muted-foreground/60 bg-secondary/20 border border-glass-border rounded-lg p-3 leading-relaxed">
+          <MarkdownRenderer content={content} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main Panel ─────────────────────────────────────────────────────────────────
+
 export function AICopilotPanel() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const { t } = useTranslation()
+  const language = usePreferencesStore((s) => s.language)
+
+  const {
+    messages,
+    isStreaming,
+    currentStreamContent,
+    currentThinkingContent,
+    pendingAnalysis,
+    addUserMessage,
+    startStreaming,
+    appendStreamContent,
+    appendThinkingContent,
+    setPendingAnalysis,
+    finishStreaming,
+  } = useAIChatStore()
+
   const [input, setInput] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+  const [thinkingCollapsed, setThinkingCollapsed] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showDisclaimer, setShowDisclaimer] = useState(false)
+  const abortRef = useRef<AbortController | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll to bottom on new content
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages, currentStreamContent, currentThinkingContent, isStreaming])
+
+  // Seed the initial welcome message; re-seed when language changes
+  // and no real conversation has started yet.
+  useEffect(() => {
+    const store = useAIChatStore.getState()
+    const hasConversation = store.messages.some((m) => m.role === "user")
+    if (hasConversation) return
+
+    const welcomeText = t("ai.welcomeMessage")
+    if (store.messages.length === 0) {
+      store.startStreaming()
+      store.appendStreamContent(welcomeText)
+      store.finishStreaming()
+    } else if (
+      store.messages.length === 1 &&
+      store.messages[0].role === "assistant" &&
+      store.messages[0].content !== welcomeText
+    ) {
+      useAIChatStore.setState((s) => ({
+        messages: [{ ...s.messages[0], content: welcomeText }],
+      }))
+    }
+  }, [language, t]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sendMessage = useCallback(
+    (content: string) => {
+      const trimmed = content.trim()
+      if (!trimmed || isStreaming) return
+
+      setErrorMessage(null)
+      setShowDisclaimer(false)
+
+      // Add user message to store
+      addUserMessage(trimmed)
+      setInput("")
+
+      // Build message history for the backend
+      const storeMessages = useAIChatStore.getState().messages
+      const chatHistory: ChatMessageItem[] = storeMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }))
+
+      // Start streaming
+      const controller = new AbortController()
+      abortRef.current = controller
+      startStreaming()
+      setThinkingCollapsed(false)
+
+      void streamChat(
+        chatHistory,
+        undefined,
+        language,
+        {
+          onThinking: (delta) => {
+            appendThinkingContent(delta)
+          },
+          onAnswer: (delta) => {
+            appendStreamContent(delta)
+          },
+          onAnalysis: (data) => {
+            setPendingAnalysis(data)
+          },
+          onDone: () => {
+            finishStreaming()
+            setShowDisclaimer(true)
+            abortRef.current = null
+          },
+          onError: (type) => {
+            finishStreaming()
+            const msg =
+              type === "connection"
+                ? t("ai.connectionError")
+                : t("ai.streamError")
+            setErrorMessage(msg)
+            abortRef.current = null
+          },
+        },
+        controller.signal,
+      )
+    },
+    [
+      isStreaming,
+      language,
+      t,
+      addUserMessage,
+      startStreaming,
+      appendStreamContent,
+      appendThinkingContent,
+      setPendingAnalysis,
+      finishStreaming,
+    ],
+  )
 
   const handleSend = () => {
-    if (!input.trim()) return
-
-    const userMessage: Message = {
-      id: messages.length + 1,
-      role: "user",
-      content: input,
-      type: "text",
-    }
-    setMessages((prev) => [...prev, userMessage])
-    setInput("")
-    setIsTyping(true)
-
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: messages.length + 2,
-        role: "assistant",
-        content:
-          "Based on my analysis of recent match data, team form, and historical performance metrics, I can provide detailed insights. This is a demo response - the full AI integration will deliver real-time predictions and statistics.",
-        type: "text",
-      }
-      setMessages((prev) => [...prev, aiMessage])
-      setIsTyping(false)
-    }, 2000)
+    sendMessage(input)
   }
 
-  const handleQuickPrompt = (prompt: string) => {
-    setInput(prompt)
+  const handleQuickPrompt = (i18nKey: string) => {
+    const promptText = t(i18nKey)
+    sendMessage(promptText)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
   }
 
   return (
     <aside className="w-full h-full flex flex-col relative">
-      {/* Floating Glass Module Effect */}
       <div className="absolute inset-2 glass-card rounded-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-glass-border">
@@ -319,11 +418,11 @@ export function AICopilotPanel() {
             </div>
             <div>
               <h2 className="font-bold text-foreground flex items-center gap-2">
-                World Cup AI Copilot
+                {t("ai.copilotTitle")}
                 <Zap className="h-3.5 w-3.5 text-[#CCFF00]" />
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Real-time analytics engine
+                {t("ai.analyticsEngine")}
               </p>
             </div>
           </div>
@@ -332,17 +431,18 @@ export function AICopilotPanel() {
         {/* Quick Prompts */}
         <div className="p-3 border-b border-glass-border bg-glass-highlight">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">
-            Quick Prompts
+            {t("ai.quickPrompts")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {quickPrompts.map((prompt) => (
+            {quickPromptDefs.map((def) => (
               <button
-                key={prompt.label}
-                onClick={() => handleQuickPrompt(prompt.label)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-secondary/30 hover:bg-[#00F0FF]/10 border border-glass-border hover:border-[#00F0FF]/30 rounded-full transition-all duration-300 text-muted-foreground hover:text-[#00F0FF]"
+                key={def.i18nKey}
+                onClick={() => handleQuickPrompt(def.i18nKey)}
+                disabled={isStreaming}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-secondary/30 hover:bg-[#00F0FF]/10 border border-glass-border hover:border-[#00F0FF]/30 rounded-full transition-all duration-300 text-muted-foreground hover:text-[#00F0FF] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>{prompt.icon}</span>
-                <span>{prompt.label}</span>
+                <span>{def.icon}</span>
+                <span>{t(def.i18nKey)}</span>
               </button>
             ))}
           </div>
@@ -380,16 +480,68 @@ export function AICopilotPanel() {
                     : "bg-secondary/30 border border-glass-border text-foreground backdrop-blur-sm"
                 )}
               >
-                {message.content}
+                {message.role === "assistant" ? (
+                  <MarkdownRenderer content={message.content} />
+                ) : (
+                  message.content
+                )}
                 {message.type === "analysis" && message.analysisData && (
-                  <AnalysisCard data={message.analysisData} />
+                  <AnalysisCard data={message.analysisData} t={t} />
                 )}
               </div>
             </div>
           ))}
 
-          {/* Thinking Animation */}
-          {isTyping && <ThinkingIndicator />}
+          {/* Live streaming response */}
+          {isStreaming && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#00F0FF]/20 border border-[#00F0FF]/30 flex items-center justify-center shrink-0">
+                <Bot className="h-4 w-4 text-[#00F0FF]" />
+              </div>
+              <div className="max-w-[90%] rounded-xl px-4 py-3 text-sm bg-secondary/30 border border-glass-border text-foreground backdrop-blur-sm">
+                {/* Thinking block */}
+                {currentThinkingContent && (
+                  <ThinkingBlock
+                    content={currentThinkingContent}
+                    collapsed={thinkingCollapsed}
+                    onToggle={() => setThinkingCollapsed((v) => !v)}
+                    t={t}
+                  />
+                )}
+                {/* Answer text with typewriter */}
+                {currentStreamContent ? (
+                  <TypewriterText text={currentStreamContent} streaming={isStreaming} />
+                ) : (
+                  !currentThinkingContent && (
+                    <ThinkingIndicator message={t("ai.thinking")} />
+                  )
+                )}
+                {/* Pending analysis rendered during stream */}
+                {pendingAnalysis && <AnalysisCard data={pendingAnalysis} t={t} />}
+              </div>
+            </div>
+          )}
+
+          {/* Error message */}
+          {errorMessage && (
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-lg bg-destructive/20 border border-destructive/30 flex items-center justify-center shrink-0">
+                <Bot className="h-4 w-4 text-destructive" />
+              </div>
+              <div className="max-w-[90%] rounded-xl px-4 py-3 text-sm bg-destructive/10 border border-destructive/20 text-destructive">
+                {errorMessage}
+              </div>
+            </div>
+          )}
+
+          {/* Disclaimer after stream ends */}
+          {showDisclaimer && !isStreaming && (
+            <p className="text-[10px] text-muted-foreground/50 text-center">
+              {t("ai.disclaimer")}
+            </p>
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input with Focus Glow */}
@@ -403,10 +555,11 @@ export function AICopilotPanel() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={handleKeyDown}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder="Ask about matches, predictions, stats..."
+              placeholder={t("ai.placeholder")}
+              disabled={isStreaming}
               className={cn(
                 "pr-12 bg-secondary/30 border-glass-border focus:border-[#00F0FF]/50 placeholder:text-muted-foreground/50 rounded-xl transition-all duration-300",
                 isFocused && "border-[#00F0FF] ring-1 ring-[#00F0FF]/30"
@@ -415,10 +568,10 @@ export function AICopilotPanel() {
             <Button
               size="icon"
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isStreaming}
               className={cn(
                 "absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg transition-all duration-300",
-                input.trim()
+                input.trim() && !isStreaming
                   ? "bg-[#CCFF00] text-[#020617] hover:bg-[#CCFF00]/90 shadow-[0_0_20px_rgba(204,255,0,0.4)]"
                   : "bg-secondary text-muted-foreground"
               )}
@@ -426,9 +579,6 @@ export function AICopilotPanel() {
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-[10px] text-muted-foreground/50 mt-2 text-center">
-            AI predictions are for entertainment purposes only
-          </p>
         </div>
       </div>
     </aside>

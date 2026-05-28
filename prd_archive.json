@@ -1,0 +1,247 @@
+[
+  {
+    "branchName": "feature/world-cup",
+    "stories": [
+      {
+        "id": "P1-01-Scaffold",
+        "title": "后端项目脚手架：依赖管理 + 环境配置 + 目录骨架",
+        "description": "基础设施任务。\n\n1. 创建 `football-server/pyproject.toml`，声明项目元数据和全部核心依赖（fastapi>=0.115, uvicorn[standard]>=0.34, sqlalchemy[asyncio]>=2.0, aiosqlite>=0.21, alembic>=1.14, redis[hiredis]>=5.0, pydantic>=2.0, pydantic-settings>=2.0, httpx>=0.28, python-dotenv>=1.0）\n2. 创建 `football-server/.env.example`，列出所有环境变量模板（DATABASE_URL, REDIS_URL, REDIS_ENABLED, DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, CORS_ORIGINS, APP_ENV）\n3. 创建 `football-server/.gitignore`（__pycache__/, .venv/, *.pyc, .env, *.db）\n4. 创建 `football-server/app/__init__.py`（空文件）\n5. 创建 `football-server/app/config.py`，使用 Pydantic Settings 定义配置类，从 .env 加载所有环境变量，提供默认值\n\n验收：`pip install -e .` 成功安装全部依赖，`from app.config import settings` 可正常导入",
+        "passes": true
+      },
+      {
+        "id": "P1-02-Exceptions",
+        "title": "异常层级 + 全局错误处理中间件 + CORS",
+        "description": "后端基础中间件任务。\n\n1. 创建 `app/exceptions/__init__.py` 和 `app/exceptions/exceptions.py`，定义异常层级：AppException(BaseException)、NotFoundError、ValidationError、BusinessError、ExternalServiceError\n2. 创建 `app/middleware/__init__.py` 和 `app/middleware/error_handler.py`，实现全局异常处理器，将自定义异常统一转换为 ApiResponse 格式 `{code, data, message}`，未捕获异常返回 500\n3. 创建 `app/middleware/cors.py`，配置 CORS 中间件，允许来自前端的跨域请求，origins 从 config 加载\n4. 创建 `app/middleware/logging.py`，实现请求日志中间件，记录 method/path/status/duration（使用标准 logging，禁止 print）",
+        "passes": true
+      },
+      {
+        "id": "P1-03-Models",
+        "title": "全部 ORM 模型：Base + Team + Venue + Match + GroupStanding + MatchEvent",
+        "description": "数据库模型层任务。\n\n1. 创建 `app/models/__init__.py`，统一导出所有模型\n2. 创建 `app/models/base.py`：DeclarativeBase + TimestampMixin（created_at, updated_at 自动时间戳）+ Base 声明\n3. 创建 `app/models/team.py`：Team 模型（id, name, name_zh, code, flag, fifa_ranking, group_label, confederation, world_cup_appearances），name 和 code 设 UNIQUE\n4. 创建 `app/models/venue.py`：Venue 模型（id, name, city, country, timezone, utc_offset, capacity）\n5. 创建 `app/models/match.py`：Match 模型（id, external_id UNIQUE, home/away_team_id FK, venue_id FK, stage, group_label, round, match_day, kickoff_utc, status, home/away_score, is_big_match, activity_level, next_match_id FK nullable, position），与 Team 和 Venue 建立 relationship\n6. 创建 `app/models/group_standing.py`：GroupStanding 模型（team_id FK UNIQUE, group_label, played, won, drawn, lost, goals_for, goals_against, goal_difference, points, position）\n7. 创建 `app/models/match_event.py`：MatchEvent 模型（id, match_id FK, event_type, minute, team_side, player_name），与 Match 建立 relationship\n\n所有模型必须使用 Type Hints（Mapped[int], Mapped[str] 等），遵循 SQLAlchemy 2.0 声明式风格",
+        "passes": true
+      },
+      {
+        "id": "P1-04-Alembic",
+        "title": "Alembic 数据库迁移配置 + 初始迁移脚本",
+        "description": "数据库迁移基础设施任务。\n\n1. 创建 `football-server/alembic.ini`，配置 sqlalchemy.url 指向 SQLite 文件（从 config 读取）\n2. 创建 `football-server/alembic/env.py`，配置 async 模式（使用 async with connectable.connect()），引入 Base.metadata 作为 target_metadata\n3. 创建 `football-server/alembic/script.py.mako` 模板\n4. 创建 `alembic/versions/001_initial_schema.py` 初始迁移脚本，包含 teams、venues、matches、group_standings、match_events 五张表及外键关系\n\n验收：`alembic upgrade head` 成功创建所有表",
+        "passes": true
+      },
+      {
+        "id": "P1-05-Schemas",
+        "title": "全部 Pydantic Schema：Common + 7 组实体 DTO/VO",
+        "description": "请求/响应数据校验层任务。\n\n1. 创建 `app/schemas/__init__.py`\n2. 创建 `app/schemas/common.py`：ApiResponse[T] 泛型响应（code: int, data: T, message: str）、PaginatedResponse[T]（items, total, page, page_size）\n3. 创建 `app/schemas/team_schema.py`：TeamCreate/TeamUpdate/TeamResponse/TeamListResponse\n4. 创建 `app/schemas/match_schema.py`：MatchQueryParams（date, stage, group, team, status 过滤参数）、MatchResponse、MatchDetailResponse（含 match_events）\n5. 创建 `app/schemas/venue_schema.py`：VenueResponse\n6. 创建 `app/schemas/group_schema.py`：GroupStandingResponse、GroupDetailResponse（standings + matches）\n7. 创建 `app/schemas/bracket_schema.py`：BracketTeamResponse、BracketMatchResponse、BracketRoundResponse、BracketTreeResponse（rounds 列表）\n8. 创建 `app/schemas/cheer_schema.py`：CheerResponse（home/away 计数）、CheerVoteRequest（side: home/away）\n9. 创建 `app/schemas/ai_schema.py`：ChatRequest（messages + context + lang）、SSEEvent（type: thinking/answer/analysis/done）、TeamAnalysisResponse\n10. 创建 `app/schemas/ws_schema.py`：WSEventType 枚举、WSMessage（event + payload）\n\n严格区分 DTO（请求）和 VO（响应），响应模型使用 from_attributes=True",
+        "passes": true
+      },
+      {
+        "id": "P1-06-Repos",
+        "title": "全部 Repository：泛型 CRUD 基类 + 5 个具体 Repo",
+        "description": "数据访问层任务。\n\n1. 创建 `app/repositories/__init__.py`\n2. 创建 `app/repositories/base.py`：泛型 BaseRepository[T]，接收 AsyncSession，提供 get_by_id、get_all（分页+过滤）、create、update、delete 方法，全部使用 async/await\n3. 创建 `app/repositories/team_repo.py`：TeamRepository(BaseRepository[Team])，增加 get_by_code、get_by_group 方法\n4. 创建 `app/repositories/match_repo.py`：MatchRepository(BaseRepository[Match])，增加 get_by_date、get_by_stage、get_by_status、get_live_matches、get_bracket_matches 方法\n5. 创建 `app/repositories/venue_repo.py`：VenueRepository(BaseRepository[Venue])\n6. 创建 `app/repositories/group_repo.py`：GroupRepository(BaseRepository[GroupStanding])，增加 get_by_group_label（返回该组全部排名）、get_group_matches 方法\n7. 创建 `app/repositories/match_event_repo.py`：MatchEventRepository(BaseRepository[MatchEvent])，增加 get_by_match 方法\n\n严禁在 Repository 层包含业务逻辑，仅封装数据库查询",
+        "passes": true
+      },
+      {
+        "id": "P1-07-TeamVenue",
+        "title": "Team + Venue Service 与 Controller",
+        "description": "队伍和场馆的业务层 + 路由层任务。\n\n1. 创建 `app/services/__init__.py`\n2. 创建 `app/services/team_service.py`：TeamService，方法包括 get_all_teams、get_team_by_code、get_teams_by_group。注入 TeamRepository\n3. 创建 `app/services/venue_service.py`：VenueService，方法包括 get_all_venues。注入 VenueRepository\n4. 创建 `app/controllers/__init__.py`\n5. 创建 `app/controllers/team_controller.py`：GET /api/teams（全部队伍）、GET /api/teams/:code（队伍详情）\n6. 创建 `app/controllers/venue_controller.py`：GET /api/venues（全部场馆，含时区信息）\n\nController 仅做参数解析和调用 Service，返回统一 ApiResponse 包装。支持 ?lang=zh 查询参数切换中英文字段",
+        "passes": true
+      },
+      {
+        "id": "P1-08-Match",
+        "title": "Match Service 与 Controller（比赛查询 + 过滤）",
+        "description": "比赛核心业务 + 路由任务。\n\n1. 创建 `app/services/match_service.py`：MatchService，方法包括 get_matches（按 date/stage/group/team/status 过滤）、get_match_by_id（含 events）、get_live_matches。注入 MatchRepository + MatchEventRepository\n2. 创建 `app/controllers/match_controller.py`：\n   - GET /api/matches — 支持 query params: date, stage, group, team, status\n   - GET /api/matches/live — 当前进行中比赛\n   - GET /api/matches/:id — 单场详情（含 match_events）\n\n过滤逻辑放在 Service 层，Controller 仅解析 MatchQueryParams 并传递。时区转换：根据请求的 timezone 参数，将 kickoff_utc 转换为 localTime 和 hostTime",
+        "passes": true
+      },
+      {
+        "id": "P1-09-Group",
+        "title": "Group Service 与 Controller（小组积分 + 赛程）",
+        "description": "小组积分业务 + 路由任务。\n\n1. 创建 `app/services/group_service.py`：GroupService，方法包括 get_all_groups（12 组积分概览）、get_group_detail（单组积分榜 + 该组赛程列表）。注入 GroupRepository + MatchRepository\n2. 创建 `app/controllers/group_controller.py`：\n   - GET /api/groups — 全部 12 组积分排名\n   - GET /api/groups/:group — 单组详情（A-L），返回 standings + matches\n\n积分榜按 points desc, goal_difference desc 排序。响应中的队伍信息包含中英文名",
+        "passes": true
+      },
+      {
+        "id": "P1-10-Bracket",
+        "title": "Bracket Service 与 Controller（完整淘汰赛对阵图）",
+        "description": "淘汰赛对阵业务 + 路由任务。\n\n1. 创建 `app/services/bracket_service.py`：BracketService，方法包括 get_full_bracket（返回 R32→R16→QF→SF→3rd→F 全结构）、get_bracket_by_round。注入 MatchRepository\n2. 创建 `app/controllers/bracket_controller.py`：\n   - GET /api/bracket — 完整淘汰赛对阵图树形结构\n   - GET /api/bracket/predictions — AI 预测淘汰赛路径（Phase 3 实际接入，当前返回 TBD）\n\n返回数据按 round 分组，每个 round 内按 position 排序。team 为 TBD 时返回 fromGroup/fromPosition 信息",
+        "passes": true
+      },
+      {
+        "id": "P1-11-AppFactory",
+        "title": "依赖注入模块 + FastAPI 应用工厂（main.py）",
+        "description": "应用启动和依赖注入任务。\n\n1. 创建 `app/dependencies.py`：定义依赖注入提供者\n   - get_db：创建 AsyncSession 并管理生命周期（yield + finally close）\n   - get_team_service、get_match_service 等业务层工厂函数\n   - get_language：从请求 Header/Query 提取当前语言偏好\n2. 创建 `app/main.py`：FastAPI 应用工厂\n   - 使用 lifespan 上下文管理器（启动时初始化 DB engine，关闭时清理）\n   - 注册所有 Router（match, bracket, team, group, venue, cheer）\n   - 注册 CORS + error_handler + logging 中间件\n   - 挂载 /docs OpenAPI 文档\n3. 创建 `football-server/run.py`：启动入口\n\n验收：`uvicorn app.main:app --reload` 启动成功，访问 /docs 看到 OpenAPI 文档，所有已注册路由可见",
+        "passes": true
+      },
+      {
+        "id": "P1-12-Utils",
+        "title": "工具模块：Markdown 解析器 + 时区转换",
+        "description": "后端工具函数任务。\n\n1. 创建 `app/utils/__init__.py`\n2. 创建 `app/utils/markdown_parser.py`：解析 data/2026_FIFA_World_Cup_Group_Stage.md 文件，提取比赛信息（队伍、日期、时间、场馆、小组），返回结构化数据。处理中文字符编码边界情况\n3. 创建 `app/utils/timezone.py`：时区转换工具函数\n   - utc_to_local(utc_dt, target_tz)：UTC 时间转目标时区\n   - get_host_city_time(utc_dt, venue_timezone)：获取主办城市当地时间\n   - 使用 zoneinfo 标准库，无需额外依赖\n\n验收：markdown_parser 能正确解析 data/ 下的赛程文件，提取出 72 场小组赛数据",
+        "passes": true
+      },
+      {
+        "id": "P1-13-SeedTeams",
+        "title": "种子数据脚本：48 支参赛队伍（含中英文名）",
+        "description": "数据初始化任务。\n\n1. 创建 `scripts/__init__.py`\n2. 创建 `scripts/seed_teams.py`：插入 48 支参赛队伍\n   - 包含完整的 48 队中英文映射表（name + name_zh）\n   - 每支队伍包含：name, name_zh, code（三字码）, flag（emoji）, fifa_ranking, group_label（A-L）, confederation, world_cup_appearances\n   - 使用 asyncio.run + async session 执行插入\n   - 支持幂等执行（已存在则跳过或更新）\n\n数据来源：参考 data/2026_FIFA_World_Cup_Group_Stage.md 中的分组信息和网络 FIFA 排名数据",
+        "passes": true
+      },
+      {
+        "id": "P1-14-SeedVenues",
+        "title": "种子数据脚本：16 座主办城市场馆",
+        "description": "场馆数据初始化任务。\n\n1. 创建 `scripts/seed_venues.py`：插入 16 座主办城市场馆\n   - 美国 11 座：MetLife Stadium (East Rutherford), AT&T Stadium (Arlington), SoFi Stadium (Inglewood) 等\n   - 加拿大 2 座：BMO Field (Toronto), BC Place (Vancouver)\n   - 墨西哥 3 座：Estadio Azteca (Mexico City), Estadio BBVA (Monterrey), Estadio Akron (Guadalajara)\n   - 每座场馆包含：name, city, country, timezone（IANA 格式）, utc_offset, capacity\n   - 支持幂等执行",
+        "passes": true
+      },
+      {
+        "id": "P1-15-SeedMatches",
+        "title": "种子数据脚本：104 场比赛（72 小组赛 + 32 淘汰赛）",
+        "description": "比赛数据初始化任务。\n\n1. 创建 `scripts/seed_matches.py`：插入 104 场比赛\n   - 72 场小组赛：使用 markdown_parser 解析 data/2026_FIFA_World_Cup_Group_Stage.md，提取每场比赛的队伍、时间、场馆\n   - 每场小组赛 external_id 格式：A_M1（A 组第 1 场）\n   - 32 场淘汰赛：使用 generate_bracket 生成对阵框架（队伍为 TBD）\n   - 淘汰赛 external_id 格式：R32_01, R16_01, QF_01, SF_01, 3RD_01, F_01\n   - status 默认 upcoming，score 默认 NULL\n   - 正确设置 next_match_id 和 position",
+        "passes": true
+      },
+      {
+        "id": "P1-16-SeedEntry",
+        "title": "种子数据入口脚本 + 淘汰赛对阵生成器 + 集成验证",
+        "description": "数据初始化编排与验证任务。\n\n1. 创建 `scripts/generate_bracket.py`：生成淘汰赛对阵树\n   - 定义 R32→R16→QF→SF→3rd/Final 的晋级关系\n   - 预建静态对阵框架，仅确定小组排名后填入具体队伍\n   - 正确设置 next_match_id 链和 position 序号\n2. 创建 `scripts/seed_data.py`：一键初始化入口\n   - 按顺序调用：seed_venues → seed_teams → seed_matches → generate_bracket\n   - 同时初始化 48 条 group_standings 记录（全 0）\n   - 执行完毕后打印统计摘要\n3. 集成验证：运行 seed_data.py 后，通过 API 验证\n   - GET /api/matches?date=2026-06-11 返回开幕日比赛\n   - GET /api/groups/A 返回 A 组积分 + 赛程\n   - GET /api/bracket 返回完整淘汰赛结构",
+        "passes": true
+      },
+      {
+        "id": "P1-17-Types",
+        "title": "前端：提取共享 TypeScript 类型定义",
+        "description": "前端类型安全基础任务。\n\n1. 创建 `football-web/lib/types/` 目录结构\n2. 创建 `football-web/lib/types/team.ts`：提取 Team interface（name, code, flag, fifaRanking?）\n3. 创建 `football-web/lib/types/match.ts`：提取 Match, MatchEvent, MatchQueryParams interface\n4. 创建 `football-web/lib/types/bracket.ts`：提取 BracketMatch, BracketTeam, BracketRound, BracketTree interface\n5. 创建 `football-web/lib/types/ai.ts`：提取 Message, TeamAnalysis, TeamStats, SSEEvent interface\n6. 创建 `football-web/lib/types/api.ts`：定义 ApiResponse<T>, PaginatedResponse<T> 通用类型\n7. 创建 `football-web/lib/types/index.ts`：统一导出\n8. 修改现有 4 个组件文件（match-cards-grid, tournament-bracket, ai-copilot-panel, page.tsx），将内联类型替换为从共享模块导入\n\n严禁使用 any 类型",
+        "passes": true
+      },
+      {
+        "id": "P1-18-ApiClient",
+        "title": "前端：API 客户端层（fetch 封装 + 统一错误处理）",
+        "description": "前端网络请求基础设施任务。\n\n1. 创建 `football-web/lib/api-client.ts`：\n   - 封装 fetch，统一处理 ApiResponse<T> 解包\n   - 自动附加 BASE_URL 前缀（从环境变量读取）\n   - 自动附加 Accept-Language Header（从 i18n 状态读取）\n   - 统一错误处理（网络错误、401、500 等转换为用户友好提示）\n   - 支持 query params 序列化\n2. 创建 `football-web/lib/api/matches.ts`：getMatches(params), getMatchById(id), getLiveMatches()\n3. 创建 `football-web/lib/api/bracket.ts`：getBracket()\n4. 创建 `football-web/lib/api/teams.ts`：getTeams(), getTeamByCode(code)\n5. 创建 `football-web/lib/api/groups.ts`：getGroups(), getGroupDetail(group)\n6. 创建 `football-web/lib/api/venues.ts`：getVenues()\n7. 创建 `football-web/lib/api/cheers.ts`：getCheers(matchId), postCheer(matchId, side)\n8. 添加 NEXT_PUBLIC_API_URL 环境变量到 .env.local.example",
+        "passes": true
+      },
+      {
+        "id": "P1-19-I18n",
+        "title": "前端：i18n 基础设施 + 中英文翻译文件",
+        "description": "国际化基础架构任务。\n\n1. 安装 next-intl 或创建轻量 i18n 上下文方案\n2. 创建 `football-web/lib/i18n/context.tsx`：I18nProvider，管理当前语言状态（默认从浏览器 Accept-Language 检测，支持手动切换）\n3. 创建 `football-web/lib/i18n/locales/zh-CN.json`：中文翻译文件，包含所有 UI 文案\n   - header 区域：标题、时区选项、视图选项\n   - timeline 区域：日期格式、阶段名称、状态标签\n   - match 卡片：比分、状态、场馆、活跃度、助威按钮\n   - bracket 区域：轮次名称\n   - AI 区域：标题、快捷提问、免责声明\n   - footer 区域：状态文案\n   - 通用：星期、月份、错误提示\n4. 创建 `football-web/lib/i18n/locales/en-US.json`：英文翻译文件，完整对照\n5. 创建 `football-web/lib/i18n/use-translation.ts`：useTranslation hook，提供 t() 函数\n6. 在 layout.tsx 中包裹 I18nProvider\n\n所有用户可见文本严禁硬编码",
+        "passes": true
+      },
+      {
+        "id": "P1-20-LangSwitch",
+        "title": "前端：Header 语言切换控件",
+        "description": "Header 区域 UI 扩展任务。\n\n1. 修改 `football-web/components/dashboard/header.tsx`：在右侧控件区域新增语言切换\n   - 使用 Globe 图标（lucide-react）+ 下拉选择（zh-CN / en-US）\n   - 切换后更新 I18nProvider 的语言状态\n   - 视觉风格与现有时区/视图切换保持一致\n2. 确保语言切换后 Header 自身文案（标题、副标题、按钮文字）也切换语言\n3. 将 Header 中所有硬编码英文文案替换为 t() 调用\n\n验收：切换语言后，Header 所有文案立即切换为对应语言",
+        "passes": true
+      },
+      {
+        "id": "P1-21-DateFilter",
+        "title": "前端：日期-比赛联动过滤 + 动态数据加载",
+        "description": "Timeline 核心交互任务。\n\n1. 修改 `football-web/components/dashboard/date-timeline.tsx`：\n   - 从 API 获取有比赛的日期列表，仅在有比赛的日期显示圆点指示器\n   - 根据实际赛程数据标注每个日期的阶段标签（Group/R32/QF/SF/Final）\n   - 打开页面时自动定位到今日，若今日无比赛则选中最近有比赛的日期\n2. 修改 `football-web/components/dashboard/match-cards-grid.tsx`：\n   - 替换硬编码的 4 场比赛为 API 调用：getMatches({ date: selectedDate })\n   - 实现 selectedDate 驱动的过滤：点击日期 → 重新请求该日比赛 → 更新卡片列表\n   - 无比赛日期显示空状态提示\n   - 时区切换联动更新所有卡片的时间显示\n3. 将两个组件中的所有硬编码文案替换为 t() 调用",
+        "passes": true
+      },
+      {
+        "id": "P1-22-GroupView",
+        "title": "前端：小组积分榜组件 + 页面",
+        "description": "新增核心功能页面任务。\n\n1. 创建 `football-web/components/dashboard/group-standings.tsx`：\n   - 展示 12 个小组（A-L）的积分排名表\n   - 每个小组卡片：组名 + 4 队排名表（位置、国旗、队名、赛/胜/平/负、进球/失球、净胜球、积分）\n   - 响应式布局：桌面端 3-4 列网格，移动端 1 列\n   - 赛博朋克风格：glass-card + 阶段颜色编码\n2. 创建 `football-web/app/groups/page.tsx`：小组积分总览页\n3. 创建 `football-web/app/groups/[group]/page.tsx`：单组详情页（积分榜 + 该组赛程列表）\n4. 调用 getGroups() / getGroupDetail(group) API 获取数据\n5. 在首页 Timeline 视图中添加小组积分快捷入口\n\n所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P1-23-FullBracket",
+        "title": "前端：完整淘汰赛对阵图扩展（R32→R16→QF→SF→3rd→F）",
+        "description": "Bracket 核心重构任务。\n\n1. 重构 `football-web/components/dashboard/tournament-bracket.tsx`：\n   - 从 API 获取完整 bracket 数据：getBracket()\n   - 扩展为 6 轮结构：R32(16场) → R16(8场) → QF(4场) → SF(2场) → 3rd(1场) → F(1场)\n   - 桌面端：横向滚动布局，支持完整展示 6 轮\n   - 移动端：考虑纵向布局或缩放方案\n   - TBD 队伍显示为 fromGroup 信息（如 \"1st Group A\"）\n   - SVG 连接线适配 6 轮结构\n   - 获胜方高亮（金色）+ LIVE 状态脉冲动画\n2. 创建 `football-web/app/bracket/page.tsx`：独立全屏对阵图页面\n3. 三四名决赛单独分支展示\n\n所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P2-01-Redis",
+        "title": "Redis 客户端连接池 + 键模式定义",
+        "description": "Redis 基础设施任务。\n\n1. 创建 `app/redis/__init__.py`\n2. 创建 `app/redis/client.py`：Redis 连接池管理\n   - 使用 redis.asyncio 创建连接池\n   - 提供 get_redis() 依赖注入函数\n   - 连接失败时优雅降级（日志警告，不阻塞启动）\n   - 支持 REDIS_ENABLED=false 时完全禁用\n3. 创建 `app/redis/keys.py`：定义所有键模式\n   - LIVE_MATCH = 'live:match:{match_id}' — 实时比分/状态/活跃度\n   - CHEERS_MATCH = 'cheers:match:{match_id}' — 球迷助威计数\n   - WS_CONNECTIONS = 'ws:connections' — 活跃 WS 连接\n   - CACHE_GROUPS = 'cache:groups' — 小组积分缓存\n   - CACHE_BRACKET = 'cache:bracket' — 对阵图缓存\n   - SCRAPER_LOCK = 'scraper:lock' — 爬虫分布式锁",
+        "passes": true
+      },
+      {
+        "id": "P2-02-Cheer",
+        "title": "球迷助威 Service + Controller（Redis 计数器）",
+        "description": "投票功能任务。\n\n1. 创建 `app/services/cheer_service.py`：CheerService\n   - get_cheers(match_id)：从 Redis HASH 读取 home/away 计数，Redis 不可用时返回默认值\n   - vote_cheer(match_id, side)：HINCRBY 原子递增，返回更新后计数\n   - 禁止重复投票可通过 IP 限流实现（简单方案）\n2. 创建 `app/controllers/cheer_controller.py`：\n   - GET /api/cheers/:matchId — 返回当前投票数据 {home: n, away: n}\n   - POST /api/cheers/:matchId — 提交投票，body: {side: 'home' | 'away'}\n\nRedis 不可用时自动降级为内存计数（进程内 dict）",
+        "passes": true
+      },
+      {
+        "id": "P2-03-LiveService",
+        "title": "Live Service：Redis 实时比赛状态管理",
+        "description": "实时状态管理任务。\n\n1. 创建 `app/services/live_service.py`：LiveService\n   - update_match_status(match_id, status)：更新比赛状态到 Redis\n   - update_score(match_id, home_score, away_score)：更新比分\n   - update_activity(match_id, level)：更新活跃度\n   - get_live_matches()：获取所有 status=live 的比赛状态\n   - get_match_live_data(match_id)：获取单场实时数据\n   - 同时更新 Redis 缓存失效标记（cache:groups, cache:bracket）\n2. 修改 `app/services/match_service.py`：在查询时合并 DB 数据 + Redis 实时数据\n   - get_matches：如 Redis 可用，用 live 数据覆盖 DB 中的比分/状态/活跃度\n   - get_live_matches：优先从 Redis 获取",
+        "passes": true
+      },
+      {
+        "id": "P2-04-WebSocket",
+        "title": "WebSocket 管理器 + Controller + 广播机制",
+        "description": "WebSocket 实时推送任务。\n\n1. 创建 `app/services/websocket_manager.py`：ConnectionManager\n   - connect(websocket, client_id)：注册新连接\n   - disconnect(client_id)：移除连接\n   - broadcast(event_type, data)：向所有连接广播消息\n   - broadcast_to_match(match_id, event_type, data)：向关注特定比赛的用户广播\n2. 创建 `app/controllers/ws_controller.py`：\n   - WS /ws/live — WebSocket 端点\n   - 连接时发送初始数据（当前 live 比赛列表）\n   - 维持心跳（ping/pong）\n   - 连接断开时自动清理\n3. 修改 LiveService：在状态变更时通过 ConnectionManager 广播事件\n   - score_update, match_start, match_end, activity_update, bracket_update",
+        "passes": true
+      },
+      {
+        "id": "P2-05-Zustand",
+        "title": "前端：Zustand 全局状态管理搭建",
+        "description": "前端状态架构任务。\n\n1. 安装 zustand 依赖\n2. 创建 `football-web/lib/store/preferences.ts`：用户偏好 store\n   - language（zh-CN/en-US）\n   - timezone（local/host）\n   - viewMode（timeline/bracket）\n   - theme（dark/light）\n   - 持久化到 localStorage\n3. 创建 `football-web/lib/store/matches.ts`：比赛数据 store\n   - matches 缓存（按日期索引）\n   - liveMatches 列表\n   - loading/error 状态\n   - fetchMatchesByDate(date)、fetchLiveMatches() actions\n4. 创建 `football-web/lib/store/live.ts`：实时更新 store\n   - WebSocket 连接状态\n   - 实时比分更新\n   - 活跃度更新\n   - cheer 数据更新\n5. 创建 `football-web/lib/store/ai-chat.ts`：AI 对话 store\n   - messages 列表\n   - isStreaming 状态\n   - currentStreamContent",
+        "passes": true
+      },
+      {
+        "id": "P2-06-WSIntegration",
+        "title": "前端：WebSocket 集成 + 实时比分 + 助威投票对接",
+        "description": "前端实时功能对接任务。\n\n1. 创建 `football-web/lib/websocket.ts`：WebSocket 客户端管理\n   - 自动连接/重连 ws://host/api/ws/live\n   - 事件分发：监听 score_update/match_start/match_end/activity_update\n   - 更新 Zustand live store\n2. 修改 `match-cards-grid.tsx`：\n   - 从 Zustand store 读取实时比分和活跃度\n   - 收到 score_update 时自动更新对应卡片\n   - LIVE 状态脉冲动画\n3. 修改助威投票逻辑：\n   - 点击 Cheer 按钮调用 postCheer(matchId, side) API\n   - 成功后更新本地 Zustand store（乐观更新）\n   - 收到其他用户的投票更新时同步刷新",
+        "passes": true
+      },
+      {
+        "id": "P2-07-MatchDetail",
+        "title": "前端：比赛详情弹窗（阵容 + 进球事件 + 技术统计）",
+        "description": "新增交互功能任务。\n\n1. 创建 `football-web/components/dashboard/match-detail-dialog.tsx`：\n   - 使用 shadcn/ui Dialog 组件\n   - 展示：比赛信息头（双方队伍 + 比分 + 状态 + 时间 + 场馆）\n   - 比赛事件时间线（进球、黄/红牌、换人、VAR）\n   - 技术统计区域（控球率、射门、角球等，如有数据）\n   - 球迷助威投票展示\n   - 赛博朋克风格（glass-card + 发光效果）\n2. 修改 match-cards-grid.tsx：卡片点击时打开 MatchDetailDialog，传入 matchId\n3. 修改 tournament-bracket.tsx：对阵卡片点击同样打开详情弹窗\n4. 调用 getMatchById(id) API 获取详情数据\n\n所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P3-01-PromptBuilder",
+        "title": "AI Schema + Prompt Builder（基于 skills/ 推理链）",
+        "description": "AI 服务基础架构任务。\n\n1. 确认 `app/schemas/ai_schema.py` 中 AI 相关类型完整：\n   - ChatRequest：messages（role + content 列表）+ context（currentView, selectedDate, timezone）+ lang\n   - TeamAnalysis 结构：5 维雷达 + 胜率 + 洞察\n2. 创建 `app/services/prompt_builder.py`：PromptBuilder\n   - build_system_prompt(lang)：构建系统提示词（含赛事上下文说明、当前日期、可用工具描述）\n   - build_match_analysis_prompt(match_id, team1, team2)：基于 skills/group_stage_predict.md 的 6 步推理链构建小组赛分析 prompt\n   - build_knockout_prompt(match_id, team1, team2)：基于 skills/knockout_stage_predict.md 的 5 步推理链构建淘汰赛预测 prompt\n   - build_chat_context(messages)：将多轮对话格式化为 OpenAI 兼容格式\n   - 支持 lang 参数：zh-CN 时返回中文 prompt，en-US 时返回英文 prompt\n3. 读取 skills/ 下的两个 skill 文件作为 prompt 模板源",
+        "passes": true
+      },
+      {
+        "id": "P3-02-Deepseek",
+        "title": "Deepseek API 客户端 + SSE 流式输出 Service",
+        "description": "AI 核心服务任务。\n\n1. 创建 `app/services/ai_service.py`：AIService\n   - __init__：初始化 httpx.AsyncClient，配置 base_url（DEEPSEEK_BASE_URL）和 api_key\n   - stream_chat(messages, context, lang) -> AsyncGenerator：核心流式方法\n     - 调用 Deepseek API（OpenAI 兼容接口），stream=True\n     - 逐 chunk 解析 SSE，区分 reasoning_content 和 content\n     - 对外 yield 统一事件格式：\n       - SSEEvent(type='thinking', content=reasoning_delta)\n       - SSEEvent(type='answer', content=answer_delta)\n       - SSEEvent(type='done')\n     - 检测到分析请求时，在 answer 完成后 yield SSEEvent(type='analysis', data=TeamAnalysis)\n   - 超时处理：30s 超时，超时时 yield error 事件\n   - 错误处理：API 限流/异常时返回友好错误消息（非抛异常中断流）\n2. 参考 D:\\code\\ai coding 项目的实现模式：async generator + SSE 事件格式",
+        "passes": true
+      },
+      {
+        "id": "P3-03-AIController",
+        "title": "AI 对话 Controller（POST /api/ai/chat SSE 端点）",
+        "description": "AI 路由层任务。\n\n1. 创建 `app/controllers/ai_controller.py`：\n   - POST /api/ai/chat — SSE 流式端点\n   - 接收 ChatRequest body（messages + context + lang）\n   - 调用 PromptBuilder 构建 prompt\n   - 调用 AIService.stream_chat() 获取 async generator\n   - 使用 FastAPI StreamingResponse(content_type='text/event-stream')\n   - 将 SSEEvent 格式化为标准 SSE 行：`data: {json}\\n\\n`\n   - 流结束时发送 `data: [DONE]\\n\\n`\n2. 在 main.py 注册 ai_controller router\n\n验收：`curl -X POST http://localhost:8000/api/ai/chat -H 'Content-Type: application/json' -d '{\"messages\":[{\"role\":\"user\",\"content\":\"你好\"}],\"lang\":\"zh-CN\"}'` 收到 SSE 流式响应",
+        "passes": true
+      },
+      {
+        "id": "P3-04-SSEFrontend",
+        "title": "前端：SSE 消费 + 打字机效果 + 分析卡片渲染",
+        "description": "前端 AI 对接任务。\n\n1. 创建 `football-web/lib/api/ai-chat.ts`：\n   - streamChat(messages, context)：使用 fetch + ReadableStream 消费 SSE\n   - 不使用 EventSource（需要 POST）\n   - 手动解析 `data:` 行，区分 thinking/answer/analysis/done 事件\n   - 返回 AsyncGenerator 或 callback 模式\n   - 支持 AbortController 中断\n2. 修改 `football-web/components/dashboard/ai-copilot-panel.tsx`：\n   - 替换 2s 假延迟为真实 SSE 调用\n   - 实现 thinking + answer 双队列打字机效果\n   - thinking 区域可折叠展示推理过程\n   - answer 区域逐字显示回复\n   - 收到 analysis 事件时渲染 AnalysisCard（雷达图 + 概率条 + 洞察列表）\n   - 流结束显示免责声明\n3. 快捷提问按钮：点击后自动发送对应问题的 AI 请求\n4. 连接 Zustand ai-chat store 持久化对话历史\n\n所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P4-01-BaseScraper",
+        "title": "爬虫基类（限流/重试）+ FIFA 官方数据爬虫",
+        "description": "数据采集基础设施任务。\n\n1. 创建 `app/scraping/__init__.py`\n2. 创建 `app/scraping/base_scraper.py`：BaseScraper\n   - 限流：使用 asyncio.Semaphore 控制并发请求\n   - 重试：指数退避重试（最多 3 次），仅对可重试异常重试\n   - 错误处理：网络超时、HTTP 错误、解析失败分别处理\n   - 日志：记录每次爬取的 URL、状态码、耗时\n   - 使用 httpx.AsyncClient 发起请求\n3. 创建 `app/scraping/fifa_scraper.py`：FIFAScraper(BaseScraper)\n   - scrape_match_schedule()：爬取赛程数据\n   - scrape_match_result(match_id)：爬取单场比赛结果\n   - 解析返回结构化数据（使用 Pydantic model 校验）\n   - 可配置的目标 URL（从 config 读取）",
+        "passes": true
+      },
+      {
+        "id": "P4-02-LiveScraper",
+        "title": "实时比分爬虫 + 数据同步服务",
+        "description": "实时数据采集与同步任务。\n\n1. 创建 `app/scraping/live_score_scraper.py`：LiveScoreScraper(BaseScraper)\n   - scrape_live_scores()：获取当前进行中比赛的实时比分\n   - 返回结构化数据：match_id, home_score, away_score, status, activity_level, events\n2. 创建 `app/scraping/data_sync.py`：DataSyncService\n   - sync_live_scores()：将爬取的实时比分同步到 Redis（通过 LiveService）\n   - sync_match_results()：将已结束比赛的结果同步到 SQLite（通过 MatchService）\n   - sync_group_standings()：重新计算并更新小组积分\n   - 使用 Redis 分布式锁（scraper:lock）防止并发同步冲突\n3. 修改 LiveService：新增从 DataSyncService 接收数据的方法",
+        "passes": true
+      },
+      {
+        "id": "P4-03-BGTask",
+        "title": "后台定时任务集成（main.py lifespan 启动爬虫调度）",
+        "description": "后台任务调度任务。\n\n1. 修改 `app/main.py`：在 lifespan 中添加后台任务\n   - 启动时创建 asyncio.Task 运行爬虫调度器\n   - 调度器按配置间隔执行：\n     - 每 30s：同步 live 比分（仅当有进行中比赛时）\n     - 每 5min：同步已完成比赛结果\n     - 每 1h：重新计算小组积分\n   - 关闭时取消后台任务并等待完成\n2. 可通过 SCRAPER_ENABLED=false 完全禁用爬虫\n3. 爬虫执行状态通过日志输出（标准 logging，非 print）\n\n验收：启动后端后，如启用爬虫，后台开始定时采集，比分更新通过 WebSocket 推送到前端",
+        "passes": true
+      },
+      {
+        "id": "P4-04-StatsPage",
+        "title": "前端：射手榜 / 数据统计中心页面",
+        "description": "新增功能页面任务。\n\n1. 后端新增 API（如需）：GET /api/stats/scorers — 射手榜数据\n2. 创建 `football-web/app/stats/page.tsx`：数据统计中心页\n3. 创建 `football-web/components/stats/scorers-table.tsx`：射手榜组件\n   - 表格展示：排名、球员名、球队、进球数、助攻数\n   - 支持按进球数/助攻数排序\n4. 创建 `football-web/components/stats/match-stats-card.tsx`：比赛统计卡\n5. 赛博朋克风格，glass-card 布局\n6. 所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P4-05-TeamDetail",
+        "title": "前端：队伍详情页（历史战绩 + 小组成绩 + 数据统计）",
+        "description": "新增功能页面任务。\n\n1. 后端新增 API（如需）：GET /api/teams/:code/stats — 队伍详细统计\n2. 创建 `football-web/app/teams/[code]/page.tsx`：队伍详情页\n3. 页面内容：\n   - 队伍信息头（国旗 + 队名 + FIFA 排名 + 足联）\n   - 小组赛成绩表（积分、排名、比赛结果）\n   - 已完成的比赛列表（比分、日期、对手）\n   - 即将进行的比赛（时间、对手、场馆）\n   - 历史世界杯参赛次数\n4. 从 API 获取数据，支持中英文名切换\n5. 所有文案使用 t() 国际化",
+        "passes": true
+      },
+      {
+        "id": "P4-06-MobileAI",
+        "title": "前端：移动端 AI Copilot 适配（FAB 入口 + 抽屉展开）",
+        "description": "移动端适配任务。\n\n1. 修改 AI Copilot 相关组件：\n   - 在 lg 断点以下隐藏侧边栏\n   - 新增浮动操作按钮（FAB）：右下角，chat 图标，点击后打开 AI 面板\n   - 移动端 AI 面板以 Sheet（底部抽屉）方式展开\n   - 使用 shadcn/ui Sheet 组件\n2. 确保移动端聊天体验：\n   - 输入框固定在底部\n   - 消息列表可滚动\n   - 打字机效果正常显示\n   - 雷达图/概率条在小屏幕下可读\n3. 所有文案使用 t() 国际化",
+        "passes": true
+      }
+    ]
+  }
+]

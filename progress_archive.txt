@@ -1,0 +1,634 @@
+---
+## P1-01-Scaffold — 后端项目脚手架：依赖管理 + 环境配置 + 目录骨架
+- Status: **PASSED**
+- Branch: `feature/world-cup`
+- Files created:
+  - `football-server/pyproject.toml` — project metadata + 10 core dependencies
+  - `football-server/.env.example` — 8 environment variable templates with defaults
+  - `football-server/.gitignore` — Python/venv/db exclusions
+  - `football-server/app/__init__.py` — empty package init
+  - `football-server/app/config.py` — Pydantic Settings class (Settings) with all env vars
+- Verification:
+  - `pip install -e .` installed all dependencies successfully
+  - `from app.config import settings` imports and returns correct defaults
+  - Frontend build (`npm run build`) passes with no regressions
+## P1-02-Exceptions — 异常层级 + 全局错误处理中间件 + CORS ✅ DONE
+  - Created `app/exceptions/exceptions.py`: AppException hierarchy (AppException → NotFoundError/404, ValidationError/422, BusinessError/400, ExternalServiceError/502)
+  - Created `app/exceptions/__init__.py`: re-exports all exception classes
+  - Created `app/middleware/error_handler.py`: ErrorHandlerMiddleware catches AppException → unified `{code, data, message}` JSON; unhandled → 500
+  - Created `app/middleware/cors.py`: add_cors_middleware() registers CORSMiddleware with origins from settings.CORS_ORIGINS
+  - Created `app/middleware/logging.py`: LoggingMiddleware logs `method path → status (duration_ms)` via stdlib logging
+  - Created `app/middleware/__init__.py`: re-exports all middleware
+  - Verified: all imports succeed, exception hierarchy assertions pass, middleware registration with FastAPI works
+  - Updated .docs/agent-file-map.md, .docs/business-overview.md, .docs/agent-api-reference.md
+## P1-03-Models — 全部 ORM 模型：Base + Team + Venue + Match + GroupStanding + MatchEvent ✅ DONE
+  - Created `app/models/base.py`: DeclarativeBase + TimestampMixin (created_at, updated_at with server_default func.now())
+  - Created `app/models/team.py`: Team model (id, name UNIQUE, name_zh, code UNIQUE, flag, fifa_ranking, group_label, confederation, world_cup_appearances) + relationships to Match (home/away) and GroupStanding
+  - Created `app/models/venue.py`: Venue model (id, name, city, country, timezone, utc_offset, capacity) + relationship to Match
+  - Created `app/models/match.py`: Match model (id, external_id UNIQUE, home/away_team_id FK, venue_id FK, stage, group_label, round, match_day, kickoff_utc, status, home/away_score, is_big_match, activity_level, next_match_id FK self-ref, position) + relationships to Team, Venue, MatchEvent, next_match
+  - Created `app/models/group_standing.py`: GroupStanding model (id, team_id FK UNIQUE, group_label, played, won, drawn, lost, goals_for, goals_against, goal_difference, points, position) + relationship to Team
+  - Created `app/models/match_event.py`: MatchEvent model (id, match_id FK, event_type, minute, team_side, player_name) + relationship to Match
+  - Created `app/models/__init__.py`: Unified re-exports of all models + Base + TimestampMixin
+  - Verification: All 5 tables created successfully in in-memory SQLite (teams, venues, matches, group_standings, match_events)
+  - Verification: Frontend build (npm run build) passes with no regressions
+  - Updated .docs/agent-file-map.md, .docs/business-overview.md, .docs/agent-api-reference.md with model schema documentation
+## P1-04-Alembic — Alembic 数据库迁移配置 + 初始迁移脚本
+- Status: **PASSED**
+- Branch: `feature/world-cup`
+- Files created:
+  - `football-server/alembic.ini` — Alembic config with logging, DB URL placeholder (overridden in env.py)
+  - `football-server/alembic/env.py` — Async migration runner, reads DATABASE_URL from app.config.settings, render_as_batch=True for SQLite
+  - `football-server/alembic/script.py.mako` — Standard Alembic migration template
+  - `football-server/alembic/versions/001_initial_schema.py` — Initial migration: teams, venues, group_standings, matches, match_events (5 tables + all FK relationships)
+- Verification:
+  - `alembic upgrade head` successfully creates all 5 tables (+ alembic_version tracking table)
+  - `alembic downgrade base` successfully drops all application tables
+  - Re-upgrade from base works cleanly
+  - Frontend build (`npm run build`) passes with no regressions
+  - Updated .docs/agent-file-map.md, .docs/business-overview.md
+## P1-05-Schemas — All Pydantic Schemas (Common + 7 Entity DTO/VO)
+- Created `app/schemas/` package with 10 files:
+  - `common.py`: ApiResponse[T] + PaginatedResponse[T] generic response envelopes
+  - `team_schema.py`: TeamCreate/TeamUpdate (DTOs) + TeamResponse/TeamListResponse (VOs)
+  - `match_schema.py`: MatchQueryParams (DTO) + MatchResponse/MatchDetailResponse/MatchEventResponse (VOs)
+  - `venue_schema.py`: VenueResponse (VO)
+  - `group_schema.py`: GroupStandingResponse + GroupDetailResponse (VOs)
+  - `bracket_schema.py`: BracketTeamResponse/BracketMatchResponse/BracketRoundResponse/BracketTreeResponse (VOs)
+  - `cheer_schema.py`: CheerVoteRequest (DTO) + CheerResponse (VO)
+  - `ai_schema.py`: ChatRequest (DTO) + SSEEvent + TeamAnalysisResponse (VOs)
+  - `ws_schema.py`: WSEventType enum + WSMessage (VO)
+  - `__init__.py`: Re-exports all 24 schema classes
+- All response models use `from_attributes = True` for ORM conversion
+- All imports verified; smoke tests pass for ApiResponse, PaginatedResponse, CheerVoteRequest, WSMessage, SSEEvent
+- Updated .docs/agent-file-map.md, .docs/business-overview.md
+## P1-06-Repos — 全部 Repository：泛型 CRUD 基类 + 5 个具体 Repo
+- Created `app/repositories/__init__.py` — re-exports all 6 repository classes
+- Created `app/repositories/base.py` — BaseRepository[T] generic CRUD:
+  - get_by_id (raises NotFoundError), get_by_id_optional (returns None)
+  - get_all(page, page_size, filters dict, order_by with - prefix for desc) → (items, total)
+  - create(data dict) → entity (IntegrityError → ValidationError)
+  - update(entity_id, data dict) → entity (partial update)
+  - delete(entity_id) → None
+- Created `app/repositories/team_repo.py` — TeamRepository: get_by_code, get_by_group (ordered by fifa_ranking)
+- Created `app/repositories/match_repo.py` — MatchRepository: get_by_date, get_by_stage, get_by_status (all paginated), get_live_matches, get_bracket_matches, get_by_group_label, get_by_team_code
+- Created `app/repositories/venue_repo.py` — VenueRepository: base CRUD only
+- Created `app/repositories/group_repo.py` — GroupRepository: get_by_group_label (sorted points desc, GD desc, GF desc), get_group_matches
+- Created `app/repositories/match_event_repo.py` — MatchEventRepository: get_by_match (ordered by minute asc)
+- All repos accept AsyncSession at construction, no business logic, pure data access
+- Smoke tests passed: all imports, CRUD operations (create/read/update/delete), pagination, filtering, NotFoundError handling
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+## P1-07-TeamVenue — Team + Venue Service & Controller
+- Created `app/services/__init__.py` — re-exports TeamService, VenueService
+- Created `app/services/team_service.py` — TeamService with get_all_teams (paginated, group filter, lang-aware), get_team_by_code (lang-aware), get_teams_by_group
+- Created `app/services/venue_service.py` — VenueService with get_all_venues (paginated, ordered by country)
+- Created `app/controllers/__init__.py` — re-exports team_router, venue_router
+- Created `app/controllers/team_controller.py` — GET /api/teams (page/page_size/group/lang), GET /api/teams/{code} (lang)
+- Created `app/controllers/venue_controller.py` — GET /api/venues (page/page_size)
+- All responses wrapped in ApiResponse[T] with PaginatedResponse for list endpoints
+- ?lang=zh support: promotes name_zh into name field for Chinese display
+- Controllers use FastAPI Depends(_get_db) for session injection (to be centralised in P1-11)
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+## P1-08-Match — Match Service & Controller (match query + filter)
+- Created `app/services/match_service.py`: MatchService with get_matches (multi-filter by date/stage/group/team/status), get_match_by_id (with events), get_live_matches. Injects MatchRepository + MatchEventRepository. Timezone conversion via zoneinfo adds local_time and host_time fields.
+- Created `app/controllers/match_controller.py`: GET /api/matches (query params: date, stage, group, team, status, timezone, lang), GET /api/matches/live, GET /api/matches/:id (with events). Controller parses query params into MatchQueryParams DTO.
+- Updated `app/schemas/match_schema.py`: Added local_time and host_time optional fields to MatchResponse VO.
+- Updated services/__init__.py and controllers/__init__.py to export new classes.
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md
+## P1-09-Group — Group Service & Controller (COMPLETED)
+- Created `app/services/group_service.py`: GroupService with `get_all_groups()` (12 groups overview) and `get_group_detail()` (standings + matches per group)
+- Created `app/controllers/group_controller.py`: GET /api/groups (all groups), GET /api/groups/{group} (single group A-L)
+- Updated `services/__init__.py` and `controllers/__init__.py` to export GroupService and group_router
+- Updated `.docs/agent-file-map.md` and `.docs/agent-api-reference.md`
+- Created AGENTS.md in services/ and controllers/ directories
+## P1-10-Bracket — Bracket Service & Controller (完整淘汰赛对阵图)
+- Created `app/services/bracket_service.py` — BracketService with:
+  - `get_full_bracket()`: returns R32→R16→QF→SF→3rd→F tree, grouped by round, sorted by position
+  - `get_bracket_by_round()`: single round query with validation
+  - `get_predictions()`: TBD placeholder for Phase 3 AI integration
+  - TBD team detection via code prefix, with from_group/from_position context ready for P1-16
+  - lang (en/zh) and timezone conversion support
+- Created `app/controllers/bracket_controller.py`:
+  - `GET /api/bracket` — full knockout bracket tree with timezone + lang support
+  - `GET /api/bracket/predictions` — AI predictions placeholder
+- Updated `app/services/__init__.py` and `app/controllers/__init__.py` to export new modules
+- Synced `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
+- Updated `AGENTS.md` in both services/ and controllers/ directories
+## P1-11-AppFactory — 依赖注入模块 + FastAPI 应用工厂
+- Created `app/dependencies.py`: centralized DI providers (get_db, get_language, get_*_service factory functions)
+- Created `app/main.py`: FastAPI app factory with lifespan (init/dispose DB engine), middleware registration (ErrorHandler → Logging → CORS), all 5 routers registered, /docs and /redoc enabled
+- Created `football-server/run.py`: uvicorn entry point with --prod flag
+- Refactored all 5 controllers (match, team, venue, group, bracket) to remove inline `_get_db` helpers and use centralized `get_*_service` DI from dependencies.py
+- Verified: `uvicorn app.main:app --reload` starts successfully, /docs returns 200 with all 10 API routes visible in OpenAPI spec
+- Updated `.docs/agent-file-map.md`, `.docs/agent-api-reference.md`, `.docs/business-overview.md`
+- Updated `AGENTS.md` in controllers/ directory
+## P1-12-Utils — 工具模块：Markdown 解析器 + 时区转换
+- **Status**: ✅ COMPLETE
+- **Files Created**:
+  - `football-server/app/utils/__init__.py` — Re-exports MarkdownParser, utc_to_local, get_host_city_time
+  - `football-server/app/utils/markdown_parser.py` — MarkdownParser class + ParsedMatch dataclass (parses 72 group-stage matches from markdown)
+  - `football-server/app/utils/timezone.py` — utc_to_local(), get_host_city_time(), convert_datetime() using zoneinfo stdlib
+  - `football-server/app/utils/AGENTS.md` — Documentation for utils module
+- **Files Modified**:
+  - `football-server/app/services/match_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
+  - `football-server/app/services/group_service.py` — Replaced local _utc_to_local with shared app.utils.timezone import
+  - `football-server/app/services/bracket_service.py` — Replaced local _utc_to_local/ZoneInfo with shared app.utils.timezone import
+  - `football-server/pyproject.toml` — Added tzdata dependency (needed on Windows for zoneinfo)
+- **Verification**: Parser correctly extracts 72 matches (12 groups × 6), dates 2026-06-11 to 2026-06-27, handles None FIFA rankings for playoff qualifiers
+- **Docs Updated**: agent-file-map.md, agent-api-reference.md, services/AGENTS.md, utils/AGENTS.md
+## P1-13-SeedTeams — 种子数据脚本：48 支参赛队伍（含中英文名）
+- **Status**: COMPLETED (passes: true)
+- **Files Created**:
+  - `football-server/scripts/__init__.py` — Package init
+  - `football-server/scripts/seed_teams.py` — Seed script with idempotent upsert logic (108 lines)
+  - `football-server/scripts/team_data.py` — 48-team data module (509 lines)
+- **Data**: 48 teams across 12 groups (A-L), 4 teams per group
+  - Bilingual names (name + name_zh), 3-letter codes, emoji flags
+  - FIFA rankings (2025-11-19 release), 6 playoff qualifiers with ranking=0
+  - Confederation distribution: UEFA 16, CAF 10, AFC 9, CONMEBOL 6, CONCACAF 6, OFC 1
+  - World Cup historical appearances
+- **Verification**:
+  - Script inserts 48 teams on first run, skips all on re-run (idempotent)
+  - API endpoint GET /api/teams returns all 48 teams with correct structure
+  - Data cross-referenced against data/2026_FIFA_World_Cup_Group_Stage.md
+  - All FIFA rankings, group assignments, and team rosters verified
+- **Architecture**: Data separated from logic to stay under 600-line hard limit
+  - `team_data.py`: pure data declaration (TEAMS list)
+  - `seed_teams.py`: async upsert logic + CLI entry point
+## P1-14-SeedVenues — completed 2026-05-24
+- `venue_data.py`: pure data declaration (VENUES list, 16 stadiums)
+- `seed_venues.py`: async upsert logic + CLI entry point
+  - Idempotent: matched by venue `name` field
+  - Verified: 16 venues inserted (first run), all skipped (second run)
+  - USA 11 + Canada 2 + Mexico 3 venues with IANA timezones, UTC offsets, capacities
+- [P1-15-SeedMatches] Seed script: 104 matches (72 group + 32 knockout)
+  - Created `scripts/seed_matches.py`
+  - 72 group-stage matches parsed from markdown via MarkdownParser
+  - External IDs: A_M1..A_M6, B_M1..B_M6, ..., L_M1..L_M6
+  - 32 knockout matches (R32x16, R16x8, QFx4, SFx2, 3RDx1, Fx1) with TBD placeholder team
+  - Bracket linkage: 30 links (R32→R16, R16→QF, QF→SF, SF→Final)
+  - Venue assignment: opening match at Estadio Azteca, round-robin for group stage, predefined for QF/SF/3rd/Final
+  - Idempotent: 104 skipped on second run
+  - Verified: 104 matches, correct linkage, TBD team, all assertions pass
+## P1-16-SeedEntry — Seed Data Entry + Bracket Generator + Integration Verification
+- Created `scripts/generate_bracket.py`:
+  - BRACKET_LINKS: 30 winner-path links (R32→R16→QF→SF→F)
+  - R32_QUALIFICATION: 16 group-position mappings for TBD team context
+  - generate_bracket(session): verifies/enforces all next_match_id + position links
+  - Idempotent: re-runs verify existing links, correct drift
+  - CLI entry: python -m scripts.generate_bracket
+- Created `scripts/seed_data.py`:
+  - One-click orchestrator: seed_venues→seed_teams→seed_matches→generate_bracket→init_group_standings
+  - _init_group_standings: creates 48 zero-initialized records (4 per group × 12 groups)
+  - Formatted summary table with timing
+  - Fully idempotent
+- Updated `app/services/bracket_service.py`:
+  - Added _R32_GROUP_MAP for TBD team from_group/from_position enrichment
+  - Updated _infer_tbd_context: R32 matches now show "1st Group A" etc.
+- Integration verification:
+  - GET /api/matches?date=2026-06-11 → 2 opening-day matches
+  - GET /api/groups/A → 4 standings (all zeros) + 6 matches
+  - GET /api/bracket → 32 matches across 6 rounds with from_group context
+  - DB state: 49 teams, 17 venues, 104 matches, 48 standings, 30 bracket links
+## P1-17-Types — 前端：提取共享 TypeScript 类型定义 [PASS]
+- Created football-web/lib/types/ directory with 7 files:
+  - team.ts: Team, TeamDetail, TeamStanding
+  - match.ts: Match, MatchStatus, CityIcon, MatchEvent, MatchEventType, MatchQueryParams
+  - bracket.ts: BracketTeam (extends Team), BracketMatch, BracketRound, BracketTree, BracketRoundName, BracketMatchStatus
+  - ai.ts: Message, TeamAnalysis, TeamAnalysisSide, TeamStats, SSEEvent, SSEEventType
+  - api.ts: ApiResponse<T>, PaginatedResponse<T>, ApiError
+  - index.ts: Unified type-only re-exports
+  - AGENTS.md: Architecture notes for future agents
+- Updated 4 component files to use shared imports:
+  - match-cards-grid.tsx: Removed inline Team/Match, imports from @/lib/types
+  - tournament-bracket.tsx: Removed inline Team/BracketMatch, imports BracketMatch/BracketTeam/BracketRoundName
+  - ai-copilot-panel.tsx: Removed inline Message/TeamAnalysis, imports Message/TeamAnalysis/TeamStats
+  - page.tsx: Extracted TimezoneOption/ViewMode local types
+- Build passes (npm run build)
+- Zero `any` types used
+## P1-18-ApiClient — 前端：API 客户端层（fetch 封装 + 统一错误处理） ✅
+- Created `football-web/lib/api-client.ts`: core fetch wrapper with NEXT_PUBLIC_API_URL base URL, Accept-Language header, ApiResponse<T> envelope unwrapping, AbortController timeout (15s), buildQueryString() utility, ApiClientError class
+- Created `football-web/lib/api/matches.ts`: getMatches(params), getMatchById(id), getLiveMatches()
+- Created `football-web/lib/api/bracket.ts`: getBracket()
+- Created `football-web/lib/api/teams.ts`: getTeams(), getTeamByCode(code)
+- Created `football-web/lib/api/groups.ts`: getGroups(), getGroupDetail(group)
+- Created `football-web/lib/api/venues.ts`: getVenues()
+- Created `football-web/lib/api/cheers.ts`: getCheers(matchId), postCheer(matchId, side)
+- Created `football-web/.env.local.example` with NEXT_PUBLIC_API_URL
+- All modules use typed interfaces matching backend Pydantic VOs
+- Language mapping: zh-CN → zh, en-US → en (matches backend lang param)
+- Build passes, TypeScript strict mode, zero `any` types
+## P1-19-I18n — 前端：i18n 基础设施 + 中英文翻译文件
+- **Status**: ✅ COMPLETE
+- **Approach**: Lightweight React Context (no external library needed)
+- **Files created**:
+  - `lib/i18n/context.tsx` — I18nProvider (React Context), locale detection, localStorage persistence, t() function
+  - `lib/i18n/use-translation.ts` — useTranslation hook exposing { t, locale, setLocale }
+  - `lib/i18n/types.ts` — Locale union type + LocaleMessages interface
+  - `lib/i18n/index.ts` — Barrel exports
+  - `lib/i18n/locales/zh-CN.json` — Chinese translations (81 keys, 6 namespaces)
+  - `lib/i18n/locales/en-US.json` — English translations (81 keys, full parity)
+  - `lib/i18n/AGENTS.md` — Agent notes for i18n module
+- **Files modified**:
+  - `app/layout.tsx` — Wrapped children with I18nProvider
+- **Namespaces**: header, timeline, match, bracket, ai, footer, common
+- **Features**: Auto-detect browser language, localStorage persistence, dot-notation key lookup, key-as-fallback
+- **Build**: Passes clean (next build ✓)
+## P1-20-LangSwitch — Header 语言切换控件
+- **Date**: 2026-05-24
+- **Files modified**:
+  - `football-web/components/dashboard/header.tsx` — Added language switch (Globe icon + shadcn Select dropdown), replaced all hardcoded text with t() calls, changed timezone icon from Globe to Clock for semantic clarity
+  - `football-web/lib/i18n/types.ts` — Added `langZh` and `langEn` fields to header namespace
+  - `football-web/lib/i18n/locales/en-US.json` — Added `header.langZh` ("中文") and `header.langEn` ("English") keys
+  - `football-web/lib/i18n/locales/zh-CN.json` — Added `header.langZh` ("中文") and `header.langEn` ("English") keys
+  - `.docs/agent-component-map.md` — Updated Header component docs, i18n namespace key counts
+  - `.docs/agent-file-map.md` — Updated Header description and locale key counts
+- **Build**: Passes clean (next build ✓)
+- **Notes**: Language switch uses I18nProvider context via useTranslation() hook; no new deps needed (shadcn Select already available)
+## P1-21-DateFilter — Date-Match Linked Filtering + Dynamic Data Loading
+- **Status**: COMPLETE
+- **Build**: Passes clean (next build ✓)
+- **Backend Changes**:
+  - Added `get_match_dates()` to `MatchRepository` — queries distinct match dates with primary stage (highest precedence wins)
+  - Added `get_match_dates()` to `MatchService` — returns `[{date, stage}]`
+  - Added `GET /api/matches/dates` endpoint to `match_controller.py`
+- **Frontend Changes**:
+  - `date-timeline.tsx`: Replaced hardcoded 40-day array with dynamic API fetch via `getMatchDates()`. Auto-selects today or nearest future match date. i18n labels for months/weekdays. Loading skeleton.
+  - `match-cards-grid.tsx`: Replaced hardcoded 4-match array with dynamic API fetch via `getMatches({ date })`. Added timezone prop, loading/error/empty states. Added `apiMatchToUi()` converter and `MatchApiItem` type. All text uses `t()`.
+  - `page.tsx`: Updated `selectedDate` initial state to empty string (populated by DateTimeline). Passes `timezone` prop to MatchCardsGrid. Footer text uses `t()`.
+  - `lib/types/match.ts`: Added `MatchDateInfo` type
+  - `lib/api/matches.ts`: Added `getMatchDates()`, `apiMatchToUi()`, `MatchApiItem` type, `inferCityIcon()` helper
+  - `lib/i18n/locales/{en-US,zh-CN}.json`: Added `match.noMatches`, `match.today`, `match.errorLoading` keys
+  - `lib/i18n/types.ts`: Updated `match` section with 3 new keys
+- **Notes**: Date format changed from "Jun 14" to ISO "2026-06-14" for API compatibility. City icon is inferred from venue city name (heuristic). The `common.noMatches` key was already present in en-US but not in match namespace; added match-scoped keys instead.
+## P1-22-GroupView - 前端：小组积分榜组件 + 页面 (COMPLETED)
+### Files Created:
+- `football-web/components/dashboard/group-standings.tsx` (~307 lines) — GroupStandings component with GroupCard sub-component
+  - Responsive grid: 1 col mobile → 4 cols desktop (md:2, xl:3, 2xl:4)
+  - 12 groups A-L with color-coded headers (cycle: lime/cyan/magenta/gold)
+  - Qualified zone highlight (top 2 rows)
+  - Loading/error/empty states with retry
+  - Links to group detail pages
+- `football-web/app/groups/page.tsx` (~65 lines) — Groups overview page with I18nProvider wrapper
+- `football-web/app/groups/[group]/page.tsx` (~485 lines) — Group detail page
+  - Full standings table with all stats (P/W/D/L/GF/GA/GD/Pts)
+  - Group match list with live/finished/upcoming states
+  - Color-coded group branding
+  - Back navigation to groups overview
+### Files Modified:
+- `football-web/app/page.tsx` — Added Groups quick-entry link in Timeline view (Trophy icon → /groups)
+- `football-web/lib/i18n/types.ts` — Added `groups` namespace with 19 keys
+- `football-web/lib/i18n/locales/zh-CN.json` — Added groups namespace (19 Chinese keys)
+- `football-web/lib/i18n/locales/en-US.json` — Added groups namespace (19 English keys)
+- `.docs/agent-component-map.md` — Updated with GroupStandings component docs, groups page, updated namespace counts
+- `.docs/agent-file-map.md` — Updated tree with groups/ directory and group-standings.tsx
+### Key Decisions:
+- Used existing `getGroups()` / `getGroupDetail()` API functions from `lib/api/groups.ts`
+- Local TypeScript interfaces defined in each component (matching API response shape) rather than central types
+- Each page wraps itself in `I18nProvider` since they are separate routes (not nested under root page)
+- Cyberpunk glass-card styling matches existing dashboard components
+- shadcn Table component used for standings tables
+- Group colors cycle through 4 neon colors (CCFF00/00F0FF/FF00E5/FFD700) for A-L
+## P1-23-FullBracket — 前端：完整淘汰赛对阵图扩展（R32→R16→QF→SF→3rd→F）
+**Status**: ✅ COMPLETE
+**Date**: 2026-05-25
+### Changes
+- **Refactored** `football-web/components/dashboard/tournament-bracket.tsx`:
+  - Replaced hardcoded QF/SF/F demo data with API integration via `getBracket()`
+  - Supports full 6-round structure: R32(16) → R16(8) → QF(4) → SF(2) → 3rd(1) → F(1)
+  - Desktop: horizontal scroll layout with SVG connectors between rounds
+  - Mobile: vertical stack layout with wrapping cards
+  - TBD teams display `fromGroup` info (e.g. "1st Group A")
+  - Winner highlighted with gold color + LIVE status pulse animation
+  - 3rd place playoff shown as separate branch after SF
+  - All hardcoded hex colors replaced with semantic theme variables
+  - All text internationalized via t()
+  - Loading, error, retry states for API fetch
+- **Created** `football-web/app/bracket/page.tsx`: standalone full-screen bracket page
+- **Updated** i18n files:
+  - Added keys: roundOf32, roundOf16, thirdPlace, fullBracket, fromGroup, tbd, errorLoading
+  - Both en-US.json and zh-CN.json updated
+  - Updated LocaleMessages type in i18n/types.ts
+### Key patterns
+- ROUND_COLORS map uses semantic classes (text-primary, bg-primary/20, etc.)
+- SVG connectors use CSS custom properties (var(--accent), var(--magenta)) instead of hex
+- API data flow: getBracket() → BracketTree → rounds[] → BracketCard[]
+- Responsive: hidden md:block / md:hidden breakpoint split between DesktopBracket and MobileBracket
+## P2-01-Redis — Redis client connection pool + key patterns (COMPLETED)
+- Created `app/redis/__init__.py` — barrel exports for RedisKeys, get_redis, init_redis_pool, close_redis_pool, is_redis_available
+- Created `app/redis/client.py` — async connection pool manager using redis.asyncio, graceful degradation when REDIS_ENABLED=false or connection fails, get_redis() DI provider returns Optional[Redis]
+- Created `app/redis/keys.py` — RedisKeys class with 6 key patterns (LIVE_MATCH, CHEERS_MATCH, WS_CONNECTIONS, CACHE_GROUPS, CACHE_BRACKET, SCRAPER_LOCK)
+- Modified `app/main.py` lifespan — added init_redis_pool() on startup, close_redis_pool() on shutdown
+- Verified: all imports work, app creates without errors, lifecycle test passes (Redis disabled mode)
+## P2-02-Cheer — 球迷助威 Service + Controller（Redis 计数器） ✅
+- Created `app/services/cheer_service.py`: CheerService with Redis HASH counters + in-memory fallback
+  - `get_cheers(match_id)`: reads home/away counts from Redis HASH or in-memory dict
+  - `vote_cheer(match_id, side, client_ip)`: atomic HINCRBY via Redis pipeline, returns updated counts
+  - IP-based rate limiting: 5-min cooldown per (match_id, client_ip), raises BusinessError on duplicate
+  - Class-level shared stores (`_shared_counts`, `_shared_rate_limits`) persist across per-request instances
+  - `_cleanup_expired_rate_limits()` classmethod prevents unbounded memory growth
+- Created `app/controllers/cheer_controller.py`:
+  - GET /api/cheers/{match_id} — returns current cheer counts
+  - POST /api/cheers/{match_id} — submit vote with IP rate limiting
+  - Client IP extracted from X-Forwarded-For header or request.client.host
+- Registered cheer_router in `app/main.py` and `app/controllers/__init__.py`
+- Functional tests passed: GET returns zeros, POST increments, duplicate IP blocked per match, different matches allowed
+- Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md
+## P2-03-LiveService — Live Service: Redis Real-time Match Status Management
+- Created app/services/live_service.py: LiveService with Redis HASH real-time match state management
+  - update_match_status(match_id, status): validates status, updates Redis HASH live:match:{id}
+  - update_score(match_id, home_score, away_score): rejects negative scores, updates Redis HASH
+  - update_activity(match_id, level): clamps to 0-100, updates Redis HASH
+  - get_live_matches(): scans Redis for all status=live matches (scan_iter)
+  - get_match_live_data(match_id): fetches single match live data
+  - Cache invalidation: sets TTL markers on cache:groups and cache:bracket on status/score changes
+  - In-memory fallback: module-level _memory_store dict (single-process dev only)
+- Modified app/services/match_service.py: auto-merge Redis live data into DB query results
+  - Constructor accepts optional redis: Optional[Redis]
+  - get_matches: batch pipeline _merge_live_data_batch() for all returned items
+  - get_match_by_id: _get_live_data_from_redis() + _apply_live_override()
+  - get_live_matches: batch pipeline merge
+  - _apply_live_override(): in-place VO override of status/home_score/away_score/activity_level
+- Modified app/dependencies.py: get_match_service injects optional Redis via Depends(get_redis)
+- Updated docs: agent-api-reference.md, agent-file-map.md, services/AGENTS.md, controllers/AGENTS.md
+- Functional tests passed: update_match_status, update_score, update_activity, get_live_matches, get_match_live_data, invalid input validation, activity clamping, in-memory fallback
+## P2-04-WebSocket — WebSocket Manager + Controller + Broadcast Mechanism
+- Created `app/services/websocket_manager.py`: ConnectionManager singleton with connect/disconnect, subscribe/unsubscribe (per-match channels), broadcast (all clients), broadcast_to_match (subscribers + fallback), get_active_count; asyncio.Lock-guarded state; auto-removes broken connections
+- Created `app/controllers/ws_controller.py`: WS /ws/live endpoint with initial payload (connected + live_matches), client subscribe/unsubscribe messages, 30s ping keep-alive loop, auto-cleanup on disconnect
+- Modified `app/services/live_service.py`: Added WebSocket broadcast integration — update_match_status broadcasts MATCH_START (status=live) / MATCH_END + BRACKET_UPDATE (status=finished); update_score broadcasts SCORE_UPDATE; update_activity broadcasts ACTIVITY_UPDATE. Broadcast uses fire-and-forget pattern with deferred import to avoid circular deps; failures logged but never raise
+- Updated `app/controllers/__init__.py`: Added ws_router export
+- Updated `app/main.py`: Registered ws_router
+- Updated `app/services/__init__.py`: Added ConnectionManager + get_manager exports
+- Updated docs: agent-api-reference.md, agent-file-map.md
+- Functional tests passed: ConnectionManager singleton, broadcast with no connections, broadcast_to_match with no subscribers, LiveService broadcast on status/score/activity changes, WebSocket TestClient connection + initial payload + subscribe/unsubscribe, existing routes unaffected
+## P2-05-Zustand — Frontend Zustand Global State Management
+- Installed zustand dependency
+- Created lib/store/preferences.ts: User preferences store (language, timezone, viewMode, theme) with localStorage persistence via zustand/persist middleware
+- Created lib/store/matches.ts: Match data store with date-indexed cache, live matches list, loading/error states, 5-min TTL, fetchMatchesByDate/fetchLiveMatches actions
+- Created lib/store/live.ts: Real-time update store with WS connection status, score patches, cheer updates keyed by matchId
+- Created lib/store/ai-chat.ts: AI chat store with message history, streaming buffers (content + thinking), pending analysis, abort/clear support
+- Created lib/store/index.ts: Barrel re-exports for all stores and exported types
+- Created lib/store/AGENTS.md: Store architecture documentation
+- Updated .docs/agent-file-map.md: Added lib/store/ to file tree
+- Updated .docs/agent-component-map.md: Added State Management section with store registry and usage patterns
+- Build verification: npx next build compiled successfully with no errors
+## P2-06-WSIntegration — 前端：WebSocket 集成 + 实时比分 + 助威投票对接
+- Created `football-web/lib/websocket.ts`: WSClient singleton with auto-connect, exponential back-off reconnection, event dispatch to Zustand live store
+- Handles all backend WSEventTypes: score_update, match_start, match_end, activity_update, cheer_update, connected (initial payload), ping, bracket_update
+- Modified `football-web/components/dashboard/match-cards-grid.tsx`:
+  - MatchCard reads real-time score/activity/cheer data from useLiveStore
+  - Cheer buttons call postCheer() API with optimistic update + rollback on failure
+  - WebSocket connection started on mount via wsClient.start()
+  - WS status indicator (Wifi/WifiOff icons) in header bar
+- Added i18n keys: match.liveUpdates, match.disconnected (en-US + zh-CN)
+- Updated .docs/agent-component-map.md: WebSocket client section, updated MatchCardsGrid docs
+- Updated .docs/agent-file-map.md: websocket.ts entry, updated match-cards-grid.tsx and live.ts descriptions
+- Updated football-web/lib/store/AGENTS.md: live.ts now references websocket.ts driver
+- Build verification: npx next build compiled successfully with no errors
+## P2-07-MatchDetail — 前端：比赛详情弹窗（阵容 + 进球事件 + 技术统计）
+- **Status**: ✅ PASS
+- **Date**: 2026-05-25
+- **Files Created**:
+  - `football-web/components/dashboard/match-detail-dialog.tsx` (~465 lines) — MatchDetailDialog component using shadcn/ui Dialog
+  - `football-web/components/dashboard/match-detail-helpers.tsx` (~215 lines) — Helper components + types (EventsSection, StatRow, VenueInfoItem, EventIcon, EventLabel, MatchDetailData, MatchDetailEvent)
+- **Files Modified**:
+  - `football-web/components/dashboard/match-cards-grid.tsx` — Added MatchDetailDialog import, cursor-pointer on MatchCard, onClick opens dialog with matchId, onMatchClick callback prop
+  - `football-web/components/dashboard/tournament-bracket.tsx` — Added MatchDetailDialog import, cursor-pointer on BracketCard, onClick opens dialog, onMatchClick prop threaded through DesktopBracket/MobileBracket
+  - `football-web/lib/i18n/locales/en-US.json` — Added matchDetail namespace (18 keys: goal, yellowCard, redCard, substitution, var, fanCheer, votes, matchEvents, noEvents, firstHalf, secondHalf, extraTime, matchStats, goals, yellowCards, redCards, venueInfo, venue, city, kickoff, capacity, loadError)
+  - `football-web/lib/i18n/locales/zh-CN.json` — Added matchDetail namespace (18 keys, Chinese translations)
+- **Features**:
+  - Dialog shows: match header (teams + flags + score + status badges), live activity bar, fan cheer meter (with live store merge), match events timeline grouped by half, match statistics (goals/yellow cards/red cards as dual-bar charts), venue info grid
+  - Real-time data merged from Zustand live store (scorePatch, cheerUpdate) on top of API data
+  - Cyberpunk glass-card style with glow effects, gradient overlays, LED display for live scores
+  - Cheer data fetched from API + merged with live store updates
+  - Events timeline splits into First Half / Second Half / Extra Time sections
+  - BracketCard click parses string match.id to int for dialog
+  - Dialog resets state on close, fetches fresh data on open
+- **Build verification**: npx next build compiled successfully with no errors
+- **Docs synced**: Updated .docs/agent-component-map.md and .docs/agent-file-map.md
+## P3-01-PromptBuilder — AI Schema + Prompt Builder (2026-05-25)
+### What was done
+1. **Verified `app/schemas/ai_schema.py` completeness**:
+   - `ChatRequest`: messages (List[ChatMessageItem]) + context (ChatContext) + lang (zh-CN/en-US)
+   - `ChatMessageItem`: role (user/assistant) + content
+   - `ChatContext`: currentView, selectedDate, timezone
+   - `SSEEvent`: type (thinking/answer/analysis/done/error) + content + data
+   - `TeamAnalysisResponse`: team_code, team_name, team_name_zh, radar (5-dim), win_probability, insights
+2. **Created `app/services/prompt_builder.py`** — PromptBuilder class with:
+   - `build_system_prompt(lang)` → constructs system prompt with tournament context (2026 FIFA World Cup format), current date, available tool descriptions, response guidelines. Full bilingual support (zh-CN / en-US).
+   - `build_match_analysis_prompt(match_id, team1, team2, lang)` → reads `skills/group_stage_predict.md` and constructs a 6-step reasoning chain prompt for group-stage match analysis
+   - `build_knockout_prompt(match_id, team1, team2, lang)` → reads `skills/knockout_stage_predict.md` and constructs a 5-step reasoning chain prompt for knockout match prediction
+   - `build_chat_context(messages)` → converts ChatMessageItem list to OpenAI-compatible message format
+   - Lazy-loads skill markdown files on first use (not at module import time)
+   - Graceful fallback if skill files are missing (logs warning, returns empty string)
+3. **Updated `app/services/__init__.py`** to export PromptBuilder
+4. **Updated `.docs/agent-file-map.md`** to document prompt_builder.py
+### Patterns discovered
+- Skill files are loaded from `skills/` directory at project root (4 levels up from `football-server/app/services/`)
+- PromptBuilder uses static methods (no instance state needed) — follows same pattern as other services in the project
+- All methods return `list[dict]` (OpenAI message format: `[{"role": ..., "content": ...}]`)
+### Smoke tests passed
+- build_system_prompt zh-CN / en-US
+- build_match_analysis_prompt with team names + match_id
+- build_knockout_prompt with team names + match_id
+- build_chat_context converts ChatMessageItem list correctly
+- Skill content loaded successfully (verified content length > 500 chars)
+- Full app import still works (`from app.main import app`)
+## P3-02-Deepseek — Deepseek API 客户端 + SSE 流式输出 Service
+**Status**: ✅ COMPLETE
+**Files created/modified**:
+- `football-server/app/services/ai_service.py` (NEW) — AIService class with Deepseek API streaming
+- `football-server/app/services/__init__.py` (MODIFIED) — added AIService export
+- `football-server/app/dependencies.py` (MODIFIED) — added get_ai_service DI provider
+**Implementation details**:
+- `AIService.stream_chat(messages, context, lang) -> AsyncGenerator[SSEEvent]`: calls Deepseek `deepseek-reasoner` model via OpenAI-compatible `/chat/completions` endpoint
+- SSE parsing: distinguishes `reasoning_content` (→ thinking events) and `content` (→ answer events) from streaming chunks
+- Analysis detection: checks user message for analysis keywords (bilingual), buffers answer, extracts embedded JSON with `team_code` post-stream
+- Error handling: 429 rate limit, 30s timeout, generic errors → friendly bilingual SSE error events (never raises exceptions)
+- Uses `httpx.AsyncClient` with lazy initialization
+- References `chat.service.ts` from `D:\code\ai coding\gomoku-server` for async generator + SSE event pattern
+**Quality checks**:
+- Full app import verified (`from app.main import app` → 18 routes)
+- Frontend build verified (no regressions)
+## P3-03-AIController — AI 对话 Controller（POST /api/ai/chat SSE 端点）
+- **Date**: 2026-05-25
+- **Created** `football-server/app/controllers/ai_controller.py`:
+  - POST /api/ai/chat SSE streaming endpoint
+  - Accepts ChatRequest body (messages + context + lang)
+  - Builds full prompt via PromptBuilder (system prompt + chat context)
+  - Streams SSEEvent objects from AIService.stream_chat() as `data: {json}\n\n` lines
+  - Terminal sentinel: `data: [DONE]\n\n`
+  - StreamingResponse headers: Cache-Control: no-cache, Connection: keep-alive, X-Accel-Buffering: no
+  - Graceful exception handling: catches errors in stream, yields error SSEEvent
+- **Modified** `football-server/app/controllers/__init__.py`: added ai_router export
+- **Modified** `football-server/app/main.py`: registered ai_router (now 19 total routes)
+- **Updated** `.docs/agent-api-reference.md`: AI Chat section marked IMPLEMENTED, controller table updated
+- **Updated** `.docs/agent-file-map.md`: controllers section updated with ai_controller.py
+- **Updated** `football-server/app/controllers/AGENTS.md`: added ai_controller documentation
+- **Verified**: curl test returns correct SSE stream (data: {type:error} → data: {type:done} → data: [DONE])
+- **Verified**: Both zh-CN and en-US language support confirmed
+- **Verified**: Frontend build passes (no regressions)
+## P3-04-SSEFrontend — Frontend SSE Consumer + Typewriter + Analysis Card Rendering
+**Completed**: Sun May 25 2026
+### Changes
+1. **Created `football-web/lib/api/ai-chat.ts`** — SSE consumer module
+   - `streamChat()` function: POST to `/api/ai/chat` via `fetch()` + `ReadableStream`
+   - Manual `data:` line parsing with buffer handling for partial chunks
+   - Distinguishes `thinking`/`answer`/`analysis`/`done`/`error` events
+   - Callback-based API (`onThinking`, `onAnswer`, `onAnalysis`, `onDone`, `onError`)
+   - AbortController support for stream cancellation
+2. **Rewrote `football-web/components/dashboard/ai-copilot-panel.tsx`** — Real SSE + typewriter
+   - Replaced hardcoded mock data with real SSE streaming via Zustand store
+   - Connected to `useAIChatStore` for message persistence and stream state
+   - Typewriter effect: cursor blink during streaming (`TypewriterText` component)
+   - Collapsible thinking block (`ThinkingBlock` with chevron toggle)
+   - Quick prompt buttons now auto-send AI requests (not just fill input)
+   - Error display with i18n messages for connection/stream failures
+   - Disclaimer shown after stream completion
+   - Welcome message seeded on first mount via store
+   - Auto-scroll to bottom on new content
+   - All text internationalized via `t()`
+3. **Updated i18n** — Added 6 new keys to both en-US and zh-CN locales
+   - `ai.thinking`, `ai.thinkingLabel`, `ai.thinkingCollapse`, `ai.thinkingExpand`
+   - `ai.streamError`, `ai.connectionError`
+4. **Updated `.docs/`** — Synced agent-component-map.md and agent-file-map.md
+### Verification
+- **Build**: `next build` passes cleanly (no errors, no type issues)
+- **i18n**: Both zh-CN and en-US locales updated with full parity
+## P4-01-BaseScraper — Scraper Base Class + FIFA Scraper
+**Date**: 2026-05-25
+**Status**: COMPLETE
+### What was done
+1. **`app/scraping/base_scraper.py`** — BaseScraper class:
+   - Rate limiting via `asyncio.Semaphore` (configurable `SCRAPER_CONCURRENCY`, default 3)
+   - Retry with exponential backoff (`2**attempt` seconds, max `SCRAPER_RETRY_MAX` = 3)
+   - Exception hierarchy: `ScraperError` → `ScraperTimeoutError`, `ScraperHTTPError`, `ScraperParseError`
+   - Retryable check: retries on timeouts, connect errors, HTTP 5xx
+   - Structured logging: URL, status code, elapsed time, attempt count
+   - `httpx.AsyncClient` with lazy init, async context-manager support
+2. **`app/scraping/fifa_scraper.py`** — FIFAScraper(BaseScraper):
+   - `scrape_match_schedule()` → `ScrapedSchedule`: extracts `__NEXT_DATA__` JSON from FIFA schedule page
+   - `scrape_match_result(match_id)` → `ScrapedMatchResult`: extracts match result with events
+   - Multiple JSON path fallbacks for FIFA page structure variations
+   - Graceful degradation: returns empty data when parsing fails
+   - Configurable URLs from `settings.FIFA_SCHEDULE_URL` / `settings.FIFA_MATCH_URL`
+3. **`app/schemas/scraper_schema.py`** — Pydantic validation models:
+   - `ScrapedMatch`, `ScrapedSchedule`, `ScrapedEvent`, `ScrapedMatchResult`
+   - Field validators for stage, status, team_side
+4. **`app/config.py`** — Added scraper settings:
+   - `FIFA_SCHEDULE_URL`, `FIFA_MATCH_URL`, `SCRAPER_CONCURRENCY`, `SCRAPER_TIMEOUT`, `SCRAPER_RETRY_MAX`
+5. **`.env.example`** — Updated with new scraper config entries
+### Verification
+- All Python files parse without syntax errors
+- All imports work correctly (base_scraper, fifa_scraper, scraper_schema)
+- Pydantic schema validation tested (valid data passes, invalid data raises errors)
+- FIFAScraper instantiation verified with config values
+- `next build` passes cleanly (no frontend breakage)
+- No `console.log`, `print()`, or dead code in new files
+## P4-02-LiveScraper - 实时比分爬虫 + 数据同步服务 (COMPLETED)
+### Files Created
+- `football-server/app/scraping/live_score_scraper.py` — LiveScoreScraper(BaseScraper): scrape_live_scores() returns ScrapedLiveScoreBatch with activity level estimation
+- `football-server/app/scraping/data_sync.py` — DataSyncService: sync_live_scores, sync_match_result, sync_group_standings with Redis distributed lock (scraper:lock)
+### Files Modified
+- `football-server/app/schemas/scraper_schema.py` — Added ScrapedLiveEvent, ScrapedLiveScore, ScrapedLiveScoreBatch models
+- `football-server/app/services/live_service.py` — Added apply_sync_data() batched update method (Redis pipeline + memory fallback)
+- `football-server/app/scraping/__init__.py` — Added LiveScoreScraper, DataSyncService exports
+### Key Design Decisions
+- LiveScoreScraper reuses _extract_next_data() from fifa_scraper.py (DRY)
+- Activity level estimated via heuristic: event type weights + recency + match minute baseline
+- DataSyncService uses Redis SET NX EX for distributed lock with Lua-script safe release
+- Fallback to asyncio.Lock when Redis unavailable
+- Group standings recalculated from finished matches: W/D/L/GF/GA/GD/points with position re-ranking
+- apply_sync_data() in LiveService provides single Redis pipeline write+read for batched syncs
+- External ID resolution: DB lookup first, integer parsing fallback
+### Quality Checks
+- `next build` passes cleanly (no frontend breakage)
+- All Python files pass syntax validation
+- No `console.log`, `print()`, or dead code in new files
+- All files within 600-line hard limit
+## P4-03-BGTask — 后台定时任务集成（main.py lifespan 启动爬虫调度）
+**Status**: ✅ COMPLETE
+### Changes
+1. **NEW** `football-server/app/scraping/scheduler.py` — `ScraperScheduler` class
+   - Three periodic asyncio tasks: live scores (30s), finished results (5min), group standings (1h)
+   - Configurable intervals via `SCRAPER_LIVE_INTERVAL`, `SCRAPER_FINISHED_INTERVAL`, `SCRAPER_GROUP_INTERVAL` env vars
+   - Graceful start/stop with task cancellation and gather
+   - Standard `logging` throughout (no print statements)
+   - Live score sync skips when no matches are currently live
+   - Finished results scrape with 2s delay between matches
+2. **MODIFIED** `football-server/app/main.py` — Integrated scheduler in lifespan
+   - Scheduler starts after DB engine + Redis pool init when `SCRAPER_ENABLED=true`
+   - Scheduler stopped before Redis/DB cleanup on shutdown
+   - Accesses `_session_factory` via `app.dependencies` module reference (runtime lookup)
+3. **MODIFIED** `football-server/app/config.py` — Added scraper interval settings
+   - `SCRAPER_LIVE_INTERVAL: int = 30`
+   - `SCRAPER_FINISHED_INTERVAL: int = 300`
+   - `SCRAPER_GROUP_INTERVAL: int = 3600`
+4. **MODIFIED** `football-server/app/scraping/__init__.py` — Exported `ScraperScheduler`
+5. **UPDATED** `.docs/agent-file-map.md` — Added scheduler.py entry, updated main.py/config.py descriptions
+6. **UPDATED** `.docs/agent-api-reference.md` — Added ScraperScheduler section, updated status line
+### Quality
+- All imports verified (scheduler, main, config compile OK)
+- Frontend build passes (`npm run build` succeeds)
+- App startup/shutdown test passed (TestClient lifespan verification)
+- No `console.log`, `print()`, or dead code
+- All files within 600-line hard limit
+## P4-04-StatsPage — 射手榜 / 数据统计中心页面 ✅ DONE
+Date: 2026-05-25
+### Backend (FastAPI)
+- **New**: `app/schemas/stats_schema.py` — ScorerItem VO (rank, player_name, team info, goals, assists)
+- **New**: `app/services/stats_service.py` — StatsService with `get_scorers()` method (aggregates goal events, enriches with team info)
+- **New**: `app/controllers/stats_controller.py` — GET /api/stats/scorers (lang, limit params)
+- **Modified**: `app/repositories/match_event_repo.py` — Added `get_scorers_leaderboard()` method (goal aggregation SQL join with Match+Team)
+- **Modified**: `app/controllers/__init__.py` — Registered `stats_router`
+- **Modified**: `app/main.py` — Mounted `stats_router` in app factory
+### Frontend (Next.js)
+- **New**: `football-web/app/stats/page.tsx` — Stats center page with cyberpunk glass-card layout
+- **New**: `football-web/components/stats/scorers-table.tsx` — Scorers leaderboard table (sortable by goals/assists, top-3 highlight with gold/silver/bronze badges)
+- **New**: `football-web/components/stats/match-stats-card.tsx` — Match statistics card (upcoming/live/finished counts with progress bars)
+- **New**: `football-web/lib/api/stats.ts` — Frontend API client for GET /api/stats/scorers
+- **Modified**: `football-web/lib/i18n/locales/en-US.json` — Added `stats.*` i18n keys (12 keys)
+- **Modified**: `football-web/lib/i18n/locales/zh-CN.json` — Added `stats.*` i18n keys (12 keys, full zh parity)
+### Quality
+- `next build` passes cleanly (0 errors)
+- All files well under 600-line limit
+- All text uses t() i18n (no hardcoded strings)
+## P4-05-TeamDetail — Team Detail Page
+Date: Sun May 25 2026
+### Backend Changes
+- **Schema**: Added `TeamStandingVO`, `TeamMatchVO`, `TeamStatsResponse` to `team_schema.py`
+- **Service**: Added `get_team_stats(code, lang, timezone_name)` to `TeamService` — aggregates team info, group standing, finished matches, and upcoming matches
+- **Controller**: Added `GET /api/teams/{code}/stats` route (registered before `/{code}` to avoid route conflicts)
+- Route order: `GET /api/teams` → `GET /api/teams/{code}/stats` → `GET /api/teams/{code}`
+### Frontend Changes
+- **API**: Added `getTeamStats(code)` and related types (`TeamStatsData`, `TeamMatchVO`, `TeamStandingVO`) to `lib/api/teams.ts`
+- **Page**: Created `app/teams/[code]/page.tsx` — team detail page with:
+  - Team header (flag, name, FIFA ranking, confederation, group, World Cup appearances)
+  - Group standing card (points, position, W/D/L/GF/GA/GD)
+  - Finished matches list (result indicator: win/loss/draw, opponent, score)
+  - Upcoming matches list (time, venue city, opponent)
+- **i18n**: Added `teamDetail.*` namespace keys (24 keys) to both `en-US.json` and `zh-CN.json`
+- Dynamic route: `/teams/[code]` where code is 3-letter team code (e.g., BRA, USA)
+### Quality
+- Build: `npm run build` passes cleanly
+- Route registered as dynamic: `ƒ /teams/[code]`
+- Backend imports verified: all schemas, services, controllers import without errors
+- No console.log or dead code
+- Follows existing codebase patterns (glass-card, Header component, API client pattern)
+- No console.log or dead code
+- Follows existing codebase patterns (glass-card, Header component, API client pattern)
+## P4-06-MobileAI — Mobile AI Copilot adaptation (FAB + Sheet)
+**Date**: 2026-05-25
+**Status**: ✅ Complete
+### Changes
+1. **New component**: `football-web/components/dashboard/ai-copilot-mobile.tsx`
+   - FAB button (fixed bottom-right, `lg:hidden`) with MessageCircle icon + streaming pulse indicator
+   - Sheet (bottom drawer, `h-[88vh]`) wrapping `AICopilotPanel` for full mobile chat experience
+   - Accessible sr-only SheetHeader for Radix a11y compliance
+2. **Modified**: `football-web/app/page.tsx`
+   - Added `AICopilotMobile` import and rendered it between main content and footer
+   - Desktop sidebar (`hidden lg:block`) and mobile FAB (`lg:hidden`) are mutually exclusive
+3. **i18n updates**:
+   - Added `ai.fabLabel`, `ai.sheetTitle`, `ai.sheetDescription` to both `en-US.json` and `zh-CN.json`
+   - Updated `lib/i18n/types.ts` LocaleMessages interface with new keys
+### Verification
+- `npm run build` passes cleanly (Next.js 16.2.6 Turbopack, 0 errors)

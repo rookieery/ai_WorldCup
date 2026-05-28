@@ -1,16 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useRef, useCallback } from "react"
+import Link from "next/link"
+import { Trophy } from "lucide-react"
 import { Header } from "@/components/dashboard/header"
 import { DateTimeline } from "@/components/dashboard/date-timeline"
 import { MatchCardsGrid } from "@/components/dashboard/match-cards-grid"
 import { TournamentBracket } from "@/components/dashboard/tournament-bracket"
 import { AICopilotPanel } from "@/components/dashboard/ai-copilot-panel"
+import { AICopilotMobile } from "@/components/dashboard/ai-copilot-mobile"
+import { useTranslation } from "@/lib/i18n"
+
+type TimezoneOption = "local" | "host"
+type ViewMode = "timeline" | "bracket"
+
+const MIN_AGENT_WIDTH = 340
 
 export default function WorldCupDashboard() {
-  const [timezone, setTimezone] = useState<"local" | "host">("local")
-  const [viewMode, setViewMode] = useState<"timeline" | "bracket">("bracket")
-  const [selectedDate, setSelectedDate] = useState("Jun 14")
+  const [timezone, setTimezone] = useState<TimezoneOption>("local")
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline")
+  const [selectedDate, setSelectedDate] = useState("")
+  const { t } = useTranslation()
+
+  const [agentPanelWidth, setAgentPanelWidth] = useState<number | undefined>(undefined)
+  const agentRef = useRef<HTMLDivElement>(null)
+
+  const handleResizeStart = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const panel = agentRef.current
+    if (!panel) return
+
+    const initialWidth = panel.offsetWidth
+    const startX = e.clientX
+
+    const handleMove = (moveEvent: MouseEvent) => {
+      const maxWidth = Math.floor(window.innerWidth / 3)
+      const delta = startX - moveEvent.clientX
+      const newWidth = Math.min(maxWidth, Math.max(MIN_AGENT_WIDTH, initialWidth + delta))
+      setAgentPanelWidth(newWidth)
+    }
+
+    const handleUp = () => {
+      document.removeEventListener("mousemove", handleMove)
+      document.removeEventListener("mouseup", handleUp)
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+    }
+
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+    document.addEventListener("mousemove", handleMove)
+    document.addEventListener("mouseup", handleUp)
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -78,8 +119,22 @@ export default function WorldCupDashboard() {
                 />
               </div>
 
+              {/* Groups Quick Entry */}
+              <div className="px-6 pt-4">
+                <Link
+                  href="/groups"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl glass-card border border-glass-border hover:border-primary/30 transition-all text-sm font-medium text-foreground hover:text-primary group/entry"
+                >
+                  <Trophy className="h-4 w-4 text-primary" />
+                  <span>{t("groups.title")}</span>
+                  <span className="text-[10px] text-muted-foreground group-hover/entry:text-primary/60 transition-colors">
+                    A-L
+                  </span>
+                </Link>
+              </div>
+
               {/* Match Cards */}
-              <MatchCardsGrid selectedDate={selectedDate} />
+              <MatchCardsGrid selectedDate={selectedDate} timezone={timezone} />
             </>
           ) : (
             /* Tournament Bracket */
@@ -87,11 +142,31 @@ export default function WorldCupDashboard() {
           )}
         </main>
 
-        {/* Right Sidebar - AI Copilot (30%) */}
-        <div className="w-[30%] min-w-[340px] max-w-[480px] hidden lg:block border-l border-glass-border">
-          <AICopilotPanel />
+        {/* Right Sidebar - AI Copilot — desktop only, resizable */}
+        <div
+          ref={agentRef}
+          className="hidden lg:block relative"
+          style={
+            agentPanelWidth !== undefined
+              ? { width: `${agentPanelWidth}px`, minWidth: `${MIN_AGENT_WIDTH}px`, maxWidth: "33.33vw" }
+              : { width: "30%", minWidth: "340px", maxWidth: "33.33vw" }
+          }
+        >
+          {/* Draggable resize handle */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-2.5 -ml-[5px] cursor-col-resize z-10 group flex justify-center"
+            onMouseDown={handleResizeStart}
+          >
+            <div className="h-full w-px bg-glass-border group-hover:w-0.5 group-hover:bg-primary/40 transition-all" />
+          </div>
+          <div className="h-full border-l border-glass-border">
+            <AICopilotPanel />
+          </div>
         </div>
       </div>
+
+      {/* Mobile AI Copilot — FAB + bottom-sheet drawer */}
+      <AICopilotMobile />
 
       {/* Footer Status Bar */}
       <footer className="h-10 border-t border-glass-border glass-card px-6 flex items-center justify-between text-xs text-muted-foreground relative z-10">
@@ -101,15 +176,15 @@ export default function WorldCupDashboard() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#CCFF00] opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#CCFF00]" />
             </div>
-            <span>Live Updates Active</span>
+            <span>{t("footer.liveUpdates")}</span>
           </div>
           <span className="text-border">|</span>
-          <span>48 Teams &bull; 16 Host Cities &bull; 104 Matches</span>
+          <span>{t("footer.teamsCitiesMatches")}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span>Data refreshed: Just now</span>
+          <span>{t("footer.dataRefreshed")}</span>
           <span className="text-border">|</span>
-          <span className="text-[#CCFF00] font-bold tracking-wide">FIFA World Cup 2026&trade;</span>
+          <span className="text-[#CCFF00] font-bold tracking-wide">{t("footer.fifaBrand")}</span>
         </div>
       </footer>
     </div>
