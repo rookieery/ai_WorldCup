@@ -12,8 +12,17 @@ Both `match-cards-grid.tsx` and `tournament-bracket.tsx` open the `MatchDetailDi
 ## File Split Pattern
 
 `match-detail-dialog.tsx` was split at 600-line limit into:
-- `match-detail-dialog.tsx` — Main dialog component + state management (~465 lines)
+- `match-detail-dialog.tsx` — Main dialog component + state management + AI analysis section (~555 lines)
 - `match-detail-helpers.tsx` — Exported sub-components (EventsSection, StatRow, VenueInfoItem) + types (MatchDetailData, MatchDetailEvent) (~215 lines)
+
+## AI Analysis in MatchDetailDialog
+
+The dialog includes an "AI Analysis" section at the bottom with:
+- **Skill selector**: shadcn `Select` component, fetches skills via `getAvailableSkills(lang)` on mount
+- **Auto-detect**: Default option uses `recommendedSkillId(stage)` (group→group_stage_predict, else→knockout_stage_predict)
+- **Callback**: `onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void` prop — parent component handles the actual SSE streaming
+- **Streaming state**: Reads `isStreaming` from `useAIChatStore` to disable button during active analysis
+- **i18n keys**: All under `matchDetail.*` namespace (aiAnalysis, selectSkill, autoDetect, etc.)
 
 ## Mobile AI Copilot Pattern
 

@@ -90,17 +90,18 @@
 - **行数**：~430
 
 ### `match-detail-dialog.tsx` — `MatchDetailDialog`
-- **Props**：`matchId`（number | null）、`open`、`onOpenChange`
+- **Props**：`matchId`（number | null）、`open`、`onOpenChange`、`onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void`
 - **数据**：弹窗打开时通过 `getMatchById(id)` + `getCheers(matchId)` 从 API 获取
 - **实时数据**：合并来自 `useLiveStore` 的实时比分补丁和助威更新
-- **区块**：比赛头部（队伍+比分+状态）、实时活动条、球迷助威计、比赛事件时间线（上半场/下半场+加时）、比赛统计（进球/红黄牌）、场馆信息
+- **AI 分析**：组件挂载时通过 `getAvailableSkills(lang)` 获取可用 Skill 列表；Skill 选择器默认"自动判断"（`recommendedSkillId()`），用户可手动选择；流式状态通过 `useAIChatStore.isStreaming` 读取
+- **区块**：比赛头部（队伍+比分+状态）、实时活动条、球迷助威计、比赛事件时间线（上半场/下半场+加时）、比赛统计（进球/红黄牌）、场馆信息、AI 分析区域（Skill 选择器 + 深度分析按钮）
 - **队伍名称层级**：与 MatchCard 一致，仅显示一行完整国名（text-lg font-bold）
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段徽章（小组赛/32强等）
-- **赛博朋克风格**：毛玻璃卡片、发光效果、渐变叠加、实时比分的 LED 显示
+- **赛博朋克风格**：毛玻璃卡片、发光效果、渐变叠加、实时比分的 LED 显示、AI 按钮渐变（from-cyan to-emerald）
 - **i18n**：使用 `useTranslation()` 管理所有可见文本（matchDetail + timeline 命名空间）
-- **导入类型**：`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`，`MatchDetailData` 来自 `match-detail-helpers`
-- **依赖**：Dialog、ScrollArea、Separator（shadcn）、`cn`、`lucide-react` 图标、`getMatchById` API、`getCheers` 助威 API、`useLiveStore`、辅助组件
-- **行数**：~480
+- **导入类型**：`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`，`MatchDetailData` 来自 `match-detail-helpers`，`SkillInfo` 来自 `@/lib/api/match-analysis`
+- **依赖**：Dialog、ScrollArea、Separator、Select（shadcn）、`cn`、`lucide-react` 图标（含 Sparkles）、`getMatchById` API、`getCheers` 助威 API、`useLiveStore`、`useAIChatStore`、`usePreferencesStore`、`getAvailableSkills`、`recommendedSkillId`、辅助组件
+- **行数**：~555
 
 ### `match-detail-helpers.tsx` — MatchDetailDialog 辅助组件 + 类型
 - **导出类型**：`MatchDetailEvent`、`MatchDetailData`（场馆含 `name_zh`、`city_zh`、`country_zh` 字段）
@@ -190,7 +191,7 @@
 | `header` | 8 | 标题、副标题、时区/视图标签、语言标签（langZh/langEn） |
 | `timeline` | 8 | 阶段标签（小组赛/R32/R16/QF/SF/季军赛/决赛/休息日） |
 | `match` | 12 | 比赛卡片标签（实时/焦点战/完赛/助威等） |
-| `matchDetail` | 18 | 比赛详情弹窗标签（事件、统计、场馆、助威） |
+| `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
 | `bracket` | 16 | 淘汰赛对阵图标签（6 轮、fromGroup、待定、状态） |
 | `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |
 | `footer` | 4 | 页脚状态栏标签 |
@@ -230,6 +231,7 @@ function MyComponent() {
 | `venues.ts` | `getVenues(params)` | `GET /api/venues` |
 | `cheers.ts` | `getCheers(matchId)`、`postCheer(matchId, side)` | `GET /api/cheers/:matchId`、`POST /api/cheers/:matchId` |
 | `ai-chat.ts` | `streamChat(messages, context, lang, callbacks, signal?)` | `POST /api/ai/chat`（SSE 流式，通过 fetch+ReadableStream） |
+| `match-analysis.ts` | `streamMatchAnalysis(body, callbacks, signal?)`、`getAvailableSkills(lang?)` | `POST /api/ai/match-analysis`（SSE 流式）、`GET /api/ai/skills` |
 
 **使用方式**：
 ```typescript

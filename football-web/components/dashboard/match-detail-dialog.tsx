@@ -27,7 +27,19 @@ import {
   Users,
   Target,
   Swords,
+  Sparkles,
 } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { getAvailableSkills } from "@/lib/api/match-analysis"
+import type { SkillInfo } from "@/lib/api/match-analysis"
+import { useAIChatStore, recommendedSkillId } from "@/lib/store/ai-chat"
+import { usePreferencesStore } from "@/lib/store/preferences"
 import {
   EventsSection,
   StatRow,
@@ -56,12 +68,14 @@ interface MatchDetailDialogProps {
   matchId: number | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void
 }
 
 export function MatchDetailDialog({
   matchId,
   open,
   onOpenChange,
+  onAnalyzeMatch,
 }: MatchDetailDialogProps) {
   const { t } = useTranslation()
   const [data, setData] = useState<MatchDetailData | null>(null)
@@ -69,6 +83,10 @@ export function MatchDetailDialog({
   const [error, setError] = useState(false)
   const [cheerHome, setCheerHome] = useState(0)
   const [cheerAway, setCheerAway] = useState(0)
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null)
+  const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([])
+  const isStreaming = useAIChatStore((s) => s.isStreaming)
+  const lang = usePreferencesStore((s) => s.language)
 
   // Real-time score patch from live store
   const scorePatch = useLiveStore(
@@ -112,6 +130,20 @@ export function MatchDetailDialog({
       setError(false)
     }
   }, [open, matchId, fetchDetail])
+
+  // Fetch available skills once on mount
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const skills = await getAvailableSkills(lang)
+        if (!cancelled) setAvailableSkills(skills)
+      } catch {
+        // Skills are optional — keep empty list
+      }
+    })()
+    return () => { cancelled = true }
+  }, [lang])
 
   // Compute live-merged values
   const homeScore = data
@@ -465,6 +497,49 @@ export function MatchDetailDialog({
                     <VenueInfoItem label={t("matchDetail.kickoff")} value={data.host_time ?? "--:--"} />
                     <VenueInfoItem label={t("matchDetail.capacity")} value={data.venue.capacity.toLocaleString()} />
                   </div>
+                </div>
+
+                {/* ── AI Analysis Section ───────────────────────────────── */}
+                <Separator className="bg-glass-border" />
+                <div className="space-y-3 rounded-xl bg-secondary/20 border border-glass-border p-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[#00F0FF]" />
+                    <h3 className="text-sm font-bold text-foreground">{t("matchDetail.aiAnalysis")}</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Select value={selectedSkillId ?? "__auto__"} onValueChange={(v) => setSelectedSkillId(v === "__auto__" ? null : v)}>
+                      <SelectTrigger className="flex-1 bg-secondary/30 border-glass-border text-xs h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__auto__">{t("matchDetail.autoDetect")}</SelectItem>
+                        {availableSkills.map((skill) => (
+                          <SelectItem key={skill.skill_id} value={skill.skill_id}>
+                            {lang === "zh-CN" ? skill.name_zh : skill.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <button
+                      disabled={isStreaming}
+                      onClick={() => {
+                        if (!onAnalyzeMatch || !data) return
+                        const resolved = selectedSkillId ?? recommendedSkillId(data.stage)
+                        onAnalyzeMatch(data, resolved)
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold",
+                        "bg-gradient-to-r from-[#00F0FF] to-[#CCFF00] text-background",
+                        "hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed",
+                      )}
+                    >
+                      {isStreaming
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t("matchDetail.analyzingMatch")}</>
+                        : <><Sparkles className="h-3.5 w-3.5" />{t("matchDetail.analysisButton")}</>
+                      }
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{t("matchDetail.analysisDesc")}</p>
                 </div>
               </div>
             )}

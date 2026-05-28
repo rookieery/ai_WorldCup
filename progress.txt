@@ -6,18 +6,34 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Build: `npm run build` passes clean
-- TypeScript: `npx tsc --noEmit` passes clean with zero errors
 
-## P5-05-StoreExtension — 前端：AI Chat Store 扩展分析上下文消息
-- **Date**: 2026-05-28
-- **Changes**:
-  1. `football-web/lib/types/ai.ts`: Added `'analysis-context'` to `MessageType` union
-  2. `football-web/lib/store/ai-chat.ts`:
-     - Added `addAnalysisContextMessage(matchSummary)` action — creates a `role: 'user'`, `type: 'analysis-context'` message with locale-aware prefix (`[AI 分析]` / `[AI Analysis]`)
-     - Added exported `recommendedSkillId(stage)` utility — returns `'group_stage_predict'` for group stage, `'knockout_stage_predict'` otherwise
-     - Added cross-store import of `usePreferencesStore` from `./preferences` for language detection
-  3. `football-web/lib/store/index.ts`: Re-exports `recommendedSkillId` from `ai-chat`
-  4. `football-web/lib/store/AGENTS.md`: Updated description to reflect new features
 - **Verification**: `npx tsc --noEmit` and `npm run build` both pass clean
+- **Status**: ✅ passes
+
+---
+
+## P5-06-AnalysisButton — 前端：MatchDetailDialog 新增 AI 分析按钮 + Skill 选择器
+**Date**: 2026-05-28
+**Branch**: feature/ai-match-analysis
+
+### Changes
+1. **`football-web/components/dashboard/match-detail-dialog.tsx`** (480→555 lines, under 600 limit):
+   - Added `onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void` prop
+   - Added internal state: `selectedSkillId`, `availableSkills`, `isStreaming` (from AI chat store)
+   - Added `useEffect` to fetch available skills on mount via `getAvailableSkills(lang)`
+   - Added "AI Analysis" section below venue info with:
+     - Skill selector dropdown (shadcn Select) with "Auto-detect" default + skill list from API
+     - Gradient "Deep AI Analysis" button with Sparkles icon, disabled during streaming
+     - Loading state: Loader2 spinner + "Analyzing match..." text
+     - Description text below button
+   - Uses `recommendedSkillId()` for auto-detect logic (group→group_stage_predict, else→knockout_stage_predict)
+
+2. **`football-web/lib/i18n/locales/zh-CN.json`** + **`en-US.json`**:
+   - Added 8 new i18n keys under `matchDetail`: `aiAnalysis`, `selectSkill`, `autoDetect`, `groupAnalysis`, `knockoutAnalysis`, `analyzingMatch`, `analysisButton`, `analysisDesc`
+
+### Verification
+- `npx tsc --noEmit` — clean
+- `npm run build` — passes
+- File total: 555 lines (under 600 hard limit)
+
 - **Status**: ✅ passes

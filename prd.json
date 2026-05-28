@@ -2,15 +2,9 @@
   "branchName": "feature/ai-match-analysis",
   "stories": [
     {
-      "id": "P5-05-StoreExtension",
-      "title": "前端：AI Chat Store 扩展分析上下文消息",
-      "passes": true,
-      "description": "前端状态管理层扩展任务。\n\n1. 修改 `football-web/lib/store/ai-chat.ts`：\n\n   - 在 Message 类型中新增可选字段：`type?: 'analysis-context'`\n     - 普通用户消息：type 为 undefined 或 'user'\n     - 分析上下文消息：type 为 'analysis-context'\n\n   - 新增 `addAnalysisContextMessage(matchSummary: string)` action：\n     - 生成一条 role: 'user'、type: 'analysis-context' 的消息\n     - 消息内容格式化为人类可读文本，例如：\n       - zh-CN: \"[AI 分析] 巴西 vs 阿根廷 | 小组赛 A组\"\n       - en-US: \"[AI Analysis] Brazil vs Argentina | Group Stage Group A\"\n     - 添加到 messages 数组末尾\n\n   - 新增 `recommendedSkillId(stage: string)` 工具函数（可放在组件层或 store 中）：\n     - stage === 'group' 时返回 'group_stage_predict'\n     - 否则返回 'knockout_stage_predict'\n\n2. 确保 AICopilotPanel 中 analysis-context 类型的消息渲染为特殊样式（可选）：\n   - 与普通用户消息气泡样式区分\n   - 显示 Sparkles 图标标识\n   - 这部分在 P5-07 中实现，此处仅确保数据结构正确\n\n验收：调用 store.addAnalysisContextMessage('巴西 vs 阿根廷') 后，messages 数组中出现一条 type 为 'analysis-context' 的消息"
-    },
-    {
       "id": "P5-06-AnalysisButton",
       "title": "前端：MatchDetailDialog 新增 AI 分析按钮 + Skill 选择器",
-      "passes": false,
+      "passes": true,
       "description": "比赛详情弹窗 UI 扩展任务。\n\n1. 修改 `football-web/components/dashboard/match-detail-dialog.tsx`：\n\n   - 新增 props：\n     - `onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void`\n\n   - 在场馆信息 Section 下方（</ScrollArea> 上方）新增\"AI 分析\"区域：\n     - 使用 glass-card 样式容器，与弹窗其他区域风格统一\n     - 包含一个 Skill 选择下拉菜单（shadcn/ui Select 组件）：\n       - 默认选项为\"自动判断\"（根据 stage 自动推荐）\n       - 列出所有可用 Skill（从 getAvailableSkills 获取）\n       - 每个选项显示对应语言的名字和描述\n     - 包含一个醒目的\"AI 深度分析\"按钮：\n       - 使用 Sparkles 图标（lucide-react）\n       - 渐变背景（cyber 风格，如 from-cyan to-emerald）\n       - 分析进行中时显示 loading 动画（Loader2 旋转图标）并禁用\n       - 读取 useAIChatStore.isStreaming 判断是否正在分析\n     - 按钮下方一行简短描述文案（通过 i18n key 引用）\n\n   - 新增内部状态：\n     - `selectedSkillId: string | null`（null 表示自动判断）\n     - `availableSkills: SkillInfo[]`（组件挂载时从 API 获取）\n\n   - 推荐逻辑：\n     - 计算 recommendedSkillId：match.stage === 'group' ? 'group_stage_predict' : 'knockout_stage_predict'\n     - 下拉菜单默认选中\"自动判断\"，实际使用 recommendedSkillId\n     - 用户手动选择后使用用户选择的 skillId\n\n   - 点击按钮时：\n     - 从 match 构造 MatchAnalysisRequestBody\n     - 调用 onAnalyzeMatch(match, resolvedSkillId)\n\n2. 确保新增内容不超过 ~50 行，文件总行数保持在 600 行硬限制内\n   - 如果接近限制，将 AI 分析区域抽离为独立组件到 match-detail-helpers.tsx\n\n验收：打开比赛详情弹窗，底部可见\"AI 分析\"区域，Skill 下拉可选，点击按钮触发 onAnalyzeMatch 回调"
     },
     {

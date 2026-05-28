@@ -61,7 +61,15 @@
     "city": "City",
     "kickoff": "Kickoff",
     "capacity": "Capacity",
-    "loadError": "Failed to load match details"
+    "loadError": "Failed to load match details",
+    "aiAnalysis": "AI Analysis",
+    "selectSkill": "Select Strategy",
+    "autoDetect": "Auto-detect",
+    "groupAnalysis": "Group Stage Analysis",
+    "knockoutAnalysis": "Knockout Analysis",
+    "analyzingMatch": "Analyzing match...",
+    "analysisButton": "Deep AI Analysis",
+    "analysisDesc": "Use AI reasoning chain for match prediction"
   },
   "bracket": {
     "knockoutStage": "Knockout Stage",
