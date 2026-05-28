@@ -43,13 +43,13 @@ football-web/
 │   ├── dashboard/
 │   │   ├── header.tsx        # 顶栏（语言切换 + 时区 + 视图模式切换，支持 i18n）
 │   │   ├── date-timeline.tsx # 横向日期选择器（6月11日–7月19日）
-│   │   ├── match-cards-grid.tsx  # 比赛卡片列表 + 球迷助威 + 实时 WS 比分/助威集成 + 在线连接指示器 + 点击打开比赛详情弹窗
-│   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息）— 赛博朋克毛玻璃风格
-│   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem、EventIcon/Label）
+│   │   ├── match-cards-grid.tsx  # 比赛卡片列表 + 球迷助威 + 实时 WS 比分/助威集成 + 在线连接指示器 + 点击打开比赛详情弹窗 + AI 分析回调接线
+│   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息、AI 分析按钮）— 赛博朋克毛玻璃风格
+│   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem）+ dispatchMatchAnalysis 共享分析流调度器
 │   │   ├── group-standings.tsx   # 小组积分榜网格（12 组 A-L，出线区高亮）
 │   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动）+ 点击打开比赛详情
-│   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、Zustand 存储）
-│   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）
+│   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、analysis-context 消息特殊渲染、Zustand 存储）
+│   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）+ 导出 openMobileCopilotSheet() 供外部触发
 │   ├── stats/
 │   │   ├── scorers-table.tsx    # 射手榜表格（按进球/助攻排序，赛博朋克毛玻璃卡片，前3名高亮）
 │   │   └── match-stats-card.tsx # 比赛统计卡片（未开/进行中/已完计数 + 进度条）
@@ -66,7 +66,7 @@ football-web/
 │   │   ├── index.ts          # 统一导出（I18nProvider、useI18n、useTranslation、类型）
 │   │   ├── context.tsx       # I18nProvider（React Context：locale 状态、t() 函数、localStorage 持久化 + API 语言同步 + locale 切换时存储缓存失效）
 │   │   ├── use-translation.ts # useTranslation Hook — 轻量封装，暴露 { t, locale, setLocale }
-│   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构）
+│   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构，含 matchDetail/stats/teamDetail 命名空间）
 │   │   └── locales/
 │   │       ├── zh-CN.json    # 中文翻译（155+ 键，11 个命名空间）
 │   │       └── en-US.json    # 英文翻译（155+ 键，与 zh-CN 完全对齐）

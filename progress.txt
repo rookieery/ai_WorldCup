@@ -7,33 +7,38 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- **Verification**: `npx tsc --noEmit` and `npm run build` both pass clean
-- **Status**: ✅ passes
 
----
-
-## P5-06-AnalysisButton — 前端：MatchDetailDialog 新增 AI 分析按钮 + Skill 选择器
-**Date**: 2026-05-28
-**Branch**: feature/ai-match-analysis
-
-### Changes
-1. **`football-web/components/dashboard/match-detail-dialog.tsx`** (480→555 lines, under 600 limit):
-   - Added `onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void` prop
-   - Added internal state: `selectedSkillId`, `availableSkills`, `isStreaming` (from AI chat store)
-   - Added `useEffect` to fetch available skills on mount via `getAvailableSkills(lang)`
-   - Added "AI Analysis" section below venue info with:
-     - Skill selector dropdown (shadcn Select) with "Auto-detect" default + skill list from API
-     - Gradient "Deep AI Analysis" button with Sparkles icon, disabled during streaming
-     - Loading state: Loader2 spinner + "Analyzing match..." text
-     - Description text below button
-   - Uses `recommendedSkillId()` for auto-detect logic (group→group_stage_predict, else→knockout_stage_predict)
-
-2. **`football-web/lib/i18n/locales/zh-CN.json`** + **`en-US.json`**:
-   - Added 8 new i18n keys under `matchDetail`: `aiAnalysis`, `selectSkill`, `autoDetect`, `groupAnalysis`, `knockoutAnalysis`, `analyzingMatch`, `analysisButton`, `analysisDesc`
-
-### Verification
-- `npx tsc --noEmit` — clean
-- `npm run build` — passes
 - File total: 555 lines (under 600 hard limit)
-
 - **Status**: ✅ passes
+
+## P5-07-Integration — 前端：回调接线 + 移动端适配 + i18n 国际化
+- **Date**: 2026-05-28
+- **Branch**: feature/ai-match-analysis
+- **Status**: ✅ passes
+### Changes
+1. **`match-cards-grid.tsx`** (~551 lines):
+   - Added `handleAnalyzeMatch` callback using shared `dispatchMatchAnalysis()` helper
+   - Passes `onAnalyzeMatch` to `MatchDetailDialog`
+   - Analysis button triggers: context message → SSE stream → dialog close → mobile sheet open
+2. **`tournament-bracket.tsx`** (~437 lines):
+   - Same `handleAnalyzeMatch` wiring via shared `dispatchMatchAnalysis()` helper
+   - Passes `onAnalyzeMatch` to `MatchDetailDialog`
+3. **`match-detail-helpers.tsx`** (~294 lines):
+   - Added `dispatchMatchAnalysis(matchData, skillId, closeDialog)` shared analysis dispatch function
+   - Constructs `MatchAnalysisRequestBody`, adds context message, starts streaming, closes dialog, opens mobile sheet, fires SSE
+   - Shared by both match-cards-grid and tournament-bracket to avoid duplication
+4. **`ai-copilot-mobile.tsx`** (~94 lines):
+   - Exported `openMobileCopilotSheet()` function for external trigger
+   - Module-level `_openSheetFn` registers component's `setOpen(true)` on each render
+5. **`ai-copilot-panel.tsx`** (~596 lines):
+   - `analysis-context` messages rendered with special styling: Sparkles icon + gradient border (from-cyan to-lime)
+   - Visually distinct from regular user messages
+6. **`lib/i18n/types.ts`** (~223 lines):
+   - Added missing `matchDetail` namespace (28 keys), `stats` namespace (17 keys), `teamDetail` namespace (27 keys)
+   - Added `match.liveUpdates` and `match.disconnected` keys
+   - Added `groups.backToTimeline` key
+### Verification
+- `npx tsc --noEmit` — clean, zero errors
+- `npm run build` — passes
+- All files well under 600-line hard limit
+- No console.log or dead code

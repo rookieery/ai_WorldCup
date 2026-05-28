@@ -58,14 +58,15 @@
 - **实时数据**：订阅 `useLiveStore` 获取实时比分补丁、助威更新和 WS 状态；挂载时启动 `wsClient`
 - **助威投票**：`MatchCard.handleCheer()` 调用 `postCheer(matchId, side)` API，乐观更新 + 失败回滚
 - **比赛详情**：卡片点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（传递 matchId）
+- **AI 分析**：通过 `dispatchMatchAnalysis()` 共享辅助函数接线分析流 — 构造请求体、添加上下文消息、关闭弹窗、打开移动端抽屉、启动 SSE 流
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段徽章；小组赛显示"小组 A"格式
 - **功能**：实时比分显示（WS 补丁数据）、焦点战徽章、活动条、球迷助威计（悬停展开）、WS 连接指示器、加载/错误/空状态
 - **队伍名称层级**：仅显示一行完整国名（text-lg font-bold），无球队代码，确保对阵双方一目了然
 - **API 映射**：`apiMatchToUi()` 将后端 `MatchApiItem` → 前端 `Match` 类型（保留原始 `stage` + `groupLabel` 用于 i18n）
 - **i18n**：使用 `useTranslation()` 管理所有可见文本含阶段标签
 - **导入类型**：`Match`、`CityIcon` 来自 `@/lib/types`，`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`
-- **依赖**：`cn` 工具、`lucide-react` 图标（含 Wifi、WifiOff）、`getMatches` + `apiMatchToUi` API、`postCheer` 助威 API、`useLiveStore`、`wsClient`、`MatchDetailDialog`
-- **行数**：~540
+- **依赖**：`cn` 工具、`lucide-react` 图标（含 Wifi、WifiOff）、`getMatches` + `apiMatchToUi` API、`postCheer` 助威 API、`useLiveStore`、`wsClient`、`MatchDetailDialog`、`dispatchMatchAnalysis`
+- **行数**：~551
 
 ### `group-standings.tsx` — `GroupStandings`
 - **数据**：通过 `getGroups()` 从 API 获取 — 全部 12 组（A-L）积分榜
@@ -103,32 +104,36 @@
 - **依赖**：Dialog、ScrollArea、Separator、Select（shadcn）、`cn`、`lucide-react` 图标（含 Sparkles）、`getMatchById` API、`getCheers` 助威 API、`useLiveStore`、`useAIChatStore`、`usePreferencesStore`、`getAvailableSkills`、`recommendedSkillId`、辅助组件
 - **行数**：~555
 
-### `match-detail-helpers.tsx` — MatchDetailDialog 辅助组件 + 类型
+### `match-detail-helpers.tsx` — MatchDetailDialog 辅助组件 + 类型 + 分析调度
 - **导出类型**：`MatchDetailEvent`、`MatchDetailData`（场馆含 `name_zh`、`city_zh`、`country_zh` 字段）
 - **组件**：`EventsSection`（按半场分组的事件列表）、`StatRow`（双条统计）、`VenueInfoItem`（标签-值对）
+- **函数**：`dispatchMatchAnalysis(matchData, skillId, closeDialog)` — 共享分析流调度器（构造请求体、添加上下文消息、关闭弹窗、打开移动端抽屉、启动 SSE 流）
 - **内部**：`EventIcon`（事件类型图标）、`EventLabel`（事件类型 i18n 标签）
-- **行数**：~218
+- **行数**：~294
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
 - **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`
 - **子组件**：`MiniRadarChart`、`AnalysisCard`、`ThinkingIndicator`、`TypewriterText`、`ThinkingBlock`
 - **Markdown 渲染**：所有 AI 助手消息（历史消息、流式响应、思维块）通过 `MarkdownRenderer`（`react-markdown` + `remark-gfm`）渲染为富文本；用户消息保持纯文本
+- **特殊消息**：`analysis-context` 类型消息使用 Sparkles 图标 + 渐变边框气泡样式（from-cyan to-lime），与普通用户消息视觉区分
 - **数据**：通过 `streamChat()` 来自 `@/lib/api/ai-chat` 的真实 SSE 流式；store 管理消息
 - **AI 集成**：通过 fetch+ReadableStream SSE 消费者 POST 到 `/api/ai/chat`；打字机光标效果；可折叠思维块；错误 + 免责声明状态
 - **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子（跟随 `language` 变化自动重置，仅限无用户消息时）、AbortController 支持
 - **i18n**：所有文本通过 `t()`（ai 命名空间）
 - **导入类型**：`TeamAnalysis`、`TeamStats` 来自 `@/lib/types`；`ChatMessageItem` 来自 `@/lib/api/ai-chat`
 - **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`、`MarkdownRenderer`
-- **行数**：~585
+- **行数**：~596
 
 ### `ai-copilot-mobile.tsx` — `AICopilotMobile`
+- **导出函数**：`openMobileCopilotSheet()` — 供外部组件调用以程序化打开移动端底部抽屉（无需 ref 钻取）
 - **状态**：本地 `open`（Sheet 可见性），从 `useAIChatStore` 读取 `isStreaming`
 - **组件**：FAB（固定右下角，`lg:hidden`）+ Sheet（底部抽屉，`h-[88vh]`）封装 `AICopilotPanel`
 - **功能**：带流式脉冲指示器的 FAB、可访问的 Sheet 含 sr-only 头部、赛博朋克主题渐变 FAB 按钮
+- **外部触发**：模块级 `_openSheetFn` 注册 `setOpen(true)`，供 `dispatchMatchAnalysis()` 等外部函数调用
 - **i18n**：使用 `t()` 管理 FAB 标签、Sheet 标题/描述（ai 命名空间：fabLabel、sheetTitle、sheetDescription）
 - **依赖**：`Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle`/`SheetDescription`（shadcn）、`AICopilotPanel`、`MessageCircle`/`Sparkles`（lucide-react）、`useAIChatStore`、`useTranslation`
 - **可见性**：仅在 `lg` 断点以下渲染（FAB 使用 `lg:hidden` class）
-- **行数**：~79
+- **行数**：~94
 
 ## 共享组件
 
@@ -190,7 +195,7 @@
 |----------|------|------|
 | `header` | 8 | 标题、副标题、时区/视图标签、语言标签（langZh/langEn） |
 | `timeline` | 8 | 阶段标签（小组赛/R32/R16/QF/SF/季军赛/决赛/休息日） |
-| `match` | 12 | 比赛卡片标签（实时/焦点战/完赛/助威等） |
+| `match` | 14 | 比赛卡片标签（实时/焦点战/完赛/助威/liveUpdates/disconnected 等） |
 | `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
 | `bracket` | 16 | 淘汰赛对阵图标签（6 轮、fromGroup、待定、状态） |
 | `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |

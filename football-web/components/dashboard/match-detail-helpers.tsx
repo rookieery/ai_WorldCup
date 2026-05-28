@@ -6,6 +6,10 @@ import {
   ArrowRightLeft,
   Monitor,
 } from "lucide-react"
+import { usePreferencesStore, useAIChatStore } from "@/lib/store"
+import { streamMatchAnalysis } from "@/lib/api/match-analysis"
+import type { MatchAnalysisRequestBody } from "@/lib/api/match-analysis"
+import { openMobileCopilotSheet } from "@/components/dashboard/ai-copilot-mobile"
 
 // ── Detail types ───────────────────────────────────────────────────────────────
 
@@ -215,4 +219,76 @@ export function VenueInfoItem({ label, value }: { label: string; value: string }
       <p className="text-xs text-foreground font-medium truncate">{value}</p>
     </div>
   )
+}
+
+// ── Analysis Dispatch Helper ───────────────────────────────────────────────────
+
+/**
+ * Kick off a match analysis SSE stream and wire it into the AI chat store.
+ *
+ * Shared by `match-cards-grid.tsx` and `tournament-bracket.tsx` so that both
+ * views can trigger AI analysis from their `MatchDetailDialog` instances
+ * without duplicating ~60 lines of wiring code.
+ *
+ * @param matchData  The match detail data from the dialog.
+ * @param skillId    The resolved skill ID (e.g. `"group_stage_predict"`).
+ * @param closeDialog  Callback to close the parent dialog.
+ */
+export function dispatchMatchAnalysis(
+  matchData: MatchDetailData,
+  skillId: string,
+  closeDialog: () => void,
+): void {
+  const lang = usePreferencesStore.getState().language
+
+  const body: MatchAnalysisRequestBody = {
+    match_id: matchData.id,
+    stage: matchData.stage,
+    skill_id: skillId,
+    home_team: {
+      name: matchData.home_team.name,
+      name_zh: matchData.home_team.name_zh,
+      code: matchData.home_team.code,
+      flag: matchData.home_team.flag,
+    },
+    away_team: {
+      name: matchData.away_team.name,
+      name_zh: matchData.away_team.name_zh,
+      code: matchData.away_team.code,
+      flag: matchData.away_team.flag,
+    },
+    home_score: matchData.home_score,
+    away_score: matchData.away_score,
+    status: matchData.status,
+    group_label: matchData.group_label ?? undefined,
+    round: matchData.round || undefined,
+    match_day: matchData.match_day ?? undefined,
+    events: matchData.events.map((e) => ({
+      event_type: e.event_type,
+      minute: e.minute,
+      team_side: e.team_side,
+      player_name: e.player_name,
+    })),
+    lang,
+  }
+
+  const homeName = lang === "zh-CN" ? matchData.home_team.name_zh : matchData.home_team.name
+  const awayName = lang === "zh-CN" ? matchData.away_team.name_zh : matchData.away_team.name
+  const summary = `${homeName} vs ${awayName}`
+
+  const store = useAIChatStore.getState()
+  store.addAnalysisContextMessage(summary)
+  store.startStreaming()
+
+  closeDialog()
+  openMobileCopilotSheet()
+
+  const controller = new AbortController()
+  void streamMatchAnalysis(body, {
+    onThinking: (delta) => useAIChatStore.getState().appendThinkingContent(delta),
+    onAnswer: (delta) => useAIChatStore.getState().appendStreamContent(delta),
+    onAnalysis: (data) => useAIChatStore.getState().setPendingAnalysis(data),
+    onDone: () => useAIChatStore.getState().finishStreaming(),
+    onError: () => useAIChatStore.getState().finishStreaming(),
+  }, controller.signal)
 }

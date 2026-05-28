@@ -25,6 +25,8 @@ import type { LiveScorePatch, CheerUpdate } from "@/lib/store"
 import { wsClient } from "@/lib/websocket"
 import type { Match, CityIcon } from "@/lib/types"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
+import { dispatchMatchAnalysis } from "@/components/dashboard/match-detail-helpers"
+import type { MatchDetailData } from "@/components/dashboard/match-detail-helpers"
 import { TeamFlag } from "@/lib/flags"
 
 /** Map a backend stage value to its i18n key. */
@@ -453,6 +455,13 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
     setDetailOpen(true)
   }, [])
 
+  const handleAnalyzeMatch = useCallback(
+    (matchData: MatchDetailData, skillId: string) => {
+      dispatchMatchAnalysis(matchData, skillId, () => setDetailOpen(false))
+    },
+    [],
+  )
+
   return (
     <div className="flex-1 p-6">
       <div className="flex items-center justify-between mb-6">
@@ -535,6 +544,7 @@ export function MatchCardsGrid({ selectedDate, timezone }: MatchCardsGridProps) 
         matchId={detailMatchId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        onAnalyzeMatch={handleAnalyzeMatch}
       />
     </div>
   )

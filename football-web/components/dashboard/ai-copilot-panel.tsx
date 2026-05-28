@@ -450,47 +450,57 @@ export function AICopilotPanel() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-3",
-                message.role === "user" ? "flex-row-reverse" : "flex-row"
-              )}
-            >
+          {messages.map((message) => {
+            const isAnalysisContext = message.type === "analysis-context"
+
+            return (
               <div
+                key={message.id}
                 className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                  message.role === "user"
-                    ? "bg-[#CCFF00]/20 border border-[#CCFF00]/30"
-                    : "bg-[#00F0FF]/20 border border-[#00F0FF]/30"
+                  "flex gap-3",
+                  message.role === "user" ? "flex-row-reverse" : "flex-row"
                 )}
               >
-                {message.role === "user" ? (
-                  <User className="h-4 w-4 text-[#CCFF00]" />
-                ) : (
-                  <Bot className="h-4 w-4 text-[#00F0FF]" />
-                )}
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                    isAnalysisContext
+                      ? "bg-gradient-to-br from-[#00F0FF]/20 to-[#CCFF00]/20 border border-[#00F0FF]/30"
+                      : message.role === "user"
+                        ? "bg-[#CCFF00]/20 border border-[#CCFF00]/30"
+                        : "bg-[#00F0FF]/20 border border-[#00F0FF]/30"
+                  )}
+                >
+                  {isAnalysisContext ? (
+                    <Sparkles className="h-4 w-4 text-[#00F0FF]" />
+                  ) : message.role === "user" ? (
+                    <User className="h-4 w-4 text-[#CCFF00]" />
+                  ) : (
+                    <Bot className="h-4 w-4 text-[#00F0FF]" />
+                  )}
+                </div>
+                <div
+                  className={cn(
+                    "max-w-[90%] rounded-xl px-4 py-3 text-sm",
+                    isAnalysisContext
+                      ? "bg-gradient-to-br from-[#00F0FF]/10 to-[#CCFF00]/5 border border-[#00F0FF]/30 text-foreground"
+                      : message.role === "user"
+                        ? "bg-[#CCFF00]/10 border border-[#CCFF00]/20 text-foreground"
+                        : "bg-secondary/30 border border-glass-border text-foreground backdrop-blur-sm"
+                  )}
+                >
+                  {message.role === "assistant" ? (
+                    <MarkdownRenderer content={message.content} />
+                  ) : (
+                    message.content
+                  )}
+                  {message.type === "analysis" && message.analysisData && (
+                    <AnalysisCard data={message.analysisData} t={t} />
+                  )}
+                </div>
               </div>
-              <div
-                className={cn(
-                  "max-w-[90%] rounded-xl px-4 py-3 text-sm",
-                  message.role === "user"
-                    ? "bg-[#CCFF00]/10 border border-[#CCFF00]/20 text-foreground"
-                    : "bg-secondary/30 border border-glass-border text-foreground backdrop-blur-sm"
-                )}
-              >
-                {message.role === "assistant" ? (
-                  <MarkdownRenderer content={message.content} />
-                ) : (
-                  message.content
-                )}
-                {message.type === "analysis" && message.analysisData && (
-                  <AnalysisCard data={message.analysisData} t={t} />
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           {/* Live streaming response */}
           {isStreaming && (

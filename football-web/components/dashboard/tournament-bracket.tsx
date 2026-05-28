@@ -6,6 +6,8 @@ import { Trophy, Zap, Loader2, AlertCircle, Medal } from "lucide-react"
 import { getBracket } from "@/lib/api/bracket"
 import { useTranslation } from "@/lib/i18n"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
+import { dispatchMatchAnalysis } from "@/components/dashboard/match-detail-helpers"
+import type { MatchDetailData } from "@/components/dashboard/match-detail-helpers"
 import type {
   BracketMatch,
   BracketTeam,
@@ -330,6 +332,13 @@ export function TournamentBracket() {
   const [detailMatchId, setDetailMatchId] = useState<number | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
+  const handleAnalyzeMatch = useCallback(
+    (matchData: MatchDetailData, skillId: string) => {
+      dispatchMatchAnalysis(matchData, skillId, () => setDetailOpen(false))
+    },
+    [],
+  )
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
@@ -421,6 +430,7 @@ export function TournamentBracket() {
         matchId={detailMatchId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        onAnalyzeMatch={handleAnalyzeMatch}
       />
     </div>
   )
