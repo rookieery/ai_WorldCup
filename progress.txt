@@ -5,17 +5,19 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- Verified: both endpoints respond correctly (skills returns JSON, match-analysis returns SSE stream)
-- File size: `ai_controller.py` is 195 lines (well under 400-line warning threshold)
 
-## P5-04-AnalysisClient — 前端：比赛分析 SSE 客户端 + 类型定义
-- Created `football-web/lib/api/match-analysis.ts` (~209 lines)
-  - Defined `MatchAnalysisRequestBody`, `TeamBrief`, `MatchEventBrief`, `SkillInfo` interfaces matching backend schemas
-  - Exported `streamMatchAnalysis(body, callbacks, signal?)` — POST to /api/ai/match-analysis, reuses SSE parsing from ai-chat
-  - Exported `getAvailableSkills(lang?)` — GET /api/ai/skills, unwraps ApiResponse envelope
-- Modified `football-web/lib/api/ai-chat.ts`
-  - Exported `parseSSELines` (was module-private)
-  - Exported `parseSSEPayload` (was module-private)
-  - `StreamCallbacks` was already exported as interface
 - Build: `npm run build` passes clean
 - TypeScript: `npx tsc --noEmit` passes clean with zero errors
+
+## P5-05-StoreExtension — 前端：AI Chat Store 扩展分析上下文消息
+- **Date**: 2026-05-28
+- **Changes**:
+  1. `football-web/lib/types/ai.ts`: Added `'analysis-context'` to `MessageType` union
+  2. `football-web/lib/store/ai-chat.ts`:
+     - Added `addAnalysisContextMessage(matchSummary)` action — creates a `role: 'user'`, `type: 'analysis-context'` message with locale-aware prefix (`[AI 分析]` / `[AI Analysis]`)
+     - Added exported `recommendedSkillId(stage)` utility — returns `'group_stage_predict'` for group stage, `'knockout_stage_predict'` otherwise
+     - Added cross-store import of `usePreferencesStore` from `./preferences` for language detection
+  3. `football-web/lib/store/index.ts`: Re-exports `recommendedSkillId` from `ai-chat`
+  4. `football-web/lib/store/AGENTS.md`: Updated description to reflect new features
+- **Verification**: `npx tsc --noEmit` and `npm run build` both pass clean
+- **Status**: ✅ passes

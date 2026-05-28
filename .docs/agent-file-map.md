@@ -85,13 +85,13 @@ football-web/
 │   │   ├── preferences.ts    # 用户偏好（语言、时区、视图模式、主题）— localStorage 持久化
 │   │   ├── matches.ts        # 比赛数据缓存（按日期 + 实时比赛）含 fetch 动作 + TTL + locale 切换时 invalidateAll()
 │   │   ├── live.ts           # 实时 WebSocket 状态（比分、助威更新、WS 连接状态）— 由 websocket.ts 事件驱动
-│   │   └── ai-chat.ts        # AI 聊天消息 + 流式状态（内容缓冲区、分析载荷）
+│   │   └── ai-chat.ts        # AI 聊天消息 + 流式状态（内容缓冲区、分析载荷）+ addAnalysisContextMessage + recommendedSkillId
 │   └── types/                # 共享 TypeScript 类型定义
 │       ├── index.ts          # 统一导出
 │       ├── team.ts           # Team、TeamDetail、TeamStanding
 │       ├── match.ts          # Match、MatchStatus、MatchEvent、MatchQueryParams、CityIcon、MatchDateInfo
 │       ├── bracket.ts        # BracketTeam、BracketMatch、BracketRound、BracketTree、BracketRoundName
-│       ├── ai.ts             # Message、TeamAnalysis、TeamStats、SSEEvent
+│       ├── ai.ts             # Message（含 analysis-context 类型）、TeamAnalysis、TeamStats、SSEEvent
 │       └── api.ts            # ApiResponse<T>、PaginatedResponse<T>、ApiError
 ├── styles/
 │   └── globals.css           # 重复/备选全局样式（需确认是否仍需要）

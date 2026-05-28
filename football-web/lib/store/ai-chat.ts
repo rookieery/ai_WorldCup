@@ -8,6 +8,7 @@
 
 import { create } from "zustand"
 import type { Message, TeamAnalysis } from "@/lib/types"
+import { usePreferencesStore } from "./preferences"
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,8 @@ interface AIChatState {
   // ── Actions ──────────────────────────────────────────────────────────────
   /** Append a user message and begin streaming. */
   addUserMessage: (content: string) => void
+  /** Add a formatted analysis-context message (displayed as AI trigger in chat). */
+  addAnalysisContextMessage: (matchSummary: string) => void
   /** Begin a new assistant streaming response. */
   startStreaming: () => void
   /** Append answer content to the current stream buffer. */
@@ -49,6 +52,16 @@ function nextMessageId(): number {
   return nextId++
 }
 
+/**
+ * Return the recommended skill ID based on the match stage.
+ *
+ * - `"group"` → `"group_stage_predict"`
+ * - any other stage → `"knockout_stage_predict"`
+ */
+export function recommendedSkillId(stage: string): string {
+  return stage === "group" ? "group_stage_predict" : "knockout_stage_predict"
+}
+
 // ── Store ───────────────────────────────────────────────────────────────────────
 
 export const useAIChatStore = create<AIChatState>()((set, get) => ({
@@ -64,6 +77,19 @@ export const useAIChatStore = create<AIChatState>()((set, get) => ({
       role: "user",
       content,
       type: "text",
+    }
+    set((s) => ({ messages: [...s.messages, msg] }))
+  },
+
+  addAnalysisContextMessage: (matchSummary) => {
+    const lang = usePreferencesStore.getState().language
+    const prefix =
+      lang === "zh-CN" ? "[AI 分析] " : "[AI Analysis] "
+    const msg: Message = {
+      id: nextMessageId(),
+      role: "user",
+      content: prefix + matchSummary,
+      type: "analysis-context",
     }
     set((s) => ({ messages: [...s.messages, msg] }))
   },

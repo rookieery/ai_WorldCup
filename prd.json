@@ -2,15 +2,9 @@
   "branchName": "feature/ai-match-analysis",
   "stories": [
     {
-      "id": "P5-04-AnalysisClient",
-      "title": "前端：比赛分析 SSE 客户端 + 类型定义",
-      "passes": true,
-      "description": "前端 AI 分析 API 对接任务。\n\n1. 新建 `football-web/lib/api/match-analysis.ts`：\n\n   - 定义 `MatchAnalysisRequestBody` 接口（与后端 MatchAnalysisRequest 对应）：\n     - match_id: number\n     - stage: string\n     - skill_id?: string\n     - home_team: { name: string; name_zh: string; code: string; flag: string }\n     - away_team: { name: string; name_zh: string; code: string; flag: string }\n     - home_score: number | null\n     - away_score: number | null\n     - status: string\n     - group_label?: string\n     - round?: string\n     - match_day?: number\n     - events?: Array<{ event_type: string; minute: number; team_side: string; player_name: string | null }>\n     - lang: string\n\n   - 定义 `SkillInfo` 接口：\n     - skill_id: string\n     - name: string\n     - name_zh: string\n     - description: string\n     - description_zh: string\n     - applicable_stages: string[]\n\n   - 导出 `streamMatchAnalysis(body: MatchAnalysisRequestBody, callbacks: StreamCallbacks, signal?: AbortSignal)` 函数：\n     - POST 到 {BASE_URL}/api/ai/match-analysis\n     - 复用 ai-chat.ts 中导出的 parseSSELines 和 parseSSEPayload 函数\n     - 使用与 streamChat 相同的 SSE 解析逻辑和回调签名（StreamCallbacks）\n     - 支持 AbortController 取消\n\n   - 导出 `getAvailableSkills(lang?: string)` 函数：\n     - GET {BASE_URL}/api/ai/skills\n     - 返回 SkillInfo[]\n\n2. 修改 `football-web/lib/api/ai-chat.ts`：\n   - 将 parseSSELines 和 parseSSEPayload 从模块内部函数改为 export 导出\n   - 导出 StreamCallbacks 类型定义（供 match-analysis.ts 复用）\n\n验收：streamMatchAnalysis 函数能正确调用后端并消费 SSE 流，getAvailableSkills 返回 Skill 列表"
-    },
-    {
       "id": "P5-05-StoreExtension",
       "title": "前端：AI Chat Store 扩展分析上下文消息",
-      "passes": false,
+      "passes": true,
       "description": "前端状态管理层扩展任务。\n\n1. 修改 `football-web/lib/store/ai-chat.ts`：\n\n   - 在 Message 类型中新增可选字段：`type?: 'analysis-context'`\n     - 普通用户消息：type 为 undefined 或 'user'\n     - 分析上下文消息：type 为 'analysis-context'\n\n   - 新增 `addAnalysisContextMessage(matchSummary: string)` action：\n     - 生成一条 role: 'user'、type: 'analysis-context' 的消息\n     - 消息内容格式化为人类可读文本，例如：\n       - zh-CN: \"[AI 分析] 巴西 vs 阿根廷 | 小组赛 A组\"\n       - en-US: \"[AI Analysis] Brazil vs Argentina | Group Stage Group A\"\n     - 添加到 messages 数组末尾\n\n   - 新增 `recommendedSkillId(stage: string)` 工具函数（可放在组件层或 store 中）：\n     - stage === 'group' 时返回 'group_stage_predict'\n     - 否则返回 'knockout_stage_predict'\n\n2. 确保 AICopilotPanel 中 analysis-context 类型的消息渲染为特殊样式（可选）：\n   - 与普通用户消息气泡样式区分\n   - 显示 Sparkles 图标标识\n   - 这部分在 P5-07 中实现，此处仅确保数据结构正确\n\n验收：调用 store.addAnalysisContextMessage('巴西 vs 阿根廷') 后，messages 数组中出现一条 type 为 'analysis-context' 的消息"
     },
     {

@@ -249,7 +249,7 @@ const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
 | `lib/types/team.ts` | `Team`、`TeamDetail`、`TeamStanding` | 球队基础结构、API 详情、小组积分行 |
 | `lib/types/match.ts` | `Match`、`MatchStatus`、`CityIcon`、`MatchEvent`、`MatchEventType`、`MatchQueryParams` | 比赛卡片数据、事件时间线、API 查询过滤 |
 | `lib/types/bracket.ts` | `BracketTeam`、`BracketMatch`、`BracketRound`、`BracketTree`、`BracketRoundName`、`BracketMatchStatus` | 淘汰赛对阵树（R32→F） |
-| `lib/types/ai.ts` | `Message`、`MessageRole`、`MessageType`、`TeamAnalysis`、`TeamAnalysisSide`（含可选 `code`）、`TeamStats`、`SSEEvent`、`SSEEventType` | AI 聊天消息、分析载荷、SSE 流式 |
+| `lib/types/ai.ts` | `Message`、`MessageRole`、`MessageType`（含 `analysis-context`）、`TeamAnalysis`、`TeamAnalysisSide`（含可选 `code`）、`TeamStats`、`SSEEvent`、`SSEEventType` | AI 聊天消息、分析载荷、SSE 流式 |
 | `lib/types/api.ts` | `ApiResponse<T>`、`PaginatedResponse<T>`、`ApiError` | 标准 API 信封类型 |
 
 ## 状态管理（`lib/store/`）— Zustand
@@ -265,7 +265,7 @@ const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
 | `usePreferencesStore` | `preferences.ts` | 用户设置：语言、时区、视图模式、主题（localStorage 持久化） |
 | `useMatchesStore` | `matches.ts` | 按日期索引的比赛数据缓存 + 实时比赛，含 TTL 的 fetch 动作 |
 | `useLiveStore` | `live.ts` | 实时 WebSocket 状态：连接状态、比分补丁、助威更新 |
-| `useAIChatStore` | `ai-chat.ts` | AI 聊天消息、流式缓冲区、待处理分析载荷 |
+| `useAIChatStore` | `ai-chat.ts` | AI 聊天消息、流式缓冲区、待处理分析载荷、分析上下文消息（addAnalysisContextMessage）、推荐技能 ID（recommendedSkillId） |
 
 ### 使用方式
 ```typescript

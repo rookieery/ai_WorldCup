@@ -12,4 +12,4 @@ export { useMatchesStore } from "./matches"
 export { useLiveStore } from "./live"
 export type { WSConnectionStatus, LiveScorePatch, CheerUpdate } from "./live"
 
-export { useAIChatStore } from "./ai-chat"
+export { useAIChatStore, recommendedSkillId } from "./ai-chat"

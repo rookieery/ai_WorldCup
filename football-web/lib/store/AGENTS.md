@@ -14,7 +14,7 @@ import type { Language, WSConnectionStatus } from "@/lib/store"
 - `preferences.ts` → User settings (language, timezone, viewMode, theme). Uses `zustand/persist` middleware for localStorage persistence (key: `worldcup-preferences`).
 - `matches.ts` → Match data cache indexed by date + live matches list. Fetch actions delegate to `@/lib/api/matches`. 5-minute TTL per date entry.
 - `live.ts` → Real-time WebSocket state: connection status, score patches, cheer updates. Driven by `@/lib/websocket.ts` WSClient which dispatches backend events into this store.
-- `ai-chat.ts` → AI chat conversation history + streaming state. Manages content buffers and analysis payloads during SSE streaming (to be connected in P3-04).
+- `ai-chat.ts` → AI chat conversation history + streaming state. Manages content buffers and analysis payloads during SSE streaming. Also provides `recommendedSkillId()` helper and `addAnalysisContextMessage()` action for match analysis flow.
 - `index.ts` → Barrel re-exports for all stores and types.
 
 ## Rules
