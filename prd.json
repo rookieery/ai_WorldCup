@@ -1,11 +1,4 @@
 {
   "branchName": "feature/ai-match-analysis",
-  "stories": [
-    {
-      "id": "P5-07-Integration",
-      "title": "前端：回调接线 + 移动端适配 + i18n 国际化",
-      "passes": true,
-      "description": "集成与国际化收尾任务。\n\n1. 修改 `football-web/components/dashboard/match-cards-grid.tsx`：\n\n   - 新增 `handleAnalyzeMatch(matchData: MatchDetailData, skillId: string)` 回调函数：\n     - 从 matchData 构造 MatchAnalysisRequestBody\n     - 调用 store.addAnalysisContextMessage() 添加格式化的用户消息（如 \"[AI 分析] 巴西 vs 阿根廷\"）\n     - 调用 store.startStreaming()\n     - 调用 streamMatchAnalysis(body, callbacks, abortController.signal)，回调中：\n       - onThinking: store.appendThinkingContent(content)\n       - onAnswer: store.appendStreamContent(content)\n       - onAnalysis: store.setPendingAnalysis(data)\n       - onDone: store.finishStreaming()\n       - onError: store.finishStreaming() + 错误提示\n   - 将回调传递给 <MatchDetailDialog onAnalyzeMatch={handleAnalyzeMatch} />\n\n2. 移动端适配（`football-web/components/dashboard/ai-copilot-mobile.tsx`）：\n   - 点击\"AI 分析\"按钮后，在移动端自动关闭 MatchDetailDialog\n   - 自动打开 AICopilotMobile 底部抽屉\n   - 用户在底部抽屉中查看分析过程和结果\n   - 需要在 AICopilotMobile 中暴露一个方法（如 openSheet）供外部调用\n\n3. i18n 国际化：在 `football-web/lib/i18n/locales/zh-CN.json` 和 `en-US.json` 中新增以下 key：\n   - matchDetail.aiAnalysis: \"AI 分析\" / \"AI Analysis\"\n   - matchDetail.selectSkill: \"选择分析策略\" / \"Select Strategy\"\n   - matchDetail.autoDetect: \"自动判断\" / \"Auto-detect\"\n   - matchDetail.groupAnalysis: \"小组赛分析\" / \"Group Stage Analysis\"\n   - matchDetail.knockoutAnalysis: \"淘汰赛分析\" / \"Knockout Analysis\"\n   - matchDetail.analyzingMatch: \"正在分析比赛...\" / \"Analyzing match...\"\n   - matchDetail.analysisButton: \"AI 深度分析\" / \"Deep AI Analysis\"\n   - matchDetail.analysisDesc: \"使用 AI 推理链进行比赛预测\" / \"Use AI reasoning chain for match prediction\"\n\n4. AICopilotPanel 分析上下文消息渲染：\n   - type === 'analysis-context' 的消息使用特殊气泡样式（Sparkles 图标 + 渐变边框）\n   - 与普通用户消息视觉区分\n\n验收：\n- 在比赛详情弹窗点击\"AI 分析\"按钮，右侧面板实时展示分析过程（thinking + answer 流式渲染）\n- 分析完成后结果固定在聊天历史中\n- 移动端点击后弹窗关闭，底部抽屉展示分析结果\n- 切换语言后所有新增文案正确显示"
-    }
-  ]
+  "stories": []
 }

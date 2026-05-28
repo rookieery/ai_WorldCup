@@ -8,37 +8,6 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- File total: 555 lines (under 600 hard limit)
-- **Status**: ✅ passes
 
-## P5-07-Integration — 前端：回调接线 + 移动端适配 + i18n 国际化
-- **Date**: 2026-05-28
-- **Branch**: feature/ai-match-analysis
-- **Status**: ✅ passes
-### Changes
-1. **`match-cards-grid.tsx`** (~551 lines):
-   - Added `handleAnalyzeMatch` callback using shared `dispatchMatchAnalysis()` helper
-   - Passes `onAnalyzeMatch` to `MatchDetailDialog`
-   - Analysis button triggers: context message → SSE stream → dialog close → mobile sheet open
-2. **`tournament-bracket.tsx`** (~437 lines):
-   - Same `handleAnalyzeMatch` wiring via shared `dispatchMatchAnalysis()` helper
-   - Passes `onAnalyzeMatch` to `MatchDetailDialog`
-3. **`match-detail-helpers.tsx`** (~294 lines):
-   - Added `dispatchMatchAnalysis(matchData, skillId, closeDialog)` shared analysis dispatch function
-   - Constructs `MatchAnalysisRequestBody`, adds context message, starts streaming, closes dialog, opens mobile sheet, fires SSE
-   - Shared by both match-cards-grid and tournament-bracket to avoid duplication
-4. **`ai-copilot-mobile.tsx`** (~94 lines):
-   - Exported `openMobileCopilotSheet()` function for external trigger
-   - Module-level `_openSheetFn` registers component's `setOpen(true)` on each render
-5. **`ai-copilot-panel.tsx`** (~596 lines):
-   - `analysis-context` messages rendered with special styling: Sparkles icon + gradient border (from-cyan to-lime)
-   - Visually distinct from regular user messages
-6. **`lib/i18n/types.ts`** (~223 lines):
-   - Added missing `matchDetail` namespace (28 keys), `stats` namespace (17 keys), `teamDetail` namespace (27 keys)
-   - Added `match.liveUpdates` and `match.disconnected` keys
-   - Added `groups.backToTimeline` key
-### Verification
-- `npx tsc --noEmit` — clean, zero errors
-- `npm run build` — passes
 - All files well under 600-line hard limit
 - No console.log or dead code
