@@ -4,22 +4,18 @@ Started: Sat May 24 00:00:00     2026
 
 
 
-- All validation tests passed (valid requests, invalid stage/lang/status rejection, optional fields, events)
-- Synced .docs/agent-file-map.md and .docs/agent-api-reference.md
 
-## P5-03-AnalysisEndpoints — 后端：新增 POST /api/ai/match-analysis + GET /api/ai/skills 端点
-- Added `_match_analysis_stream` async generator in `app/controllers/ai_controller.py`
-  - Calls `PromptBuilder.build_skill_prompt(request)` to build skill-driven prompts
-  - Streams SSE events via `AIService.stream_chat(messages, lang=request.lang)`
-  - Error handling: skill file loading failures surfaced as error events, stream never breaks
-  - Always terminates with `data: [DONE]`
-- Added `POST /api/ai/match-analysis` route handler returning `StreamingResponse(text/event-stream)`
-  - Same SSE format as `/api/ai/chat`: thinking, answer, analysis, done, error events
-  - Same headers: Cache-Control, Connection, X-Accel-Buffering
-- Added `GET /api/ai/skills` route handler returning `ApiResponse[List[SkillInfo]]`
-  - Reads from in-memory `_SKILL_REGISTRY` via `PromptBuilder.get_available_skills()`
-  - Returns both `group_stage_predict` and `knockout_stage_predict` skills
-- Updated `.docs/agent-file-map.md`: ai_controller description reflects 3 endpoints
-- Updated `.docs/agent-api-reference.md`: added match-analysis and skills route docs, marked as implemented
 - Verified: both endpoints respond correctly (skills returns JSON, match-analysis returns SSE stream)
 - File size: `ai_controller.py` is 195 lines (well under 400-line warning threshold)
+
+## P5-04-AnalysisClient — 前端：比赛分析 SSE 客户端 + 类型定义
+- Created `football-web/lib/api/match-analysis.ts` (~209 lines)
+  - Defined `MatchAnalysisRequestBody`, `TeamBrief`, `MatchEventBrief`, `SkillInfo` interfaces matching backend schemas
+  - Exported `streamMatchAnalysis(body, callbacks, signal?)` — POST to /api/ai/match-analysis, reuses SSE parsing from ai-chat
+  - Exported `getAvailableSkills(lang?)` — GET /api/ai/skills, unwraps ApiResponse envelope
+- Modified `football-web/lib/api/ai-chat.ts`
+  - Exported `parseSSELines` (was module-private)
+  - Exported `parseSSEPayload` (was module-private)
+  - `StreamCallbacks` was already exported as interface
+- Build: `npm run build` passes clean
+- TypeScript: `npx tsc --noEmit` passes clean with zero errors

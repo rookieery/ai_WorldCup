@@ -78,7 +78,8 @@ football-web/
 │   │   ├── venues.ts         # getVenues(params)
 │   │   ├── cheers.ts         # getCheers(matchId)、postCheer(matchId, side)
 │   │   ├── stats.ts          # getScorers(params) — 射手榜数据
-│   │   └── ai-chat.ts        # streamChat() SSE 消费者（fetch+ReadableStream，POST /api/ai/chat）
+│   │   ├── ai-chat.ts        # streamChat() SSE 消费者（fetch+ReadableStream，POST /api/ai/chat）+ 导出 parseSSELines/parseSSEPayload/StreamCallbacks
+│   │   └── match-analysis.ts # streamMatchAnalysis() SSE 消费者（POST /api/ai/match-analysis）+ getAvailableSkills()（GET /api/ai/skills）
 │   ├── store/                # Zustand 全局状态存储
 │   │   ├── index.ts          # 统一导出所有存储
 │   │   ├── preferences.ts    # 用户偏好（语言、时区、视图模式、主题）— localStorage 持久化
