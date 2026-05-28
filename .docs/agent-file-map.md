@@ -177,7 +177,7 @@ football-server/
 │   │   └── websocket_manager.py # ConnectionManager：connect/disconnect、subscribe/unsubscribe、broadcast/broadcast_to_match、get_manager 单例
 │   ├── controllers/
 │   │   ├── __init__.py          # 统一导出所有路由器
-│   │   ├── ai_controller.py    # POST /api/ai/chat（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse text/event-stream）
+│   │   ├── ai_controller.py    # POST /api/ai/chat + POST /api/ai/match-analysis（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse）+ GET /api/ai/skills（SkillInfo 列表）
 │   │   ├── team_controller.py   # GET /api/teams、GET /api/teams/:code/stats、GET /api/teams/:code（使用 get_team_service DI）
 │   │   ├── venue_controller.py  # GET /api/venues（使用 get_venue_service DI）
 │   │   ├── match_controller.py  # GET /api/matches、/dates、/live、/:id（使用 get_match_service DI）

@@ -2,7 +2,7 @@
 
 > 后端 API 契约文档。完整规格见 `football-web/REQUIREMENTS.md` 第七节。
 
-## 状态：应用工厂 + DI + 工具层 + 种子数据 + 前端 API 客户端 + Redis 基础设施 + 助威服务 + 实时服务 + WebSocket + AI 服务 + AI 控制器 + 爬虫基础设施 + 实时爬虫 + 数据同步 + 调度器 已全部完成
+## 状态：应用工厂 + DI + 工具层 + 种子数据 + 前端 API 客户端 + Redis 基础设施 + 助威服务 + 实时服务 + WebSocket + AI 服务 + AI 控制器 + 爬虫基础设施 + 实时爬虫 + 数据同步 + 调度器 + AI 比赛分析端点 + Skill 列表端点 已全部完成
 
 后端脚手架、异常层级、中间件、ORM 模型、Pydantic Schema、Repository、Service、Controller、**应用工厂（main.py）**、**依赖注入（dependencies.py）**、**运行入口（run.py）**、**工具模块（utils/）**、**种子数据流水线**、**前端 API 客户端层**、**Redis 基础设施（app/redis/）**、**助威投票服务/控制器**、**实时服务**、**WebSocket 管理器 + 控制器**、**AI 服务（Deepseek API 客户端含 SSE 流式）**、**AI 控制器（POST /api/ai/chat SSE 端点）**、**爬虫基础设施（BaseScraper + FIFAScraper）**、**实时比分爬虫（LiveScoreScraper）**、**数据同步服务（DataSyncService）** 和 **调度器（ScraperScheduler）** 均已实现。
 `uvicorn app.main:app --reload` 可正常启动；`/docs` 显示 OpenAPI 所有注册路由。
@@ -139,6 +139,8 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 | `cheer_controller` | `POST /api/cheers/{match_id}` | Body：`{side: "home" \| "away"}`；通过 `X-Forwarded-For` 进行 IP 频率限制 |
 | `ws_controller` | `WS /ws/live` | WebSocket：初始载荷（connected + live_matches）、按 matchId subscribe/unsubscribe、30s ping 心跳、断开时自动清理 |
 | `ai_controller` | `POST /api/ai/chat` | Body：`ChatRequest`（`messages`、`context?`、`lang`）；SSE 流式响应；事件：`thinking`、`answer`、`analysis`、`done`、`error`；以 `data: [DONE]\n\n` 终止 |
+| `ai_controller` | `POST /api/ai/match-analysis` | Body：`MatchAnalysisRequest`（`match_id`、`stage`、`skill_id?`、`home_team`、`away_team`、`score?`、`status`、`events?`、`lang`）；SSE 流式响应，格式与 `/chat` 一致；使用 Skill 推理链构建 prompt |
+| `ai_controller` | `GET /api/ai/skills` | 返回 `ApiResponse<List<SkillInfo>>`；无数据库查询，从内存 `_SKILL_REGISTRY` 返回 |
 | `stats_controller` | `GET /api/stats/scorers` | `lang`（en/zh）、`limit`（1-100，默认 50） |
 
 > 依赖注入集中在 `app/dependencies.py`：
@@ -221,8 +223,8 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 │   └── POST /:matchId           # 提交球迷投票
 ├── /ai
 │   ├── POST /chat               # AI 聊天（SSE 流式）
-│   ├── POST /match-analysis     # AI 比赛分析（SSE 流式）— 待实现
-│   └── GET  /skills             # AI 分析 Skill 列表 — 待实现
+│   ├── POST /match-analysis     # AI 比赛分析（SSE 流式，Skill 推理链驱动）
+│   └── GET  /skills             # AI 分析 Skill 列表（从内存注册表返回）
 ├── /stats
 │   └── GET /scorers              # 射手榜
 └── /ws
@@ -276,7 +278,7 @@ interface BracketResponse {
 }
 ```
 
-### AI 比赛分析（SSE 流）— 待实现
+### AI 比赛分析（SSE 流）— 已实现
 
 ```
 POST /api/ai/match-analysis
