@@ -6,3 +6,10 @@ Started: Sat May 24 00:00:00     2026
 
 - FAB renders correctly in SSR output (verified via curl)
 - Uses existing Zustand `useAIChatStore` for state sharing between mobile/desktop views
+
+[P5-01-AnalysisSchemas] DONE - 2026-05-28
+- Added TeamBrief, MatchEventBrief, MatchAnalysisRequest, SkillInfo Pydantic models to app/schemas/ai_schema.py
+- Added field_validator for stage (group|R32|R16|QF|SF|3rd|F), status (upcoming|live|finished), lang (zh-CN|en-US), and team_side (home|away)
+- Updated app/schemas/__init__.py to export all new schemas
+- All validation tests passed (valid requests, invalid stage/lang/status rejection, optional fields, events)
+- Synced .docs/agent-file-map.md and .docs/agent-api-reference.md

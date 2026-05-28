@@ -219,7 +219,9 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 │   ├── GET /:matchId            # 比赛球迷投票数据
 │   └── POST /:matchId           # 提交球迷投票
 ├── /ai
-│   └── POST /chat               # AI 聊天（SSE 流式）
+│   ├── POST /chat               # AI 聊天（SSE 流式）
+│   ├── POST /match-analysis     # AI 比赛分析（SSE 流式）— 待实现
+│   └── GET  /skills             # AI 分析 Skill 列表 — 待实现
 ├── /stats
 │   └── GET /scorers              # 射手榜
 └── /ws
@@ -271,6 +273,32 @@ interface BracketResponse {
     }>
   }>
 }
+```
+
+### AI 比赛分析（SSE 流）— 待实现
+
+```
+POST /api/ai/match-analysis
+Body: MatchAnalysisRequest {
+    match_id: int (必填)
+    stage: str (必填, "group" | "R32" | "R16" | "QF" | "SF" | "3rd" | "F")
+    skill_id?: str (可选, 不传则根据 stage 自动推断)
+    home_team: TeamBrief { name, name_zh, code, flag }
+    away_team: TeamBrief { name, name_zh, code, flag }
+    home_score?: int | null
+    away_score?: int | null
+    status: str (必填, "upcoming" | "live" | "finished")
+    group_label?: str (A-L, 仅小组赛)
+    round?: str
+    match_day?: int
+    events?: Array<MatchEventBrief>
+    lang: str (必填, "zh-CN" | "en-US")
+}
+Response: SSE 流 (text/event-stream) — 与 /api/ai/chat 格式一致
+
+GET /api/ai/skills
+Response: ApiResponse<Array<SkillInfo>>
+    SkillInfo { skill_id, name, name_zh, description, description_zh, applicable_stages }
 ```
 
 ### AI 聊天（SSE 流）— 已实现
