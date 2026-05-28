@@ -58,6 +58,19 @@
 - Constructor: `LiveService(redis: Optional[Redis] = None)` — same pattern as CheerService
 - No DB dependency — pure Redis/in-memory state service
 
+### PromptBuilder
+- `build_system_prompt(lang)` → `list[dict]` — system prompt with tournament context and rules
+- `build_match_analysis_prompt(match_id, team1, team2, lang)` → `list[dict]` — group-stage analysis with 6-step reasoning chain
+- `build_knockout_prompt(match_id, team1, team2, lang)` → `list[dict]` — knockout analysis with 5-step reasoning chain
+- `build_chat_context(messages)` → `list[dict]` — convert ChatMessageItem list to OpenAI format
+- `resolve_skill_id(skill_id, stage)` → `str` — resolve effective skill_id from explicit override or stage; defaults to `"group_stage_predict"`
+- `get_available_skills()` → `list[SkillInfo]` — return metadata for all registered skills
+- `build_skill_prompt(request: MatchAnalysisRequest)` → `list[dict]` — skill-driven analysis: resolves skill, loads reasoning chain, formats match context, returns `[system_msg, user_msg]`
+- `_format_match_context(request)` → `str` — format match data (teams, score, stage, events) into human-readable context
+- `_SKILL_REGISTRY` — module-level dict mapping skill_id → `{loader, name, name_zh, description, description_zh, applicable_stages}`
+- Skill files loaded lazily from `skills/` directory at project root
+- All methods are static; no instance state required
+
 ### AIService
 - `stream_chat(messages, *, context, lang) -> AsyncGenerator[SSEEvent]` — calls Deepseek API (OpenAI-compatible `/chat/completions`), streams SSE, yields `SSEEvent` objects
 - Event types yielded: `thinking` (reasoning delta), `answer` (content delta), `analysis` (structured JSON when analysis keywords detected), `done`, `error`
