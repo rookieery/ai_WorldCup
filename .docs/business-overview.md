@@ -201,4 +201,11 @@ ws_schema.py
 - `skills/group_stage_predict.md` — 6 步推理（状态、H2H、战术、关键球员、主场优势、无形因素）
 - `skills/knockout_stage_predict.md` — 5 步推理（状态、H2H、淘汰赛心理、战术对位、X 因素）
 
-这些技能驱动后端 AI 服务（`POST /api/ai/chat`）。
+这些技能驱动后端 AI 服务（`POST /api/ai/chat`、`POST /api/ai/match-analysis`）。
+
+### AI 语言与格式控制
+
+Prompt 构建层 (`prompt_builder.py`) 通过 `_SYSTEM_FRAGMENTS` 双语系统提示实现语言一致性和输出格式规范化：
+
+- **语言强制**：`rules` 中包含显式语言指令（zh-CN: "思考过程和最终回答必须全部使用中文"；en-US: "reasoning and final answer must be in English"），确保 agent 思考和回答语种与项目选择一致。
+- **Markdown 格式**：`build_skill_prompt()` 的用户指令明确要求以 Markdown 格式输出（二级标题分段、加粗/列表展示关键数据），保证分析结果格式稳定可渲染。

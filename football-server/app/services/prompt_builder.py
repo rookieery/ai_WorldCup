@@ -106,6 +106,7 @@ _SYSTEM_FRAGMENTS: Dict[str, Dict[str, str]] = {
             "- 明确标注预测置信度（高/中/低）\n"
             "- 如涉及概率预测，给出具体数值\n"
             "- 在分析末尾附上免责声明：预测仅供参考，实际结果可能不同\n"
+            "- 你的思考过程和最终回答必须全部使用中文（简体）\n"
         ),
     },
     "en-US": {
@@ -139,6 +140,7 @@ _SYSTEM_FRAGMENTS: Dict[str, Dict[str, str]] = {
             "- Clearly state prediction confidence (HIGH / MEDIUM / LOW)\n"
             "- Include specific probability figures when predicting outcomes\n"
             "- Append a disclaimer at the end: predictions are for reference only\n"
+            "- Your reasoning and final answer must be in English\n"
         ),
     },
 }
@@ -434,14 +436,24 @@ class PromptBuilder:
 
         if lang == "zh-CN":
             instruction = (
-                "请根据以上比赛上下文，严格按照推理链中的步骤进行完整分析。"
-                "输出各步骤的详细推理过程，并在最后给出综合预测结论。"
+                "请根据以上比赛上下文，严格按照推理链中的步骤进行完整分析。\n"
+                "输出要求：\n"
+                "1. 使用 Markdown 格式输出完整的分析结果\n"
+                "2. 每个推理步骤使用二级标题（## Step N）\n"
+                "3. 综合预测结论使用独立的二级标题（## 综合预测）\n"
+                "4. 关键数据使用加粗或列表展示\n"
+                "5. 在末尾附上免责声明"
             )
         else:
             instruction = (
                 "Based on the match context above, follow the reasoning chain "
-                "steps strictly to produce a complete analysis. Output detailed "
-                "reasoning for each step, and conclude with a final prediction."
+                "steps strictly to produce a complete analysis.\n"
+                "Output requirements:\n"
+                "1. Use Markdown format for the entire analysis\n"
+                "2. Each reasoning step as a level-2 heading (## Step N)\n"
+                "3. Final prediction as a separate level-2 heading (## Final Prediction)\n"
+                "4. Key data presented in bold or bullet lists\n"
+                "5. Append a disclaimer at the end"
             )
 
         user_content = match_context + "\n\n" + instruction
