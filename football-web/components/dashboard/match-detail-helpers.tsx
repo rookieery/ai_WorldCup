@@ -281,7 +281,9 @@ export function dispatchMatchAnalysis(
   store.startStreaming()
 
   closeDialog()
-  openMobileCopilotSheet()
+  if (window.innerWidth < 1024) {
+    openMobileCopilotSheet()
+  }
 
   const controller = new AbortController()
   void streamMatchAnalysis(body, {

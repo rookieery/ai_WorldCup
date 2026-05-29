@@ -107,12 +107,12 @@
 ### `match-detail-helpers.tsx` — MatchDetailDialog 辅助组件 + 类型 + 分析调度
 - **导出类型**：`MatchDetailEvent`、`MatchDetailData`（场馆含 `name_zh`、`city_zh`、`country_zh` 字段）
 - **组件**：`EventsSection`（按半场分组的事件列表）、`StatRow`（双条统计）、`VenueInfoItem`（标签-值对）
-- **函数**：`dispatchMatchAnalysis(matchData, skillId, closeDialog)` — 共享分析流调度器（构造请求体、添加上下文消息、关闭弹窗、打开移动端抽屉、启动 SSE 流）
+- **函数**：`dispatchMatchAnalysis(matchData, skillId, closeDialog)` — 共享分析流调度器（构造请求体、添加上下文消息、关闭弹窗、仅移动端打开底部抽屉、启动 SSE 流）；桌面端分析直接在右侧面板展示
 - **内部**：`EventIcon`（事件类型图标）、`EventLabel`（事件类型 i18n 标签）
 - **行数**：~294
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
-- **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`
+- **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`、`streamGlow`（流式开始时短暂发光吸引注意力）
 - **子组件**：`MiniRadarChart`、`AnalysisCard`、`ThinkingIndicator`、`TypewriterText`、`ThinkingBlock`
 - **Markdown 渲染**：所有 AI 助手消息（历史消息、流式响应、思维块）通过 `MarkdownRenderer`（`react-markdown` + `remark-gfm`）渲染为富文本；用户消息保持纯文本
 - **特殊消息**：`analysis-context` 类型消息使用 Sparkles 图标 + 渐变边框气泡样式（from-cyan to-lime），与普通用户消息视觉区分
