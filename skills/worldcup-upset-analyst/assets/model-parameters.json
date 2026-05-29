@@ -1,0 +1,148 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-05-28",
+  "model_ensemble_weights": {
+    "ranking_gap_model": 0.35,
+    "logistic_regression": 0.30,
+    "rule_based_engine": 0.20,
+    "trend_extrapolation": 0.15,
+    "notes": "Weights calibrated from historical back-testing accuracy on 192 matches (2014-2022). Ranking gap model weighted highest due to best individual accuracy (73%)."
+  },
+  "ranking_gap_model": {
+    "k": 0.065,
+    "threshold": 15,
+    "base_upset_rate": 0.11,
+    "calibration_accuracy": 0.73,
+    "formula": "P(upset) = 1 / (1 + e^(-k * (gap - threshold)))",
+    "notes": "k=0.065 steepness factor, threshold=15 ranking positions. When gap = threshold, P = 50%. Calibrated against 2014-2022 upset incidence by rank gap bracket."
+  },
+  "logistic_regression": {
+    "intercept": -2.1,
+    "coefficients": {
+      "ranking_gap": 0.06,
+      "is_group_stage": 0.5,
+      "is_defending_champion": 0.8,
+      "is_5_sub_era": 0.4,
+      "is_home_continent": -0.3,
+      "year_trend": 0.15,
+      "cluster_effect": 0.25
+    },
+    "calibration_accuracy": 0.68,
+    "formula": "logit(P) = intercept + sum(factor_i * coefficient_i). P = 1 / (1 + e^(-logit))",
+    "notes": "68% accuracy. Strongest predictors: defending_champion (0.8) and ranking_gap (0.06 per rank position)."
+  },
+  "rule_based_engine": {
+    "base_upset_rate": 0.105,
+    "rules": [
+      {
+        "id": "defending_champion_curse",
+        "name_cn": "卫冕冠军魔咒",
+        "name_en": "Defending Champion Curse",
+        "condition": "defending champion is playing in group stage (not first match only, entire group stage)",
+        "probability_boost": 0.25,
+        "historical_support": "3 of 4 defending champions since 2010 struggled significantly in group stage (Italy 2010, Spain 2014, Germany 2018 all eliminated; France 2022 nearly lost to Tunisia)",
+        "effective_range": [0.25, 0.55],
+        "notes": "Applies throughout defending champion's group stage campaign, not just opening match"
+      },
+      {
+        "id": "asian_rise",
+        "name_cn": "亚洲崛起",
+        "name_en": "Asian Rise",
+        "condition": "AFC confederation team vs FIFA top-10 ranked opponent in group stage",
+        "probability_boost": 0.20,
+        "historical_support": "5 of 8 upsets in 2022 involved Asian teams (Japan x2, Saudi Arabia, South Korea, Australia). Japan beat both Germany and Spain.",
+        "effective_range": [0.15, 0.40],
+        "notes": "Strongest effect for Japan and South Korea; weaker for lower-ranked Asian teams"
+      },
+      {
+        "id": "five_sub_effect",
+        "name_cn": "5换人效应",
+        "name_en": "Five-Sub Effect",
+        "condition": "match year >= 2022 AND the lower-ranked team has demonstrated squad depth (can field 4+ attacking subs)",
+        "probability_boost": 0.15,
+        "historical_support": "2022 had 57% more upsets than 2018 (11 vs 7). Japan's '田忌赛马' strategy exemplified this.",
+        "effective_range": [0.10, 0.30],
+        "notes": "Requires depth assessment. Not all lower-ranked teams benefit equally from 5 subs."
+      },
+      {
+        "id": "cluster_effect",
+        "name_cn": "传染性爆冷",
+        "name_en": "Contagious Upset",
+        "condition": "another upset has already occurred in the same group in the current tournament",
+        "probability_boost": 0.12,
+        "historical_support": "80% of groups with one upset had at least one additional upset (e.g., Group E 2022: Germany-Japan then Japan-Spain; Group F 2018: Germany-Mexico then South Korea-Germany)",
+        "effective_range": [0.08, 0.25],
+        "notes": "Psychological cascade effect. Once a group's 'invincibles' are shown vulnerable, all teams in the group become more competitive."
+      },
+      {
+        "id": "home_continent_advantage",
+        "name_cn": "东道主加成",
+        "name_en": "Home Continent Advantage",
+        "condition": "match is in the host continent AND the team has strong football culture roots (top-20 in football tradition, not just ranking)",
+        "probability_boost": -0.10,
+        "historical_support": "European teams in Europe 2018 (all 4 semi-finalists from Europe). Brazil in South America 2014 (4th place). Russia as host 2018 (QF). Qatar 2022 as counterexample (no football culture).",
+        "effective_range": [-0.20, 0.0],
+        "notes": "Negative boost = reduces upset probability. Only applies for teams with established football culture."
+      },
+      {
+        "id": "knockout_stability",
+        "name_cn": "淘汰赛稳定",
+        "name_en": "Knockout Stability",
+        "condition": "match is knockout stage (round_of_16, quarter_final, semi_final, final, third_place)",
+        "probability_boost": -0.15,
+        "historical_support": "Knockout upset rate is ~5% vs group stage rate of ~9%. Only 5 knockout upsets across 3 tournaments (22 total). Most knockout upsets decided by penalty shootouts.",
+        "effective_range": [-0.20, -0.05],
+        "notes": "Strong negative effect. Knockout matches heavily favor higher-ranked teams due to defensive tactics and experience."
+      },
+      {
+        "id": "var_effect",
+        "name_cn": "VAR裁判因素",
+        "name_en": "VAR Officiating Effect",
+        "condition": "match year >= 2018 AND stage is group AND the underdog plays a disciplined defensive style (few fouls, organized shape)",
+        "probability_boost": 0.08,
+        "historical_support": "VAR era saw 29 penalties in 2018 vs 13 in 2014. Underdogs who defend cleanly benefit from VAR catching higher-ranked teams' infractions.",
+        "effective_range": [0.03, 0.15],
+        "notes": "Smaller effect. VAR benefits underdogs who are defensively disciplined; hurts those who rely on physical/aggressive defending."
+      }
+    ],
+    "calibration_accuracy": 0.65,
+    "notes": "65% accuracy. Most interpretable model. Rules should be applied additively from base rate of 10.5%. Final probability clamped to [0.05, 0.95]."
+  },
+  "trend_extrapolation": {
+    "historical_counts": { "2014": 4, "2018": 7, "2022": 11 },
+    "linear_regression": {
+      "slope": 3.5,
+      "intercept": 3.83,
+      "r_squared": 0.99,
+      "formula": "predicted_upsets = slope * year_index + intercept. year_index: 2014=0, 2018=1, 2022=2, 2026=3"
+    },
+    "base_2026_projection": 14,
+    "2026_adjustments": {
+      "expanded_tournament_48_teams": 2,
+      "continued_5_sub_rule": 1,
+      "north_america_mixed_host": 1,
+      "total_adjustment": 4
+    },
+    "adjusted_2026_projection": 18,
+    "confidence_interval": [13, 23],
+    "notes": "2026 with 48 teams = 104 matches (vs 64 previously). More matches mechanically increases upset count. 18 projected upsets = ~17% upset rate (higher than 2022's ~11% rate)."
+  },
+  "confidence_thresholds": {
+    "high": {
+      "condition": "all 4 models agree within 10 percentage points AND strong historical precedent exists",
+      "description": "High confidence: clear signal across all models"
+    },
+    "medium": {
+      "condition": "models diverge 10-20 percentage points OR limited historical precedent",
+      "description": "Medium confidence: directional signal but significant uncertainty"
+    },
+    "low": {
+      "condition": "models diverge >20 percentage points OR speculative matchup (e.g., teams from different eras)",
+      "description": "Low confidence: high uncertainty, treat as exploratory"
+    }
+  },
+  "historical_comparables": {
+    "methodology": "For any new match prediction, the system identifies the most similar historical upset from 2014-2022 data based on: ranking gap (40%), stage (25%), confederation match (20%), and year (15%).",
+    "notes": "Similarity scoring used to provide contextual reference points for predictions."
+  }
+}

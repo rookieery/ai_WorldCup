@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-05-28",
+  "notes": "Pre-tournament FIFA rankings. 2014: June 5 2014. 2018: June 7 2018. 2022: October 6 2022. 2026_estimated: approximate based on May 2026 rankings and projected changes.",
+  "rankings": {
+    "2014": {
+      "Spain": 1, "Germany": 2, "Brazil": 3, "Portugal": 4, "Argentina": 5,
+      "Switzerland": 6, "Uruguay": 7, "Colombia": 8, "Italy": 9, "England": 10,
+      "Belgium": 11, "Greece": 12, "United States": 13, "Chile": 14, "Netherlands": 15,
+      "France": 16, "Russia": 18, "Mexico": 19, "Croatia": 20, "Ivory Coast": 21,
+      "Bosnia and Herzegovina": 25, "Algeria": 25, "Ecuador": 28, "Honduras": 30,
+      "Costa Rica": 34, "Iran": 37, "Ghana": 38, "Nigeria": 44, "Japan": 47,
+      "Cameroon": 50, "South Korea": 55, "Australia": 59
+    },
+    "2018": {
+      "Germany": 1, "Brazil": 2, "Belgium": 3, "Portugal": 4, "Argentina": 5,
+      "Switzerland": 6, "France": 7, "Poland": 8, "Chile": 9, "Spain": 10,
+      "Peru": 11, "Denmark": 12, "England": 12, "Uruguay": 14, "Mexico": 15,
+      "Colombia": 16, "Netherlands": 17, "Wales": 18, "Italy": 19, "Croatia": 20,
+      "Tunisia": 21, "Iceland": 22, "Costa Rica": 23, "Sweden": 24, "United States": 25,
+      "Senegal": 27, "Serbia": 34, "Iran": 37, "Australia": 36, "Morocco": 41,
+      "Egypt": 45, "Nigeria": 48, "Japan": 61, "South Korea": 57, "Russia": 70,
+      "Saudi Arabia": 67, "Panama": 55
+    },
+    "2022": {
+      "Brazil": 1, "Belgium": 2, "Argentina": 3, "France": 4, "England": 5,
+      "Spain": 7, "Netherlands": 8, "Portugal": 9, "Denmark": 10, "Germany": 11,
+      "Croatia": 12, "Mexico": 13, "Uruguay": 14, "Switzerland": 15, "United States": 16,
+      "Senegal": 18, "Wales": 19, "Iran": 20, "Serbia": 21, "Morocco": 22,
+      "Japan": 24, "Poland": 26, "South Korea": 28, "Ecuador": 30, "Tunisia": 30,
+      "Cameroon": 41, "Ghana": 43, "Costa Rica": 44, "Australia": 38, "Canada": 53,
+      "Saudi Arabia": 51, "Qatar": 50
+    },
+    "2026_estimated": {
+      "notes": "Approximate rankings based on May 2026 trends. Subject to change before tournament.",
+      "Argentina": 3, "France": 2, "England": 4, "Spain": 7, "Brazil": 5,
+      "Portugal": 8, "Netherlands": 6, "Germany": 10, "Belgium": 9, "Croatia": 12,
+      "Uruguay": 14, "United States": 11, "Mexico": 15, "Japan": 18, "Morocco": 13,
+      "Senegal": 20, "Denmark": 16, "Switzerland": 17, "South Korea": 22,
+      "Australia": 25, "Canada": 35, "Ecuador": 28, "Serbia": 23, "Poland": 24,
+      "Iran": 21, "Wales": 27, "Nigeria": 30, "Cameroon": 34, "Ghana": 32,
+      "Saudi Arabia": 40, "Tunisia": 29, "Algeria": 33, "Ivory Coast": 31,
+      "Egypt": 36, "Mali": 38, "Burkina Faso": 42, "Costa Rica": 41,
+      "Panama": 45, "Jamaica": 48, "Honduras": 50, "New Zealand": 55,
+      "Fiji": 120, "Tahiti": 140
+    }
+  },
+  "confederation_map": {
+    "UEFA": ["Germany", "Spain", "France", "England", "Portugal", "Belgium", "Netherlands", "Switzerland", "Italy", "Croatia", "Denmark", "Sweden", "Poland", "Serbia", "Wales", "Iceland", "Russia", "Greece", "Bosnia and Herzegovina", "Scotland", "Norway", "Ukraine", "Austria", "Turkey", "Czech Republic"],
+    "CONMEBOL": ["Brazil", "Argentina", "Uruguay", "Colombia", "Chile", "Ecuador", "Peru", "Paraguay", "Venezuela", "Bolivia"],
+    "CONCACAF": ["United States", "Mexico", "Canada", "Costa Rica", "Panama", "Jamaica", "Honduras", "El Salvador", "Trinidad and Tobago"],
+    "AFC": ["Japan", "South Korea", "Australia", "Iran", "Saudi Arabia", "Qatar", "Iraq", "United Arab Emirates", "Oman", "China"],
+    "CAF": ["Morocco", "Senegal", "Nigeria", "Ghana", "Cameroon", "Tunisia", "Algeria", "Egypt", "Ivory Coast", "Mali", "Burkina Faso", "Congo DR", "South Africa"],
+    "OFC": ["New Zealand", "Fiji", "Tahiti", "Papua New Guinea", "Solomon Islands"]
+  }
+}
