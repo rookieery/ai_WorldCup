@@ -32,7 +32,7 @@ export interface TeamAnalysis {
 }
 
 export type MessageRole = "user" | "assistant"
-export type MessageType = "text" | "analysis"
+export type MessageType = "text" | "analysis" | "analysis-context"
 
 export interface Message {
   id: number

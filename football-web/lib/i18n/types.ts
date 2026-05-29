@@ -37,6 +37,41 @@ export interface LocaleMessages {
     noMatches: string
     today: string
     errorLoading: string
+    liveUpdates: string
+    disconnected: string
+  }
+  matchDetail: {
+    goal: string
+    yellowCard: string
+    redCard: string
+    substitution: string
+    var: string
+    groupStage: string
+    fanCheer: string
+    votes: string
+    matchEvents: string
+    noEvents: string
+    firstHalf: string
+    secondHalf: string
+    extraTime: string
+    matchStats: string
+    goals: string
+    yellowCards: string
+    redCards: string
+    venueInfo: string
+    venue: string
+    city: string
+    kickoff: string
+    capacity: string
+    loadError: string
+    aiAnalysis: string
+    selectSkill: string
+    autoDetect: string
+    groupAnalysis: string
+    knockoutAnalysis: string
+    analyzingMatch: string
+    analysisButton: string
+    analysisDesc: string
   }
   bracket: {
     knockoutStage: string
@@ -109,9 +144,56 @@ export interface LocaleMessages {
     viewDetail: string
     groupMatches: string
     backToGroups: string
+    backToTimeline: string
     noGroups: string
     errorLoading: string
     qualified: string
+  }
+  stats: {
+    title: string
+    subtitle: string
+    scorersTitle: string
+    rank: string
+    player: string
+    team: string
+    goals: string
+    assists: string
+    sortByGoals: string
+    sortByAssists: string
+    matchStats: string
+    noData: string
+    errorLoading: string
+    goldenBoot: string
+    topScorer: string
+    total: string
+  }
+  teamDetail: {
+    title: string
+    fifaRanking: string
+    confederation: string
+    group: string
+    worldCupAppearances: string
+    groupStageRecord: string
+    position: string
+    played: string
+    won: string
+    drawn: string
+    lost: string
+    goalsFor: string
+    goalsAgainst: string
+    goalDiff: string
+    points: string
+    finishedMatches: string
+    upcomingMatches: string
+    noFinishedMatches: string
+    noUpcomingMatches: string
+    vs: string
+    home: string
+    away: string
+    ft: string
+    scheduled: string
+    errorLoading: string
+    backToTeams: string
   }
   common: {
     weekdayMon: string

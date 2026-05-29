@@ -13,6 +13,17 @@ import { AICopilotPanel } from "@/components/dashboard/ai-copilot-panel"
 import { useTranslation } from "@/lib/i18n"
 import { useAIChatStore } from "@/lib/store"
 
+// ── External sheet trigger ────────────────────────────────────────────────────
+// Allows parent components (e.g. match-cards-grid) to open the mobile sheet
+// without drilling refs through the component tree.
+
+let _openSheetFn: (() => void) | null = null
+
+/** Programmatically open the mobile AI Copilot bottom sheet. */
+export function openMobileCopilotSheet(): void {
+  _openSheetFn?.()
+}
+
 /**
  * Mobile AI Copilot — FAB entry + bottom-sheet drawer.
  *
@@ -22,6 +33,10 @@ import { useAIChatStore } from "@/lib/store"
 export function AICopilotMobile() {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
+
+  // Register the external trigger on every render so it always
+  // points to the latest `setOpen` closure.
+  _openSheetFn = () => setOpen(true)
 
   // Show a subtle pulse on the FAB while the AI is streaming
   const isStreaming = useAIChatStore((s) => s.isStreaming)

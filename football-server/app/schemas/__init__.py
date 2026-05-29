@@ -29,6 +29,10 @@ from app.schemas.ai_schema import (
     ChatRequest,
     SSEEvent,
     TeamAnalysisResponse,
+    TeamBrief,
+    MatchEventBrief,
+    MatchAnalysisRequest,
+    SkillInfo,
 )
 from app.schemas.ws_schema import WSEventType, WSMessage
 from app.schemas.scraper_schema import (
@@ -69,6 +73,10 @@ __all__ = [
     "ChatRequest",
     "SSEEvent",
     "TeamAnalysisResponse",
+    "TeamBrief",
+    "MatchEventBrief",
+    "MatchAnalysisRequest",
+    "SkillInfo",
     # ws
     "WSEventType",
     "WSMessage",

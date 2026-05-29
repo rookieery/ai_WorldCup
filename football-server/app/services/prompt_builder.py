@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Literal
 
-from app.schemas.ai_schema import ChatMessageItem
+from app.schemas.ai_schema import ChatMessageItem, MatchAnalysisRequest, SkillInfo
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,30 @@ def _get_knockout_stage_skill() -> str:
     if _KNOCKOUT_STAGE_SKILL is None:
         _KNOCKOUT_STAGE_SKILL = _read_skill("knockout_stage_predict.md")
     return _KNOCKOUT_STAGE_SKILL
+
+
+# ---------------------------------------------------------------------------
+# Skill registry
+# ---------------------------------------------------------------------------
+
+_SKILL_REGISTRY: Dict[str, Dict] = {
+    "group_stage_predict": {
+        "loader": _get_group_stage_skill,
+        "name": "Group Stage Prediction",
+        "name_zh": "小组赛单场预测",
+        "description": "6-step reasoning chain for group stage matches",
+        "description_zh": "基于6步推理链的小组赛单场胜负预测",
+        "applicable_stages": ["group"],
+    },
+    "knockout_stage_predict": {
+        "loader": _get_knockout_stage_skill,
+        "name": "Knockout Stage Prediction",
+        "name_zh": "淘汰赛单场预测",
+        "description": "5-step reasoning chain for knockout matches",
+        "description_zh": "基于5步推理链的淘汰赛单场预测（含加时/点球）",
+        "applicable_stages": ["R32", "R16", "QF", "SF", "3rd", "F"],
+    },
+}
 
 
 # ---------------------------------------------------------------------------
@@ -294,3 +318,238 @@ class PromptBuilder:
             Messages formatted as ``[{"role": ..., "content": ...}, ...]``.
         """
         return [{"role": msg.role, "content": msg.content} for msg in messages]
+
+    # ── Skill registry helpers ────────────────────────────────────────────
+
+    @staticmethod
+    def resolve_skill_id(skill_id: str | None, stage: str) -> str:
+        """Resolve the effective skill_id from an explicit override or stage.
+
+        Parameters
+        ----------
+        skill_id:
+            Explicit skill identifier, or ``None`` to auto-detect.
+        stage:
+            Tournament stage (e.g. ``"group"``, ``"R16"``).
+
+        Returns
+        -------
+        str
+            The resolved skill_id (defaults to ``"group_stage_predict"``).
+        """
+        if skill_id is not None:
+            return skill_id
+
+        for sid, meta in _SKILL_REGISTRY.items():
+            if stage in meta.get("applicable_stages", []):
+                return sid
+
+        return "group_stage_predict"
+
+    @staticmethod
+    def get_available_skills() -> List[SkillInfo]:
+        """Return metadata for all registered skills.
+
+        Returns
+        -------
+        list[SkillInfo]
+            Skill descriptors suitable for API responses.
+        """
+        return [
+            SkillInfo(
+                skill_id=sid,
+                name=meta["name"],
+                name_zh=meta["name_zh"],
+                description=meta["description"],
+                description_zh=meta["description_zh"],
+                applicable_stages=meta["applicable_stages"],
+            )
+            for sid, meta in _SKILL_REGISTRY.items()
+        ]
+
+    @staticmethod
+    def build_skill_prompt(
+        request: MatchAnalysisRequest,
+    ) -> List[Dict[str, str]]:
+        """Build an OpenAI-compatible message list for a skill-driven analysis.
+
+        The pipeline is:
+        1. Resolve the target skill via :meth:`resolve_skill_id`.
+        2. Load the skill reasoning-chain content from the registry.
+        3. Build a system prompt combining the AI role and the reasoning chain.
+        4. Build a user message with the formatted match context and an
+           analysis instruction.
+        5. Return ``[system_message, user_message]``.
+
+        Parameters
+        ----------
+        request:
+            The structured match analysis request.
+
+        Returns
+        -------
+        list[dict]
+            Two-element message list ready for the chat API.
+        """
+        resolved_id = PromptBuilder.resolve_skill_id(request.skill_id, request.stage)
+        meta = _SKILL_REGISTRY.get(resolved_id)
+
+        # Load skill reasoning chain; fall back to empty string on failure
+        skill_content = ""
+        if meta is not None:
+            try:
+                skill_content = meta["loader"]()
+            except Exception:
+                logger.exception("Failed to load skill: %s", resolved_id)
+        else:
+            logger.warning("Unknown skill_id resolved: %s", resolved_id)
+
+        lang = request.lang if request.lang in ("zh-CN", "en-US") else "zh-CN"
+        fragments = _SYSTEM_FRAGMENTS.get(lang, _SYSTEM_FRAGMENTS["zh-CN"])
+
+        # System message: role + tournament context + skill reasoning chain
+        current_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        system_parts = [
+            fragments["role_description"],
+            "",
+            fragments["tournament_context"],
+            "",
+            fragments["date_notice"].format(current_date=current_date),
+        ]
+        if skill_content:
+            system_parts.extend([
+                "",
+                "---",
+                "推理链 / Reasoning Chain:" if lang == "zh-CN" else "---\nReasoning Chain:",
+                "",
+                skill_content,
+            ])
+        system_parts.append("")
+        system_parts.append(fragments["rules"])
+
+        system_content = "\n".join(system_parts)
+
+        # User message: formatted match context + analysis instruction
+        match_context = PromptBuilder._format_match_context(request)
+
+        if lang == "zh-CN":
+            instruction = (
+                "请根据以上比赛上下文，严格按照推理链中的步骤进行完整分析。"
+                "输出各步骤的详细推理过程，并在最后给出综合预测结论。"
+            )
+        else:
+            instruction = (
+                "Based on the match context above, follow the reasoning chain "
+                "steps strictly to produce a complete analysis. Output detailed "
+                "reasoning for each step, and conclude with a final prediction."
+            )
+
+        user_content = match_context + "\n\n" + instruction
+
+        return [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": user_content},
+        ]
+
+    @staticmethod
+    def _format_match_context(request: MatchAnalysisRequest) -> str:
+        """Format structured match data into a human-readable analysis context.
+
+        Parameters
+        ----------
+        request:
+            The match analysis request with team, score, and event data.
+
+        Returns
+        -------
+        str
+            Formatted context text suitable for inclusion in an AI prompt.
+        """
+        lang = request.lang if request.lang in ("zh-CN", "en-US") else "zh-CN"
+        home = request.home_team
+        away = request.away_team
+
+        if lang == "zh-CN":
+            parts: list[str] = [
+                f"=== 比赛上下文 ===",
+                f"比赛ID: {request.match_id}",
+                f"主队: {home.flag} {home.name_zh} ({home.name}) [{home.code}]",
+                f"客队: {away.flag} {away.name_zh} ({away.name}) [{away.code}]",
+            ]
+
+            # Stage context
+            if request.stage == "group":
+                stage_label = "小组赛"
+                if request.group_label:
+                    stage_label += f" {request.group_label}组"
+                if request.round:
+                    stage_label += f" 第{request.round}轮"
+                parts.append(f"阶段: {stage_label}")
+            else:
+                round_label = request.round or request.stage
+                parts.append(f"阶段: 淘汰赛 - {round_label}")
+
+            # Match status
+            status_map: dict[str, str] = {
+                "upcoming": "未开始",
+                "live": "进行中",
+                "finished": "已结束",
+            }
+            parts.append(f"状态: {status_map.get(request.status, request.status)}")
+
+            # Score
+            if request.home_score is not None and request.away_score is not None:
+                parts.append(
+                    f"比分: {home.name_zh} {request.home_score} - "
+                    f"{request.away_score} {away.name_zh}"
+                )
+
+            # Match day
+            if request.match_day is not None:
+                parts.append(f"比赛日: 第{request.match_day}天")
+        else:
+            parts = [
+                "=== Match Context ===",
+                f"Match ID: {request.match_id}",
+                f"Home: {home.flag} {home.name} [{home.code}]",
+                f"Away: {away.flag} {away.name} [{away.code}]",
+            ]
+
+            if request.stage == "group":
+                stage_label = "Group Stage"
+                if request.group_label:
+                    stage_label += f" Group {request.group_label}"
+                if request.round:
+                    stage_label += f" Round {request.round}"
+                parts.append(f"Stage: {stage_label}")
+            else:
+                round_label = request.round or request.stage
+                parts.append(f"Stage: Knockout - {round_label}")
+
+            parts.append(f"Status: {request.status}")
+
+            if request.home_score is not None and request.away_score is not None:
+                parts.append(
+                    f"Score: {home.name} {request.home_score} - "
+                    f"{request.away_score} {away.name}"
+                )
+
+            if request.match_day is not None:
+                parts.append(f"Match Day: {request.match_day}")
+
+        # Events timeline
+        if request.events:
+            event_lines: list[str] = []
+            for evt in request.events:
+                team = home if evt.team_side == "home" else away
+                side_label = team.name_zh if lang == "zh-CN" else team.name
+                player = f" ({evt.player_name})" if evt.player_name else ""
+                event_lines.append(
+                    f"  [{evt.minute}'] {evt.event_type} - {side_label}{player}"
+                )
+
+            header = "比赛事件:" if lang == "zh-CN" else "Match Events:"
+            parts.append(header)
+            parts.extend(event_lines)
+
+        return "\n".join(parts)

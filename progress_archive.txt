@@ -632,3 +632,112 @@ Date: Sun May 25 2026
    - Updated `lib/i18n/types.ts` LocaleMessages interface with new keys
 ### Verification
 - `npm run build` passes cleanly (Next.js 16.2.6 Turbopack, 0 errors)
+- FAB renders correctly in SSR output (verified via curl)
+- Uses existing Zustand `useAIChatStore` for state sharing between mobile/desktop views
+[P5-01-AnalysisSchemas] DONE - 2026-05-28
+- Added TeamBrief, MatchEventBrief, MatchAnalysisRequest, SkillInfo Pydantic models to app/schemas/ai_schema.py
+- Added field_validator for stage (group|R32|R16|QF|SF|3rd|F), status (upcoming|live|finished), lang (zh-CN|en-US), and team_side (home|away)
+- Updated app/schemas/__init__.py to export all new schemas
+- All validation tests passed (valid requests, invalid stage/lang/status rejection, optional fields, events)
+- Synced .docs/agent-file-map.md and .docs/agent-api-reference.md
+## P5-02-SkillRegistry — completed (2026-05-28)
+- Added `_SKILL_REGISTRY` module-level dict in `prompt_builder.py` mapping skill_id → {loader, name, name_zh, description, description_zh, applicable_stages}
+- Implemented `PromptBuilder.resolve_skill_id(skill_id, stage)` — auto-detects skill from stage, defaults to "group_stage_predict"
+- Implemented `PromptBuilder.build_skill_prompt(request)` — resolves skill, loads reasoning chain, formats match context, returns [system_msg, user_msg]
+- Implemented `PromptBuilder._format_match_context(request)` — formats teams/score/stage/events into human-readable context (bilingual)
+- Implemented `PromptBuilder.get_available_skills()` — returns list[SkillInfo] from registry
+- All methods tested: resolve_skill_id, get_available_skills, build_skill_prompt (zh-CN group, en-US knockout, with events)
+- File: prompt_builder.py = 555 lines (within 600 limit)
+- Updated .docs/agent-file-map.md, .docs/agent-api-reference.md, app/services/AGENTS.md
+- All validation tests passed (valid requests, invalid stage/lang/status rejection, optional fields, events)
+- Synced .docs/agent-file-map.md and .docs/agent-api-reference.md
+## P5-03-AnalysisEndpoints — 后端：新增 POST /api/ai/match-analysis + GET /api/ai/skills 端点
+- Added `_match_analysis_stream` async generator in `app/controllers/ai_controller.py`
+  - Calls `PromptBuilder.build_skill_prompt(request)` to build skill-driven prompts
+  - Streams SSE events via `AIService.stream_chat(messages, lang=request.lang)`
+  - Error handling: skill file loading failures surfaced as error events, stream never breaks
+  - Always terminates with `data: [DONE]`
+- Added `POST /api/ai/match-analysis` route handler returning `StreamingResponse(text/event-stream)`
+  - Same SSE format as `/api/ai/chat`: thinking, answer, analysis, done, error events
+  - Same headers: Cache-Control, Connection, X-Accel-Buffering
+- Added `GET /api/ai/skills` route handler returning `ApiResponse[List[SkillInfo]]`
+  - Reads from in-memory `_SKILL_REGISTRY` via `PromptBuilder.get_available_skills()`
+  - Returns both `group_stage_predict` and `knockout_stage_predict` skills
+- Updated `.docs/agent-file-map.md`: ai_controller description reflects 3 endpoints
+- Updated `.docs/agent-api-reference.md`: added match-analysis and skills route docs, marked as implemented
+- Verified: both endpoints respond correctly (skills returns JSON, match-analysis returns SSE stream)
+- File size: `ai_controller.py` is 195 lines (well under 400-line warning threshold)
+## P5-04-AnalysisClient — 前端：比赛分析 SSE 客户端 + 类型定义
+- Created `football-web/lib/api/match-analysis.ts` (~209 lines)
+  - Defined `MatchAnalysisRequestBody`, `TeamBrief`, `MatchEventBrief`, `SkillInfo` interfaces matching backend schemas
+  - Exported `streamMatchAnalysis(body, callbacks, signal?)` — POST to /api/ai/match-analysis, reuses SSE parsing from ai-chat
+  - Exported `getAvailableSkills(lang?)` — GET /api/ai/skills, unwraps ApiResponse envelope
+- Modified `football-web/lib/api/ai-chat.ts`
+  - Exported `parseSSELines` (was module-private)
+  - Exported `parseSSEPayload` (was module-private)
+  - `StreamCallbacks` was already exported as interface
+- Build: `npm run build` passes clean
+- TypeScript: `npx tsc --noEmit` passes clean with zero errors
+## P5-05-StoreExtension — 前端：AI Chat Store 扩展分析上下文消息
+- **Date**: 2026-05-28
+- **Changes**:
+  1. `football-web/lib/types/ai.ts`: Added `'analysis-context'` to `MessageType` union
+  2. `football-web/lib/store/ai-chat.ts`:
+     - Added `addAnalysisContextMessage(matchSummary)` action — creates a `role: 'user'`, `type: 'analysis-context'` message with locale-aware prefix (`[AI 分析]` / `[AI Analysis]`)
+     - Added exported `recommendedSkillId(stage)` utility — returns `'group_stage_predict'` for group stage, `'knockout_stage_predict'` otherwise
+     - Added cross-store import of `usePreferencesStore` from `./preferences` for language detection
+  3. `football-web/lib/store/index.ts`: Re-exports `recommendedSkillId` from `ai-chat`
+  4. `football-web/lib/store/AGENTS.md`: Updated description to reflect new features
+- **Verification**: `npx tsc --noEmit` and `npm run build` both pass clean
+- **Status**: ✅ passes
+---
+## P5-06-AnalysisButton — 前端：MatchDetailDialog 新增 AI 分析按钮 + Skill 选择器
+**Date**: 2026-05-28
+**Branch**: feature/ai-match-analysis
+### Changes
+1. **`football-web/components/dashboard/match-detail-dialog.tsx`** (480→555 lines, under 600 limit):
+   - Added `onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void` prop
+   - Added internal state: `selectedSkillId`, `availableSkills`, `isStreaming` (from AI chat store)
+   - Added `useEffect` to fetch available skills on mount via `getAvailableSkills(lang)`
+   - Added "AI Analysis" section below venue info with:
+     - Skill selector dropdown (shadcn Select) with "Auto-detect" default + skill list from API
+     - Gradient "Deep AI Analysis" button with Sparkles icon, disabled during streaming
+     - Loading state: Loader2 spinner + "Analyzing match..." text
+     - Description text below button
+   - Uses `recommendedSkillId()` for auto-detect logic (group→group_stage_predict, else→knockout_stage_predict)
+2. **`football-web/lib/i18n/locales/zh-CN.json`** + **`en-US.json`**:
+   - Added 8 new i18n keys under `matchDetail`: `aiAnalysis`, `selectSkill`, `autoDetect`, `groupAnalysis`, `knockoutAnalysis`, `analyzingMatch`, `analysisButton`, `analysisDesc`
+### Verification
+- `npx tsc --noEmit` — clean
+- `npm run build` — passes
+- File total: 555 lines (under 600 hard limit)
+- **Status**: ✅ passes
+## P5-07-Integration — 前端：回调接线 + 移动端适配 + i18n 国际化
+- **Date**: 2026-05-28
+- **Branch**: feature/ai-match-analysis
+- **Status**: ✅ passes
+### Changes
+1. **`match-cards-grid.tsx`** (~551 lines):
+   - Added `handleAnalyzeMatch` callback using shared `dispatchMatchAnalysis()` helper
+   - Passes `onAnalyzeMatch` to `MatchDetailDialog`
+   - Analysis button triggers: context message → SSE stream → dialog close → mobile sheet open
+2. **`tournament-bracket.tsx`** (~437 lines):
+   - Same `handleAnalyzeMatch` wiring via shared `dispatchMatchAnalysis()` helper
+   - Passes `onAnalyzeMatch` to `MatchDetailDialog`
+3. **`match-detail-helpers.tsx`** (~294 lines):
+   - Added `dispatchMatchAnalysis(matchData, skillId, closeDialog)` shared analysis dispatch function
+   - Constructs `MatchAnalysisRequestBody`, adds context message, starts streaming, closes dialog, opens mobile sheet, fires SSE
+   - Shared by both match-cards-grid and tournament-bracket to avoid duplication
+4. **`ai-copilot-mobile.tsx`** (~94 lines):
+   - Exported `openMobileCopilotSheet()` function for external trigger
+   - Module-level `_openSheetFn` registers component's `setOpen(true)` on each render
+5. **`ai-copilot-panel.tsx`** (~596 lines):
+   - `analysis-context` messages rendered with special styling: Sparkles icon + gradient border (from-cyan to-lime)
+   - Visually distinct from regular user messages
+6. **`lib/i18n/types.ts`** (~223 lines):
+   - Added missing `matchDetail` namespace (28 keys), `stats` namespace (17 keys), `teamDetail` namespace (27 keys)
+   - Added `match.liveUpdates` and `match.disconnected` keys
+   - Added `groups.backToTimeline` key
+### Verification
+- `npx tsc --noEmit` — clean, zero errors
+- `npm run build` — passes

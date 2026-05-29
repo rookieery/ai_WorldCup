@@ -43,13 +43,13 @@ football-web/
 │   ├── dashboard/
 │   │   ├── header.tsx        # 顶栏（语言切换 + 时区 + 视图模式切换，支持 i18n）
 │   │   ├── date-timeline.tsx # 横向日期选择器（6月11日–7月19日）
-│   │   ├── match-cards-grid.tsx  # 比赛卡片列表 + 球迷助威 + 实时 WS 比分/助威集成 + 在线连接指示器 + 点击打开比赛详情弹窗
-│   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息）— 赛博朋克毛玻璃风格
-│   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem、EventIcon/Label）
+│   │   ├── match-cards-grid.tsx  # 比赛卡片列表 + 球迷助威 + 实时 WS 比分/助威集成 + 在线连接指示器 + 点击打开比赛详情弹窗 + AI 分析回调接线
+│   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息、AI 分析按钮）— 赛博朋克毛玻璃风格
+│   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem）+ dispatchMatchAnalysis 共享分析流调度器
 │   │   ├── group-standings.tsx   # 小组积分榜网格（12 组 A-L，出线区高亮）
 │   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动）+ 点击打开比赛详情
-│   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、Zustand 存储）
-│   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）
+│   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、analysis-context 消息特殊渲染、Zustand 存储）
+│   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）+ 导出 openMobileCopilotSheet() 供外部触发
 │   ├── stats/
 │   │   ├── scorers-table.tsx    # 射手榜表格（按进球/助攻排序，赛博朋克毛玻璃卡片，前3名高亮）
 │   │   └── match-stats-card.tsx # 比赛统计卡片（未开/进行中/已完计数 + 进度条）
@@ -66,7 +66,7 @@ football-web/
 │   │   ├── index.ts          # 统一导出（I18nProvider、useI18n、useTranslation、类型）
 │   │   ├── context.tsx       # I18nProvider（React Context：locale 状态、t() 函数、localStorage 持久化 + API 语言同步 + locale 切换时存储缓存失效）
 │   │   ├── use-translation.ts # useTranslation Hook — 轻量封装，暴露 { t, locale, setLocale }
-│   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构）
+│   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构，含 matchDetail/stats/teamDetail 命名空间）
 │   │   └── locales/
 │   │       ├── zh-CN.json    # 中文翻译（155+ 键，11 个命名空间）
 │   │       └── en-US.json    # 英文翻译（155+ 键，与 zh-CN 完全对齐）
@@ -78,19 +78,20 @@ football-web/
 │   │   ├── venues.ts         # getVenues(params)
 │   │   ├── cheers.ts         # getCheers(matchId)、postCheer(matchId, side)
 │   │   ├── stats.ts          # getScorers(params) — 射手榜数据
-│   │   └── ai-chat.ts        # streamChat() SSE 消费者（fetch+ReadableStream，POST /api/ai/chat）
+│   │   ├── ai-chat.ts        # streamChat() SSE 消费者（fetch+ReadableStream，POST /api/ai/chat）+ 导出 parseSSELines/parseSSEPayload/StreamCallbacks
+│   │   └── match-analysis.ts # streamMatchAnalysis() SSE 消费者（POST /api/ai/match-analysis）+ getAvailableSkills()（GET /api/ai/skills）
 │   ├── store/                # Zustand 全局状态存储
 │   │   ├── index.ts          # 统一导出所有存储
 │   │   ├── preferences.ts    # 用户偏好（语言、时区、视图模式、主题）— localStorage 持久化
 │   │   ├── matches.ts        # 比赛数据缓存（按日期 + 实时比赛）含 fetch 动作 + TTL + locale 切换时 invalidateAll()
 │   │   ├── live.ts           # 实时 WebSocket 状态（比分、助威更新、WS 连接状态）— 由 websocket.ts 事件驱动
-│   │   └── ai-chat.ts        # AI 聊天消息 + 流式状态（内容缓冲区、分析载荷）
+│   │   └── ai-chat.ts        # AI 聊天消息 + 流式状态（内容缓冲区、分析载荷）+ addAnalysisContextMessage + recommendedSkillId
 │   └── types/                # 共享 TypeScript 类型定义
 │       ├── index.ts          # 统一导出
 │       ├── team.ts           # Team、TeamDetail、TeamStanding
 │       ├── match.ts          # Match、MatchStatus、MatchEvent、MatchQueryParams、CityIcon、MatchDateInfo
 │       ├── bracket.ts        # BracketTeam、BracketMatch、BracketRound、BracketTree、BracketRoundName
-│       ├── ai.ts             # Message、TeamAnalysis、TeamStats、SSEEvent
+│       ├── ai.ts             # Message（含 analysis-context 类型）、TeamAnalysis、TeamStats、SSEEvent
 │       └── api.ts            # ApiResponse<T>、PaginatedResponse<T>、ApiError
 ├── styles/
 │   └── globals.css           # 重复/备选全局样式（需确认是否仍需要）
@@ -165,7 +166,7 @@ football-server/
 │   ├── services/
 │   │   ├── __init__.py          # 统一导出所有 Service 类
 │   │   ├── ai_service.py        # AIService：Deepseek API 客户端（stream_chat AsyncGenerator → SSEEvent 对象：thinking/answer/analysis/done/error，30s 超时，优雅错误处理）
-│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context（双语 zh-CN/en-US，读取 skills/ markdown）
+│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、_format_match_context（_SKILL_REGISTRY 注册表，双语 zh-CN/en-US，读取 skills/ markdown）
 │   │   ├── team_service.py      # TeamService：get_all_teams、get_team_by_code、get_teams_by_group、get_team_stats（支持 lang + timezone）
 │   │   ├── venue_service.py     # VenueService：get_all_venues（分页）
 │   │   ├── match_service.py     # MatchService：get_match_dates、get_matches（多条件筛选 + Redis 实时合并）、get_match_by_id（含事件 + Redis 实时）、get_live_matches（Redis 实时合并）；使用共享 app.utils.timezone
@@ -177,7 +178,7 @@ football-server/
 │   │   └── websocket_manager.py # ConnectionManager：connect/disconnect、subscribe/unsubscribe、broadcast/broadcast_to_match、get_manager 单例
 │   ├── controllers/
 │   │   ├── __init__.py          # 统一导出所有路由器
-│   │   ├── ai_controller.py    # POST /api/ai/chat（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse text/event-stream）
+│   │   ├── ai_controller.py    # POST /api/ai/chat + POST /api/ai/match-analysis（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse）+ GET /api/ai/skills（SkillInfo 列表）
 │   │   ├── team_controller.py   # GET /api/teams、GET /api/teams/:code/stats、GET /api/teams/:code（使用 get_team_service DI）
 │   │   ├── venue_controller.py  # GET /api/venues（使用 get_venue_service DI）
 │   │   ├── match_controller.py  # GET /api/matches、/dates、/live、/:id（使用 get_match_service DI）
@@ -204,7 +205,7 @@ football-server/
 │       ├── bracket_schema.py    # BracketTeam/Match/Round/TreeResponse VO（支持 TBD）
 │       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
 │       ├── stats_schema.py      # ScorerItem VO（排名、球员名、球队信息、进球、助攻）
-│       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO
+│       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO + MatchAnalysisRequest DTO + TeamBrief/MatchEventBrief/SkillInfo VO
 │       ├── ws_schema.py         # WSEventType 枚举 + WSMessage VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VO 用于爬虫数据验证
 ├── scraping/                    # 网页爬虫基础设施

@@ -61,7 +61,15 @@
     "city": "城市",
     "kickoff": "开球时间",
     "capacity": "容纳人数",
-    "loadError": "加载比赛详情失败"
+    "loadError": "加载比赛详情失败",
+    "aiAnalysis": "AI 分析",
+    "selectSkill": "选择分析策略",
+    "autoDetect": "自动判断",
+    "groupAnalysis": "小组赛分析",
+    "knockoutAnalysis": "淘汰赛分析",
+    "analyzingMatch": "正在分析比赛...",
+    "analysisButton": "AI 深度分析",
+    "analysisDesc": "使用 AI 推理链进行比赛预测"
   },
   "bracket": {
     "knockoutStage": "淘汰赛阶段",

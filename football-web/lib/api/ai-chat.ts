@@ -46,8 +46,10 @@ const CHAT_ENDPOINT = `${BASE_URL}/api/ai/chat`
 /**
  * Parse raw SSE text chunks into individual `data:` lines.
  * Handles partial chunks and multi-line payloads.
+ *
+ * Exported for reuse by other SSE consumers (e.g. match-analysis).
  */
-function parseSSELines(
+export function parseSSELines(
   buffer: string,
   chunk: string,
 ): { remaining: string; lines: string[] } {
@@ -71,8 +73,10 @@ function parseSSELines(
 /**
  * Parse a single `data:` payload string into an `SSEEvent` or `null`.
  * Recognises the `[DONE]` sentinel and malformed payloads.
+ *
+ * Exported for reuse by other SSE consumers (e.g. match-analysis).
  */
-function parseSSEPayload(raw: string): SSEEvent | "done" | null {
+export function parseSSEPayload(raw: string): SSEEvent | "done" | null {
   if (raw === "[DONE]") return "done"
 
   try {

@@ -58,14 +58,15 @@
 - **实时数据**：订阅 `useLiveStore` 获取实时比分补丁、助威更新和 WS 状态；挂载时启动 `wsClient`
 - **助威投票**：`MatchCard.handleCheer()` 调用 `postCheer(matchId, side)` API，乐观更新 + 失败回滚
 - **比赛详情**：卡片点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（传递 matchId）
+- **AI 分析**：通过 `dispatchMatchAnalysis()` 共享辅助函数接线分析流 — 构造请求体、添加上下文消息、关闭弹窗、打开移动端抽屉、启动 SSE 流
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段徽章；小组赛显示"小组 A"格式
 - **功能**：实时比分显示（WS 补丁数据）、焦点战徽章、活动条、球迷助威计（悬停展开）、WS 连接指示器、加载/错误/空状态
 - **队伍名称层级**：仅显示一行完整国名（text-lg font-bold），无球队代码，确保对阵双方一目了然
 - **API 映射**：`apiMatchToUi()` 将后端 `MatchApiItem` → 前端 `Match` 类型（保留原始 `stage` + `groupLabel` 用于 i18n）
 - **i18n**：使用 `useTranslation()` 管理所有可见文本含阶段标签
 - **导入类型**：`Match`、`CityIcon` 来自 `@/lib/types`，`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`
-- **依赖**：`cn` 工具、`lucide-react` 图标（含 Wifi、WifiOff）、`getMatches` + `apiMatchToUi` API、`postCheer` 助威 API、`useLiveStore`、`wsClient`、`MatchDetailDialog`
-- **行数**：~540
+- **依赖**：`cn` 工具、`lucide-react` 图标（含 Wifi、WifiOff）、`getMatches` + `apiMatchToUi` API、`postCheer` 助威 API、`useLiveStore`、`wsClient`、`MatchDetailDialog`、`dispatchMatchAnalysis`
+- **行数**：~551
 
 ### `group-standings.tsx` — `GroupStandings`
 - **数据**：通过 `getGroups()` 从 API 获取 — 全部 12 组（A-L）积分榜
@@ -90,44 +91,49 @@
 - **行数**：~430
 
 ### `match-detail-dialog.tsx` — `MatchDetailDialog`
-- **Props**：`matchId`（number | null）、`open`、`onOpenChange`
+- **Props**：`matchId`（number | null）、`open`、`onOpenChange`、`onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void`
 - **数据**：弹窗打开时通过 `getMatchById(id)` + `getCheers(matchId)` 从 API 获取
 - **实时数据**：合并来自 `useLiveStore` 的实时比分补丁和助威更新
-- **区块**：比赛头部（队伍+比分+状态）、实时活动条、球迷助威计、比赛事件时间线（上半场/下半场+加时）、比赛统计（进球/红黄牌）、场馆信息
+- **AI 分析**：组件挂载时通过 `getAvailableSkills(lang)` 获取可用 Skill 列表；Skill 选择器默认"自动判断"（`recommendedSkillId()`），用户可手动选择；流式状态通过 `useAIChatStore.isStreaming` 读取
+- **区块**：比赛头部（队伍+比分+状态）、实时活动条、球迷助威计、比赛事件时间线（上半场/下半场+加时）、比赛统计（进球/红黄牌）、场馆信息、AI 分析区域（Skill 选择器 + 深度分析按钮）
 - **队伍名称层级**：与 MatchCard 一致，仅显示一行完整国名（text-lg font-bold）
 - **阶段标签**：使用 `stageKey()` + `t()` 实现本地化阶段徽章（小组赛/32强等）
-- **赛博朋克风格**：毛玻璃卡片、发光效果、渐变叠加、实时比分的 LED 显示
+- **赛博朋克风格**：毛玻璃卡片、发光效果、渐变叠加、实时比分的 LED 显示、AI 按钮渐变（from-cyan to-emerald）
 - **i18n**：使用 `useTranslation()` 管理所有可见文本（matchDetail + timeline 命名空间）
-- **导入类型**：`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`，`MatchDetailData` 来自 `match-detail-helpers`
-- **依赖**：Dialog、ScrollArea、Separator（shadcn）、`cn`、`lucide-react` 图标、`getMatchById` API、`getCheers` 助威 API、`useLiveStore`、辅助组件
-- **行数**：~480
+- **导入类型**：`LiveScorePatch`、`CheerUpdate` 来自 `@/lib/store`，`MatchDetailData` 来自 `match-detail-helpers`，`SkillInfo` 来自 `@/lib/api/match-analysis`
+- **依赖**：Dialog、ScrollArea、Separator、Select（shadcn）、`cn`、`lucide-react` 图标（含 Sparkles）、`getMatchById` API、`getCheers` 助威 API、`useLiveStore`、`useAIChatStore`、`usePreferencesStore`、`getAvailableSkills`、`recommendedSkillId`、辅助组件
+- **行数**：~555
 
-### `match-detail-helpers.tsx` — MatchDetailDialog 辅助组件 + 类型
+### `match-detail-helpers.tsx` — MatchDetailDialog 辅助组件 + 类型 + 分析调度
 - **导出类型**：`MatchDetailEvent`、`MatchDetailData`（场馆含 `name_zh`、`city_zh`、`country_zh` 字段）
 - **组件**：`EventsSection`（按半场分组的事件列表）、`StatRow`（双条统计）、`VenueInfoItem`（标签-值对）
+- **函数**：`dispatchMatchAnalysis(matchData, skillId, closeDialog)` — 共享分析流调度器（构造请求体、添加上下文消息、关闭弹窗、仅移动端打开底部抽屉、启动 SSE 流）；桌面端分析直接在右侧面板展示
 - **内部**：`EventIcon`（事件类型图标）、`EventLabel`（事件类型 i18n 标签）
-- **行数**：~218
+- **行数**：~294
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
-- **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`
+- **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`、`streamGlow`（流式开始时短暂发光吸引注意力）
 - **子组件**：`MiniRadarChart`、`AnalysisCard`、`ThinkingIndicator`、`TypewriterText`、`ThinkingBlock`
 - **Markdown 渲染**：所有 AI 助手消息（历史消息、流式响应、思维块）通过 `MarkdownRenderer`（`react-markdown` + `remark-gfm`）渲染为富文本；用户消息保持纯文本
+- **特殊消息**：`analysis-context` 类型消息使用 Sparkles 图标 + 渐变边框气泡样式（from-cyan to-lime），与普通用户消息视觉区分
 - **数据**：通过 `streamChat()` 来自 `@/lib/api/ai-chat` 的真实 SSE 流式；store 管理消息
 - **AI 集成**：通过 fetch+ReadableStream SSE 消费者 POST 到 `/api/ai/chat`；打字机光标效果；可折叠思维块；错误 + 免责声明状态
 - **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子（跟随 `language` 变化自动重置，仅限无用户消息时）、AbortController 支持
 - **i18n**：所有文本通过 `t()`（ai 命名空间）
 - **导入类型**：`TeamAnalysis`、`TeamStats` 来自 `@/lib/types`；`ChatMessageItem` 来自 `@/lib/api/ai-chat`
 - **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`、`MarkdownRenderer`
-- **行数**：~585
+- **行数**：~596
 
 ### `ai-copilot-mobile.tsx` — `AICopilotMobile`
+- **导出函数**：`openMobileCopilotSheet()` — 供外部组件调用以程序化打开移动端底部抽屉（无需 ref 钻取）
 - **状态**：本地 `open`（Sheet 可见性），从 `useAIChatStore` 读取 `isStreaming`
 - **组件**：FAB（固定右下角，`lg:hidden`）+ Sheet（底部抽屉，`h-[88vh]`）封装 `AICopilotPanel`
 - **功能**：带流式脉冲指示器的 FAB、可访问的 Sheet 含 sr-only 头部、赛博朋克主题渐变 FAB 按钮
+- **外部触发**：模块级 `_openSheetFn` 注册 `setOpen(true)`，供 `dispatchMatchAnalysis()` 等外部函数调用
 - **i18n**：使用 `t()` 管理 FAB 标签、Sheet 标题/描述（ai 命名空间：fabLabel、sheetTitle、sheetDescription）
 - **依赖**：`Sheet`/`SheetContent`/`SheetHeader`/`SheetTitle`/`SheetDescription`（shadcn）、`AICopilotPanel`、`MessageCircle`/`Sparkles`（lucide-react）、`useAIChatStore`、`useTranslation`
 - **可见性**：仅在 `lg` 断点以下渲染（FAB 使用 `lg:hidden` class）
-- **行数**：~79
+- **行数**：~94
 
 ## 共享组件
 
@@ -189,8 +195,8 @@
 |----------|------|------|
 | `header` | 8 | 标题、副标题、时区/视图标签、语言标签（langZh/langEn） |
 | `timeline` | 8 | 阶段标签（小组赛/R32/R16/QF/SF/季军赛/决赛/休息日） |
-| `match` | 12 | 比赛卡片标签（实时/焦点战/完赛/助威等） |
-| `matchDetail` | 18 | 比赛详情弹窗标签（事件、统计、场馆、助威） |
+| `match` | 14 | 比赛卡片标签（实时/焦点战/完赛/助威/liveUpdates/disconnected 等） |
+| `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
 | `bracket` | 16 | 淘汰赛对阵图标签（6 轮、fromGroup、待定、状态） |
 | `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |
 | `footer` | 4 | 页脚状态栏标签 |
@@ -230,6 +236,7 @@ function MyComponent() {
 | `venues.ts` | `getVenues(params)` | `GET /api/venues` |
 | `cheers.ts` | `getCheers(matchId)`、`postCheer(matchId, side)` | `GET /api/cheers/:matchId`、`POST /api/cheers/:matchId` |
 | `ai-chat.ts` | `streamChat(messages, context, lang, callbacks, signal?)` | `POST /api/ai/chat`（SSE 流式，通过 fetch+ReadableStream） |
+| `match-analysis.ts` | `streamMatchAnalysis(body, callbacks, signal?)`、`getAvailableSkills(lang?)` | `POST /api/ai/match-analysis`（SSE 流式）、`GET /api/ai/skills` |
 
 **使用方式**：
 ```typescript
@@ -249,7 +256,7 @@ const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
 | `lib/types/team.ts` | `Team`、`TeamDetail`、`TeamStanding` | 球队基础结构、API 详情、小组积分行 |
 | `lib/types/match.ts` | `Match`、`MatchStatus`、`CityIcon`、`MatchEvent`、`MatchEventType`、`MatchQueryParams` | 比赛卡片数据、事件时间线、API 查询过滤 |
 | `lib/types/bracket.ts` | `BracketTeam`、`BracketMatch`、`BracketRound`、`BracketTree`、`BracketRoundName`、`BracketMatchStatus` | 淘汰赛对阵树（R32→F） |
-| `lib/types/ai.ts` | `Message`、`MessageRole`、`MessageType`、`TeamAnalysis`、`TeamAnalysisSide`（含可选 `code`）、`TeamStats`、`SSEEvent`、`SSEEventType` | AI 聊天消息、分析载荷、SSE 流式 |
+| `lib/types/ai.ts` | `Message`、`MessageRole`、`MessageType`（含 `analysis-context`）、`TeamAnalysis`、`TeamAnalysisSide`（含可选 `code`）、`TeamStats`、`SSEEvent`、`SSEEventType` | AI 聊天消息、分析载荷、SSE 流式 |
 | `lib/types/api.ts` | `ApiResponse<T>`、`PaginatedResponse<T>`、`ApiError` | 标准 API 信封类型 |
 
 ## 状态管理（`lib/store/`）— Zustand
@@ -265,7 +272,7 @@ const result = await getMatches({ date: "2026-06-14", page: 1, pageSize: 20 })
 | `usePreferencesStore` | `preferences.ts` | 用户设置：语言、时区、视图模式、主题（localStorage 持久化） |
 | `useMatchesStore` | `matches.ts` | 按日期索引的比赛数据缓存 + 实时比赛，含 TTL 的 fetch 动作 |
 | `useLiveStore` | `live.ts` | 实时 WebSocket 状态：连接状态、比分补丁、助威更新 |
-| `useAIChatStore` | `ai-chat.ts` | AI 聊天消息、流式缓冲区、待处理分析载荷 |
+| `useAIChatStore` | `ai-chat.ts` | AI 聊天消息、流式缓冲区、待处理分析载荷、分析上下文消息（addAnalysisContextMessage）、推荐技能 ID（recommendedSkillId） |
 
 ### 使用方式
 ```typescript
