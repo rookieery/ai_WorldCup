@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-05-28",
+  "primary_definition": {
+    "label": "ranking_based_upset",
+    "description": "A match where the lower-ranked team wins or draws against a higher-ranked opponent with specified gap thresholds",
+    "criteria": [
+      "lower_ranked_wins AND rank_gap >= 10",
+      "lower_ranked_draws AND rank_gap >= 25 AND higher_ranked in top_15"
+    ],
+    "notes": "Pre-tournament FIFA rankings used as baseline. 'rank_gap' = lower_rank - higher_rank (positive when underdog is lower-ranked)."
+  },
+  "magnitude_classification": {
+    "minor": { "label": "Minor upset", "rank_gap_range": [10, 19], "description": "Lower-ranked team wins with moderate ranking gap" },
+    "moderate": { "label": "Moderate upset", "rank_gap_range": [20, 34], "description": "Clear ranking disparity overcome" },
+    "major": { "label": "Major upset", "rank_gap_range": [35, 49], "description": "Significant ranking gap, highly unexpected" },
+    "historic": { "label": "Historic upset", "rank_gap_range": [50, 999], "description": "One of the biggest upsets in World Cup history" }
+  },
+  "sub_types": {
+    "giant_killing": {
+      "criteria": "rank_gap >= 30 AND lower_ranked_wins",
+      "count_2014_2022": 4,
+      "description": "Small football nation defeats a traditional powerhouse"
+    },
+    "group_surprise": {
+      "criteria": "stage = group AND is_upset = true",
+      "count_2014_2022": 17,
+      "description": "Upset occurring in group stage play"
+    },
+    "knockout_shock": {
+      "criteria": "stage != group AND is_upset = true",
+      "count_2014_2022": 5,
+      "description": "Upset occurring in knockout round"
+    },
+    "defending_champion_collapse": {
+      "criteria": "is_defending_champion = true AND stage = group AND is_upset_against = true",
+      "count_2014_2022": 5,
+      "description": "Defending champion loses in group stage"
+    },
+    "asian_rise": {
+      "criteria": "lower_ranked_confederation = AFC AND higher_ranked_rank <= 10 AND is_upset = true",
+      "count_2014_2022": 5,
+      "description": "Asian team defeats a top-10 ranked opponent"
+    },
+    "african_breakthrough": {
+      "criteria": "lower_ranked_confederation = CAF AND higher_ranked_rank <= 10 AND is_upset = true",
+      "count_2014_2022": 2,
+      "description": "African team defeats a top-10 opponent or reaches unprecedented stage"
+    }
+  },
+  "historical_counts": {
+    "by_tournament": {
+      "2014": { "total": 4, "group": 4, "knockout": 0 },
+      "2018": { "total": 7, "group": 5, "knockout": 2 },
+      "2022": { "total": 11, "group": 8, "knockout": 3 }
+    },
+    "total_2014_2022": 22,
+    "total_matches_analyzed": 192
+  },
+  "rate_by_stage": {
+    "group": { "rate": 0.088, "matches": 192, "upsets": 17 },
+    "round_of_16": { "rate": 0.062, "matches": 48, "upsets": 3 },
+    "quarter_final": { "rate": 0.042, "matches": 24, "upsets": 1 },
+    "semi_final": { "rate": 0.0, "matches": 12, "upsets": 0 },
+    "final": { "rate": 0.0, "matches": 6, "upsets": 0 }
+  },
+  "defending_champions": {
+    "2014": { "team": "Spain", "pre_tournament_rank": 1, "group_stage_result": "eliminated", "losses_to": ["Netherlands(15)", "Chile(14)"] },
+    "2018": { "team": "Germany", "pre_tournament_rank": 1, "group_stage_result": "eliminated", "losses_to": ["Mexico(15)", "South Korea(57)"] },
+    "2022": { "team": "France", "pre_tournament_rank": 4, "group_stage_result": "advanced", "losses_to": ["Tunisia(30)"] }
+  }
+}
