@@ -9,13 +9,13 @@
 - **状态**：`timezone`、`viewMode`、`selectedDate`（均为 `useState`）、`agentPanelWidth`（AI 侧边栏宽度，`useRef` + `useCallback` 实现拖拽缩放）
 - **布局**：Header → 主区域（时间线|对阵图）+ AI 侧边栏（可拖拽分割线缩放，min=340px，max=33.33vw）→ Footer
 - **Props 流向**：状态直接传递给子组件
-- **功能**：时间线视图中的小组赛快捷入口（Trophy 图标 → `/groups`）；移动端 AI 助手（`AICopilotMobile`）含 FAB + 底部抽屉 Sheet；桌面端 AI 侧边栏支持拖拽分割线调整宽度
+- **功能**：时间线视图中的小组赛快捷入口（Trophy 图标 → `/groups`）；移动端 AI 助手（`AICopilotMobile`）含 FAB + 底部抽屉 Sheet；桌面端 AI 侧边栏支持拖拽分割线调整宽度；对阵图视图内嵌 GroupTeamList 小组球队侧边栏
 
 ### `app/bracket/page.tsx` — `BracketPage`
 - **类型**：客户端组件（`"use client"`）
-- **布局**：Header → TournamentBracket → Footer（全宽，无侧边栏）
+- **布局**：Header → TournamentBracket → Footer（TournamentBracket 内部含 GroupTeamList 侧边栏）
 - **封装**：`I18nProvider` 用于独立页面的 i18n 上下文
-- **功能**：通过 `/bracket` 访问的全屏对阵图视图
+- **功能**：通过 `/bracket` 访问的全屏对阵图视图，GroupTeamList 内嵌于 TournamentBracket
 
 ### `app/teams/[code]/page.tsx` — `TeamDetailPage`
 - **类型**：客户端组件（`"use client"`）
@@ -68,6 +68,15 @@
 - **依赖**：`cn` 工具、`lucide-react` 图标（含 Wifi、WifiOff）、`getMatches` + `apiMatchToUi` API、`postCheer` 助威 API、`useLiveStore`、`wsClient`、`MatchDetailDialog`、`dispatchMatchAnalysis`
 - **行数**：~551
 
+### `group-team-list.tsx` — `GroupTeamList`
+- **数据**：通过 `getGroups()` 从 API 获取 — 全部 12 组（A-L）球队列表
+- **子组件**：`GroupMiniCard`（每组迷你卡片：组名 + 4 支队伍国旗+名称）、`GroupSkeleton`（12 组加载骨架屏）
+- **功能**：2 列紧凑网格展示 12 组、可折叠/展开侧边栏（w-[220px] ↔ w-10）、桌面端专属（`hidden md:flex`）；加载期间始终显示骨架屏占位，API 失败才隐藏
+- **UI**：毛玻璃卡片 + 颜色编码组标题（A-L 循环：lime/cyan/magenta/gold）、小组国旗使用 `TeamFlag` 组件
+- **i18n**：locale 感知球队名（zh-CN → name_zh）；使用 `bracket.groupTeams`、`bracket.expandGroups`、`bracket.collapseGroups` 键
+- **依赖**：`cn` 工具、`lucide-react` 图标（Users、ChevronRight、ChevronLeft）、`getGroups` API、`TeamFlag` 组件
+- **行数**：~155
+
 ### `group-standings.tsx` — `GroupStandings`
 - **数据**：通过 `getGroups()` 从 API 获取 — 全部 12 组（A-L）积分榜
 - **子组件**：`GroupCard`（每组积分卡片）
@@ -79,16 +88,16 @@
 
 ### `tournament-bracket.tsx` — `TournamentBracket`
 - **数据**：通过 `getBracket()` 从 API 获取 — 完整 BracketTree（R32→R16→QF→SF→3rd→F）
-- **子组件**：`BracketCard`、`TeamRow`、`DesktopBracket`、`MobileBracket`、`HalfBracket`/`HalfDivider`/`SfToFinalConnector`/`FinalSection`（来自 `bracket-halves.tsx`）
+- **子组件**：`BracketCard`、`TeamRow`、`DesktopBracket`、`MobileBracket`、`HalfBracket`/`HalfDivider`/`SfToFinalConnector`/`FinalSection`（来自 `bracket-halves.tsx`）、`GroupTeamList`（小组球队右侧边栏）
 - **比赛详情**：BracketCard 点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（parseInt 从 string match.id）
-- **UI**：桌面端双行半区布局（上半区 + 分隔线 + 下半区）+ 决赛/季军赛连接器；移动端垂直堆叠
+- **UI**：桌面端双行半区布局（上半区 + 分隔线 + 下半区）+ 决赛/季军赛连接器 + 右侧 GroupTeamList 侧边栏；移动端垂直堆叠
 - **功能**：API 数据获取含加载/错误/重试、`splitByHalf()` 将每轮比赛拆分为上半区/下半区、TBD 球队显示小组排名标签（如 A1、B2）、赢家金色高亮、LIVE 脉冲、季军赛+决赛单独渲染
-- **响应式**：`hidden md:block` 用于 DesktopBracket，`md:hidden` 用于 MobileBracket
+- **响应式**：桌面端 `hidden md:flex` 水平布局（bracket + GroupTeamList 侧边栏），移动端 `md:hidden` 垂直堆叠
 - **颜色**：全部使用语义化主题变量（text-gold、text-accent、bg-primary/20 等）
 - **文本**：全部通过 `t()` 国际化（含 `bracket.upperHalf`、`bracket.lowerHalf` 新增键）
 - **导入类型**：`BracketMatch`、`BracketTeam`、`BracketRoundName`、`BracketTree` 来自 `@/lib/types`
-- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Zap、Medal、Loader2、AlertCircle）、`getBracket` API、`useTranslation` i18n、`MatchDetailDialog`、`bracket-halves` 子组件
-- **行数**：~310
+- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Zap、Medal、Loader2、AlertCircle）、`getBracket` API、`useTranslation` i18n、`MatchDetailDialog`、`bracket-halves` 子组件、`GroupTeamList`
+- **行数**：~435
 
 ### `bracket-halves.tsx` — 对阵图半区布局子组件
 - **导出组件**：`HalfBracket`（单半区渲染：标签 + 各轮卡片 + SVG 连接线）、`HalfDivider`（上下半区分隔线）、`SfToFinalConnector`（半决赛到决赛 SVG 连接）、`FinalSection`（决赛+季军赛区域）
@@ -204,7 +213,7 @@
 | `timeline` | 8 | 阶段标签（小组赛/R32/R16/QF/SF/季军赛/决赛/休息日） |
 | `match` | 14 | 比赛卡片标签（实时/焦点战/完赛/助威/liveUpdates/disconnected 等） |
 | `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
-| `bracket` | 17 | 淘汰赛对阵图标签（6 轮、待定、状态、上半区、下半区） |
+| `bracket` | 20 | 淘汰赛对阵图标签（6 轮、待定、状态、上半区、下半区、小组球队列表） |
 | `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |
 | `footer` | 4 | 页脚状态栏标签 |
 | `groups` | 18 | 小组积分榜标签（标题、表格列、导航、状态） |

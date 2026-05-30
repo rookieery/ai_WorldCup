@@ -90,6 +90,9 @@ export interface LocaleMessages {
     tbd: string
     bestThird: string
     errorLoading: string
+    groupTeams: string
+    expandGroups: string
+    collapseGroups: string
   }
   ai: {
     copilotTitle: string

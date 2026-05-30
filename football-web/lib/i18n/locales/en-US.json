@@ -91,7 +91,10 @@
     "lowerHalf": "Lower Half",
     "upperHalfShort": "UPPER",
     "lowerHalfShort": "LOWER",
-    "errorLoading": "Failed to load bracket data"
+    "errorLoading": "Failed to load bracket data",
+    "groupTeams": "Group Teams",
+    "expandGroups": "Expand group list",
+    "collapseGroups": "Collapse group list"
   },
   "ai": {
     "copilotTitle": "World Cup AI Copilot",

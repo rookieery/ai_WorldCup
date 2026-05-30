@@ -22,6 +22,7 @@ import {
   SfToFinalConnector,
   FinalSection,
 } from "@/components/dashboard/bracket-halves"
+import { GroupTeamList } from "@/components/dashboard/group-team-list"
 
 // ── Round config ──────────────────────────────────────────────────────────────
 
@@ -394,9 +395,12 @@ export function TournamentBracket() {
         <p className="text-xs text-muted-foreground mt-1">{t("bracket.roadToGlory")}</p>
       </div>
 
-      {/* Desktop bracket */}
-      <div className="flex-1 overflow-hidden hidden md:block">
-        <DesktopBracket data={data} onMatchClick={(id) => { setDetailMatchId(id); setDetailOpen(true) }} />
+      {/* Desktop bracket + group sidebar */}
+      <div className="flex-1 overflow-hidden hidden md:flex">
+        <div className="flex-1 overflow-hidden">
+          <DesktopBracket data={data} onMatchClick={(id) => { setDetailMatchId(id); setDetailOpen(true) }} />
+        </div>
+        <GroupTeamList />
       </div>
 
       {/* Mobile bracket */}

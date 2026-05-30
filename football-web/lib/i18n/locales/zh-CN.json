@@ -91,7 +91,10 @@
     "lowerHalf": "下半区",
     "upperHalfShort": "上半",
     "lowerHalfShort": "下半",
-    "errorLoading": "加载对阵图数据失败"
+    "errorLoading": "加载对阵图数据失败",
+    "groupTeams": "小组球队",
+    "expandGroups": "展开小组列表",
+    "collapseGroups": "收起小组列表"
   },
   "ai": {
     "copilotTitle": "世界杯 AI 助手",
