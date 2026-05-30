@@ -114,7 +114,7 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 | `LiveService` | `update_match_status(match_id, status)`、`update_score(match_id, home_score, away_score)`、`update_activity(match_id, level)`、`get_live_matches()`、`get_match_live_data(match_id)`、`apply_sync_data(match_id, *, home_score?, away_score?, status?, activity_level?, events?)` | Redis HASH 实时状态（`live:match:{id}` 含 `status`/`home_score`/`away_score`/`activity` 字段）；内存降级；状态/比分变化时的缓存失效标记；MatchService 通过 `_merge_live_data_batch()` 自动合并 Redis 实时数据到查询结果；**状态变化时广播 WebSocket 事件**（MATCH_START/MATCH_END/SCORE_UPDATE/ACTIVITY_UPDATE/BRACKET_UPDATE）；`apply_sync_data()` 是为 DataSyncService 设计的批量更新，单次 Redis 写+读周期 |
 | `ConnectionManager` | `connect(websocket, client_id)`、`disconnect(client_id)`、`subscribe(client_id, match_id)`、`unsubscribe(client_id, match_id)`、`broadcast(event_type, data)`、`broadcast_to_match(match_id, event_type, data)`、`get_active_count()` | 通过 `get_manager()` 的模块级单例；进程内活跃 WebSocket 连接注册表；asyncio.Lock 保护状态；自动移除断开连接；支持按比赛订阅频道 |
 | `AIService` | `stream_chat(messages, *, context, lang) -> AsyncGenerator[SSEEvent]`、`close()` | Deepseek API 客户端（OpenAI 兼容 `/chat/completions`，model=`deepseek-v4-pro`）；产出 `SSEEvent` 对象：`thinking`（推理增量）、`answer`（内容增量）、`analysis`（检测到分析关键词时的结构化 JSON）、`done`、`error`；使用 `httpx.AsyncClient` 懒初始化；30s 超时；优雅错误处理（速率限制 429、超时、通用错误 → 错误事件，永不抛出）；无 DB 依赖；配置来自 `settings.DEEPSEEK_API_KEY` / `settings.DEEPSEEK_BASE_URL` |
-| `PromptBuilder` | `build_system_prompt(lang)`、`build_match_analysis_prompt(match_id, team1, team2, lang)`、`build_knockout_prompt(match_id, team1, team2, lang)`、`build_chat_context(messages)`、`resolve_skill_id(skill_id, stage)`、`get_available_skills()`、`build_skill_prompt(request: MatchAnalysisRequest)` | AI 提示词构建器；`_SKILL_REGISTRY` 模块级字典映射 skill_id → {loader, name, name_zh, description, description_zh, applicable_stages}；`resolve_skill_id` 从显式指定或 stage 自动推断 skill_id（默认 `group_stage_predict`）；`build_skill_prompt` 加载推理链 + 格式化比赛上下文 → `[system_msg, user_msg]`；`get_available_skills` 返回 `list[SkillInfo]`；所有方法为 static；无实例状态 |
+| `PromptBuilder` | `build_system_prompt(lang)`、`build_match_analysis_prompt(match_id, team1, team2, lang)`、`build_knockout_prompt(match_id, team1, team2, lang)`、`build_chat_context(messages)`、`resolve_skill_id(skill_id, stage)`、`get_available_skills()`、`build_skill_prompt(request: MatchAnalysisRequest)`、`build_championship_prompt(request: ChampionshipAnalysisRequest)` | AI 提示词构建器；`_SKILL_REGISTRY` 模块级字典映射 3 个 skill_id（group_stage_predict、knockout_stage_predict、championship_predict）；`build_championship_prompt` 加载冠亚军策略文件 + 蒙特卡洛模拟指令 → `[system_msg, user_msg]`；提示词常量抽取至 `app/services/prompts/` 子模块（system_prompts.py、championship_prompts.py）；所有方法为 static；无实例状态 |
 | `StatsService` | `get_scorers(lang, limit)` | 从 MatchEventRepository 聚合进球事件，丰富球队信息；返回射手字典列表（rank、player_name、team_code、team_name、team_name_zh、team_flag、goals、assists）；语言感知（提升 name_zh） |
 
 ## 控制器层
@@ -140,7 +140,8 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 | `ws_controller` | `WS /ws/live` | WebSocket：初始载荷（connected + live_matches）、按 matchId subscribe/unsubscribe、30s ping 心跳、断开时自动清理 |
 | `ai_controller` | `POST /api/ai/chat` | Body：`ChatRequest`（`messages`、`context?`、`lang`）；SSE 流式响应；事件：`thinking`、`answer`、`analysis`、`done`、`error`；以 `data: [DONE]\n\n` 终止 |
 | `ai_controller` | `POST /api/ai/match-analysis` | Body：`MatchAnalysisRequest`（`match_id`、`stage`、`skill_id?`、`home_team`、`away_team`、`score?`、`status`、`events?`、`lang`）；SSE 流式响应，格式与 `/chat` 一致；使用 Skill 推理链构建 prompt |
-| `ai_controller` | `GET /api/ai/skills` | 返回 `ApiResponse<List<SkillInfo>>`；无数据库查询，从内存 `_SKILL_REGISTRY` 返回 |
+| `ai_controller` | `POST /api/ai/championship-analysis` | Body：`ChampionshipAnalysisRequest`（`skill_id?`、`lang`）；SSE 流式响应；加载冠亚军预测策略（蒙特卡洛模拟 2000 次推演），输出 TOP 20 决赛场景及概率 |
+| `ai_controller` | `GET /api/ai/skills` | 返回 `ApiResponse<List<SkillInfo>>`；无数据库查询，从内存 `_SKILL_REGISTRY` 返回；含 3 个 Skill：group_stage_predict、knockout_stage_predict、championship_predict |
 | `stats_controller` | `GET /api/stats/scorers` | `lang`（en/zh）、`limit`（1-100，默认 50） |
 
 > 依赖注入集中在 `app/dependencies.py`：
@@ -222,9 +223,10 @@ WebSocket：`app/services/websocket_manager.py` + `app/controllers/ws_controller
 │   ├── GET /:matchId            # 比赛球迷投票数据
 │   └── POST /:matchId           # 提交球迷投票
 ├── /ai
-│   ├── POST /chat               # AI 聊天（SSE 流式）
-│   ├── POST /match-analysis     # AI 比赛分析（SSE 流式，Skill 推理链驱动）
-│   └── GET  /skills             # AI 分析 Skill 列表（从内存注册表返回）
+│   ├── POST /chat                    # AI 聊天（SSE 流式）
+│   ├── POST /match-analysis          # AI 比赛分析（SSE 流式，Skill 推理链驱动）
+│   ├── POST /championship-analysis   # AI 冠亚军预测（SSE 流式，蒙特卡洛模拟）
+│   └── GET  /skills                  # AI 分析 Skill 列表（从内存注册表返回）
 ├── /stats
 │   └── GET /scorers              # 射手榜
 └── /ws
@@ -302,6 +304,20 @@ Response: SSE 流 (text/event-stream) — 与 /api/ai/chat 格式一致
 GET /api/ai/skills
 Response: ApiResponse<Array<SkillInfo>>
     SkillInfo { skill_id, name, name_zh, description, description_zh, applicable_stages }
+```
+
+### AI 冠亚军预测（SSE 流）— 已实现
+
+```
+POST /api/ai/championship-analysis
+Body: ChampionshipAnalysisRequest {
+    skill_id?: str (可选, 默认 "championship_predict")
+    lang: str (必填, "zh-CN" | "en-US")
+}
+Response: SSE 流 (text/event-stream) — 与 /api/ai/chat 格式一致
+- 加载 skills/冠亚军分析.md 策略文件（7 大核心预测策略）
+- 系统指令要求模拟 2000 次比赛（遵循真实赛程时间线）
+- 输出 TOP 20 决赛场景及概率
 ```
 
 ### AI 聊天（SSE 流）— 已实现

@@ -94,7 +94,11 @@
     "errorLoading": "Failed to load bracket data",
     "groupTeams": "Group Teams",
     "expandGroups": "Expand group list",
-    "collapseGroups": "Collapse group list"
+    "collapseGroups": "Collapse group list",
+    "championshipPrediction": "Champion Prediction",
+    "championshipAnalyzing": "Simulating 2,000 matches...",
+    "championshipDesc": "Monte Carlo simulation (2,000 runs) for World Cup champion & runner-up prediction",
+    "selectStrategy": "Select Strategy"
   },
   "ai": {
     "copilotTitle": "World Cup AI Copilot",

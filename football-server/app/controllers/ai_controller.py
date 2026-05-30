@@ -13,7 +13,13 @@ from typing import AsyncGenerator, List
 from fastapi import APIRouter, Depends
 
 from app.dependencies import get_ai_service
-from app.schemas.ai_schema import ChatRequest, MatchAnalysisRequest, SkillInfo, SSEEvent
+from app.schemas.ai_schema import (
+    ChampionshipAnalysisRequest,
+    ChatRequest,
+    MatchAnalysisRequest,
+    SkillInfo,
+    SSEEvent,
+)
 from app.schemas.common import ApiResponse
 from app.services.ai_service import AIService
 from app.services.prompt_builder import PromptBuilder
@@ -125,6 +131,51 @@ async def _match_analysis_stream(
     yield _format_done()
 
 
+async def _championship_analysis_stream(
+    svc: AIService,
+    body: ChampionshipAnalysisRequest,
+) -> AsyncGenerator[str, None]:
+    """Yield SSE-formatted strings for a championship prediction request.
+
+    The pipeline is:
+    1. Build the full prompt via ``PromptBuilder.build_championship_prompt``.
+    2. Stream ``SSEEvent`` objects from ``AIService.stream_chat``.
+    3. Convert each event to ``data: {json}\\n\\n``.
+    4. Emit ``data: [DONE]\\n\\n`` on completion.
+
+    Skill file loading failures are caught and surfaced as ``error`` events.
+    """
+    try:
+        messages = PromptBuilder.build_championship_prompt(body)
+    except Exception:
+        logger.exception("Failed to build championship prompt")
+        yield _format_sse_event(
+            SSEEvent(
+                type="error",
+                content="Failed to load championship prediction skill. Please try again.",
+            )
+        )
+        yield _format_done()
+        return
+
+    try:
+        async for event in svc.stream_chat(
+            messages,
+            lang=body.lang,
+        ):
+            yield _format_sse_event(event)
+    except Exception:
+        logger.exception("Unexpected error in championship analysis stream")
+        yield _format_sse_event(
+            SSEEvent(
+                type="error",
+                content="An unexpected error occurred during streaming.",
+            )
+        )
+
+    yield _format_done()
+
+
 # ── routes ─────────────────────────────────────────────────────────────────
 
 
@@ -172,6 +223,33 @@ async def match_analysis(
 
     return StreamingResponse(
         _match_analysis_stream(svc, body),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post(
+    "/championship-analysis",
+    summary="AI championship prediction (SSE streaming)",
+)
+async def championship_analysis(
+    body: ChampionshipAnalysisRequest,
+    svc: AIService = Depends(get_ai_service),
+) -> "StreamingResponse":  # noqa: F821
+    """Run a championship/runner-up prediction and return the result as an SSE stream.
+
+    Accepts a ``ChampionshipAnalysisRequest`` body with language preference,
+    loads the championship prediction skill (Monte Carlo simulation strategies),
+    and streams the AI response using the same event format as ``/chat``.
+    """
+    from starlette.responses import StreamingResponse
+
+    return StreamingResponse(
+        _championship_analysis_stream(svc, body),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

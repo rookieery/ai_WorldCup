@@ -196,12 +196,22 @@ ws_schema.py
 
 ## AI 预测技能
 
-两个技能文件定义了比赛预测的推理框架：
+三个技能文件定义了比赛预测和冠亚军预测的推理框架：
 
 - `skills/group_stage_predict.md` — 6 步推理（状态、H2H、战术、关键球员、主场优势、无形因素）
 - `skills/knockout_stage_predict.md` — 5 步推理（状态、H2H、淘汰赛心理、战术对位、X 因素）
+- `skills/冠亚军分析.md` — 7 大核心预测策略（Underdog Pruning、Seed Squad Dominance、Bracket Collision Detection、Powerhouse Amnesty、Dynamic 3rd-Placers Matrix、Tournament Grit Factor、Chronological Game Theory）
 
-这些技能驱动后端 AI 服务（`POST /api/ai/chat`、`POST /api/ai/match-analysis`）。
+这些技能驱动后端 AI 服务（`POST /api/ai/chat`、`POST /api/ai/match-analysis`、`POST /api/ai/championship-analysis`）。
+
+### 冠亚军预测分析
+
+对阵图页面（`TournamentBracket`）提供「冠亚军预测」按钮，支持：
+- 蒙特卡洛模拟 2000 次完整淘汰赛推演（遵循真实赛程时间线）
+- 加载 7 大核心预测策略文件构建分析 prompt
+- 输出 TOP 20 决赛场景及概率（含入选原因和数据约束）
+- 可选策略文件选择器（shadcn Select 下拉）
+- SSE 流式输出到 AI Copilot 面板
 
 ### AI 语言与格式控制
 

@@ -89,10 +89,18 @@ export interface LocaleMessages {
     fullBracket: string
     tbd: string
     bestThird: string
+    upperHalf: string
+    lowerHalf: string
+    upperHalfShort: string
+    lowerHalfShort: string
     errorLoading: string
     groupTeams: string
     expandGroups: string
     collapseGroups: string
+    championshipPrediction: string
+    championshipAnalyzing: string
+    championshipDesc: string
+    selectStrategy: string
   }
   ai: {
     copilotTitle: string

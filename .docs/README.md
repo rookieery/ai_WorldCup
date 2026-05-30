@@ -24,3 +24,4 @@
 | `data/2022_FIFA_World_Cup_Results.md` | 历史比赛结果 |
 | `skills/group_stage_predict.md` | AI 预测技能（小组赛） |
 | `skills/knockout_stage_predict.md` | AI 预测技能（淘汰赛） |
+| `skills/冠亚军分析.md` | AI 预测技能（冠亚军蒙特卡洛模拟） |

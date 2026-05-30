@@ -94,7 +94,11 @@
     "errorLoading": "加载对阵图数据失败",
     "groupTeams": "小组球队",
     "expandGroups": "展开小组列表",
-    "collapseGroups": "收起小组列表"
+    "collapseGroups": "收起小组列表",
+    "championshipPrediction": "冠亚军预测",
+    "championshipAnalyzing": "正在模拟2000场比赛...",
+    "championshipDesc": "基于蒙特卡洛模拟（2000次推演），预测世界杯冠亚军",
+    "selectStrategy": "选择分析策略"
   },
   "ai": {
     "copilotTitle": "世界杯 AI 助手",

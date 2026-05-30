@@ -164,6 +164,28 @@ class MatchAnalysisRequest(BaseModel):
         return v
 
 
+class ChampionshipAnalysisRequest(BaseModel):
+    """Request body for the championship/runner-up prediction streaming endpoint."""
+
+    skill_id: Optional[str] = Field(
+        default=None,
+        description="Skill to use; defaults to championship_predict",
+    )
+    lang: str = Field(
+        default="zh-CN",
+        description="Response language",
+    )
+
+    @field_validator("lang")
+    @classmethod
+    def validate_lang(cls, v: str) -> str:
+        if v not in _VALID_LANGS:
+            raise ValueError(
+                f"Invalid lang: {v!r}. Must be one of {_VALID_LANGS}"
+            )
+        return v
+
+
 class SkillInfo(BaseModel):
     """Metadata for an AI analysis Skill."""
 

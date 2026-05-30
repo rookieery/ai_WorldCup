@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Trophy, Zap, Medal, Loader2, AlertCircle } from "lucide-react"
+import { Trophy, Zap, Medal, Loader2, AlertCircle, Crown } from "lucide-react"
 import { getBracket } from "@/lib/api/bracket"
 import { useTranslation } from "@/lib/i18n"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
@@ -23,6 +23,19 @@ import {
   FinalSection,
 } from "@/components/dashboard/bracket-halves"
 import { GroupTeamList } from "@/components/dashboard/group-team-list"
+import { streamChampionshipAnalysis } from "@/lib/api/championship-analysis"
+import { getAvailableSkills } from "@/lib/api/match-analysis"
+import type { SkillInfo } from "@/lib/api/match-analysis"
+import { useAIChatStore } from "@/lib/store/ai-chat"
+import { usePreferencesStore } from "@/lib/store/preferences"
+import { openMobileCopilotSheet } from "@/components/dashboard/ai-copilot-mobile"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // ── Round config ──────────────────────────────────────────────────────────────
 
@@ -319,6 +332,11 @@ function MobileBracket({ data, onMatchClick }: { data: BracketTree; onMatchClick
 
 // ── Main exported component ──────────────────────────────────────────────────
 
+/** Filter skills to only show championship-related ones for the strategy selector. */
+function isChampionshipSkill(skill: SkillInfo): boolean {
+  return skill.applicable_stages.includes("tournament")
+}
+
 export function TournamentBracket() {
   const { t } = useTranslation()
   const [data, setData] = useState<BracketTree | null>(null)
@@ -326,6 +344,24 @@ export function TournamentBracket() {
   const [error, setError] = useState<string | null>(null)
   const [detailMatchId, setDetailMatchId] = useState<number | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const isStreaming = useAIChatStore((s) => s.isStreaming)
+  const lang = usePreferencesStore((s) => s.language)
+  const [selectedChampionshipSkill, setSelectedChampionshipSkill] = useState<string | null>(null)
+  const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([])
+
+  // Fetch available skills once on mount
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const skills = await getAvailableSkills(lang)
+        if (!cancelled) setAvailableSkills(skills)
+      } catch {
+        // Skills are optional — keep empty list
+      }
+    })()
+    return () => { cancelled = true }
+  }, [lang])
 
   const handleAnalyzeMatch = useCallback(
     (matchData: MatchDetailData, skillId: string) => {
@@ -333,6 +369,37 @@ export function TournamentBracket() {
     },
     [],
   )
+
+  const handleChampionshipAnalysis = useCallback(() => {
+    if (isStreaming) return
+
+    const skillId = selectedChampionshipSkill ?? "championship_predict"
+
+    const store = useAIChatStore.getState()
+    const summary = lang === "zh-CN"
+      ? "世界杯冠亚军预测 — 2000 次蒙特卡洛模拟"
+      : "World Cup Champion Prediction — 2,000 Monte Carlo Simulations"
+
+    store.addAnalysisContextMessage(summary)
+    store.startStreaming()
+
+    if (window.innerWidth < 1024) {
+      openMobileCopilotSheet()
+    }
+
+    const controller = new AbortController()
+    void streamChampionshipAnalysis(
+      { skill_id: skillId, lang },
+      {
+        onThinking: (delta) => useAIChatStore.getState().appendThinkingContent(delta),
+        onAnswer: (delta) => useAIChatStore.getState().appendStreamContent(delta),
+        onAnalysis: (data) => useAIChatStore.getState().setPendingAnalysis(data),
+        onDone: () => useAIChatStore.getState().finishStreaming(),
+        onError: () => useAIChatStore.getState().finishStreaming(),
+      },
+      controller.signal,
+    )
+  }, [isStreaming, selectedChampionshipSkill, lang])
 
   const fetchData = useCallback(async () => {
     try {
@@ -381,10 +448,13 @@ export function TournamentBracket() {
 
   if (!data) return null
 
+  // Filter championship skills for the strategy selector
+  const championshipSkills = availableSkills.filter(isChampionshipSkill)
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="text-center py-6 px-4 flex-shrink-0">
+      <div className="text-center py-4 px-4 flex-shrink-0">
         <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
           <Trophy className="h-5 w-5 text-gold" />
           <span className="bg-gradient-to-r from-primary via-accent to-magenta bg-clip-text text-transparent">
@@ -393,6 +463,46 @@ export function TournamentBracket() {
           <Trophy className="h-5 w-5 text-gold" />
         </h2>
         <p className="text-xs text-muted-foreground mt-1">{t("bracket.roadToGlory")}</p>
+
+        {/* Championship Prediction Button */}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          {championshipSkills.length > 0 && (
+            <Select
+              value={selectedChampionshipSkill ?? "__default__"}
+              onValueChange={(v) => setSelectedChampionshipSkill(v === "__default__" ? null : v)}
+            >
+              <SelectTrigger className="w-auto min-w-[120px] max-w-[180px] bg-secondary/30 border-glass-border text-[11px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__default__">
+                  {lang === "zh-CN" ? "冠亚军分析" : "Championship"}
+                </SelectItem>
+                {championshipSkills.map((skill) => (
+                  <SelectItem key={skill.skill_id} value={skill.skill_id}>
+                    {lang === "zh-CN" ? skill.name_zh : skill.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <button
+            disabled={isStreaming}
+            onClick={handleChampionshipAnalysis}
+            className={cn(
+              "flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-bold",
+              "bg-gradient-to-r from-gold via-[#FFD700] to-gold text-background",
+              "hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed",
+              "shadow-lg shadow-gold/20",
+            )}
+          >
+            {isStreaming
+              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t("bracket.championshipAnalyzing")}</>
+              : <><Crown className="h-3.5 w-3.5" />{t("bracket.championshipPrediction")}</>
+            }
+          </button>
+        </div>
+        <p className="text-[10px] text-muted-foreground/60 mt-1">{t("bracket.championshipDesc")}</p>
       </div>
 
       {/* Desktop bracket + group sidebar */}
