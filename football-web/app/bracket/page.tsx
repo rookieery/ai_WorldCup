@@ -14,7 +14,7 @@ export default function BracketPage() {
  
   return (
     <I18nProvider>
-      <div className="min-h-screen flex flex-col">
+      <div className="h-screen overflow-hidden flex flex-col">
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div
@@ -44,7 +44,7 @@ export default function BracketPage() {
           onViewModeChange={setViewMode}
         />
  
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           <TournamentBracket />
         </main>
  

@@ -192,8 +192,8 @@ function DesktopBracket({ data, onMatchClick }: { data: BracketTree; onMatchClic
   const sfActive = sfRound ? sfRound.matches.some((m) => m.status !== "upcoming") : false
 
   return (
-    <div className="overflow-x-auto scrollbar-hide h-full">
-      <div className="flex items-center min-w-max px-4 h-full">
+    <div className="overflow-x-auto overflow-y-auto scrollbar-thin h-full">
+      <div className="flex items-center min-w-max px-4 min-h-full">
         {/* Two-row bracket stack */}
         <div className="flex flex-col gap-0">
           {/* Upper Half */}
@@ -452,7 +452,7 @@ export function TournamentBracket() {
   const championshipSkills = availableSkills.filter(isChampionshipSkill)
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden min-h-0">
       {/* Header */}
       <div className="text-center py-4 px-4 flex-shrink-0">
         <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">

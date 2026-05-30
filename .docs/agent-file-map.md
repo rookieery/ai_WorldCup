@@ -26,14 +26,14 @@ ai_WorldCup/
 football-web/
 ├── app/
 │   ├── layout.tsx            # 根布局（暗色主题，Geist 字体，Analytics）
-│   ├── page.tsx              # 单页仪表盘（默认视图：时间线；所有状态在此管理，小组赛快捷入口，移动端 AI 助手 FAB+Sheet，AI 侧边栏可拖拽缩放 min=340px max=33.33vw）
-│   ├── globals.css           # CSS 变量、动画、毛玻璃工具类（.glass-card 40%透明 / .glass-card-opaque 95%不透明用于弹窗）
+│   ├── page.tsx              # 单页仪表盘（h-screen 视口锁定，默认视图：时间线独立 overflow-y-auto 滚动；对阵图独立 scrollbar-thin 滚动；小组赛快捷入口，移动端 AI 助手 FAB+Sheet，AI 侧边栏可拖拽缩放 min=340px max=33.33vw）
+│   ├── globals.css           # CSS 变量、动画、毛玻璃工具类（.glass-card / .glass-card-opaque）+ 滚动条工具类（.scrollbar-hide 隐藏 / .scrollbar-thin 细滚动条）
 │   └── groups/
 │       ├── page.tsx          # 小组赛总览页（12 组积分榜网格，返回时间线导航）
 │       └── [group]/
 │           └── page.tsx      # 单组详情页（积分榜 + 比赛列表）
 ├── bracket/
-│   └── page.tsx              # 独立全屏淘汰赛对阵图页面
+│   └── page.tsx              # 独立全屏淘汰赛对阵图页面（h-screen 视口锁定，overflow-hidden）
 ├── stats/
 │   └── page.tsx              # 数据中心页（射手榜 + 比赛统计）
 ├── teams/
@@ -47,7 +47,7 @@ football-web/
 │   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息、AI 分析按钮）— 赛博朋克毛玻璃风格
 │   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem）+ dispatchMatchAnalysis 共享分析流调度器
 │   │   ├── group-standings.tsx   # 小组积分榜网格（12 组 A-L，出线区高亮）
-│   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动，双行半区布局）+ 冠亚军预测按钮（蒙特卡洛 2000 次模拟）+ 策略选择器 + 点击打开比赛详情
+│   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动，双行半区布局，DesktopBracket 使用 scrollbar-thin 独立滚动）+ 冠亚军预测按钮（蒙特卡洛 2000 次模拟）+ 策略选择器 + 点击打开比赛详情
 │   │   ├── bracket-halves.tsx     # 对阵图半区布局子组件（HalfBracket、HalfDivider、SfToFinalConnector、FinalSection、splitByHalf）
 │   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、analysis-context 消息特殊渲染、Zustand 存储）
 │   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）+ 导出 openMobileCopilotSheet() 供外部触发

@@ -54,7 +54,7 @@ export default function WorldCupDashboard() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen overflow-hidden flex flex-col">
       {/* Background Effects - Mesh Gradients */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Large soft mesh gradients with animation */}
@@ -106,11 +106,11 @@ export default function WorldCupDashboard() {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex relative">
+      <div className="flex-1 flex relative min-h-0">
         {/* Left/Center - Main Content (70%) */}
-        <main className="flex-1 flex flex-col min-w-0">
+        <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           {viewMode === "timeline" ? (
-            <>
+            <div className="flex-1 overflow-y-auto">
               {/* Date Timeline */}
               <div className="border-b border-glass-border glass-card">
                 <DateTimeline
@@ -135,7 +135,7 @@ export default function WorldCupDashboard() {
 
               {/* Match Cards */}
               <MatchCardsGrid selectedDate={selectedDate} timezone={timezone} />
-            </>
+            </div>
           ) : (
             /* Tournament Bracket */
             <TournamentBracket />
@@ -159,7 +159,7 @@ export default function WorldCupDashboard() {
           >
             <div className="h-full w-px bg-glass-border group-hover:w-0.5 group-hover:bg-primary/40 transition-all" />
           </div>
-          <div className="h-full border-l border-glass-border">
+          <div className="h-full border-l border-glass-border overflow-hidden">
             <AICopilotPanel />
           </div>
         </div>
