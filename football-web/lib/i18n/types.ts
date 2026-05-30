@@ -128,6 +128,7 @@ export interface LocaleMessages {
     thinkingExpand: string
     streamError: string
     connectionError: string
+    stopGenerating: string
     fabLabel: string
     sheetTitle: string
     sheetDescription: string

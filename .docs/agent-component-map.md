@@ -129,16 +129,17 @@
 - **行数**：~294
 
 ### `ai-copilot-panel.tsx` — `AICopilotPanel`
-- **状态**：连接到 Zustand `useAIChatStore` + 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`、`streamGlow`（流式开始时短暂发光吸引注意力）
+- **状态**：连接到 Zustand `useAIChatStore`（含 `abortStreaming` 中止动作）+ 本地 `input`、`isFocused`、`thinkingCollapsed`、`errorMessage`、`showDisclaimer`、`streamGlow`（流式开始时短暂发光吸引注意力）
 - **子组件**：`MiniRadarChart`、`AnalysisCard`、`ThinkingIndicator`、`TypewriterText`、`ThinkingBlock`
 - **Markdown 渲染**：所有 AI 助手消息（历史消息、流式响应、思维块）通过 `MarkdownRenderer`（`react-markdown` + `remark-gfm`）渲染为富文本；用户消息保持纯文本
 - **特殊消息**：`analysis-context` 类型消息使用 Sparkles 图标 + 渐变边框气泡样式（from-cyan to-lime），与普通用户消息视觉区分
 - **数据**：通过 `streamChat()` 来自 `@/lib/api/ai-chat` 的真实 SSE 流式；store 管理消息
 - **AI 集成**：通过 fetch+ReadableStream SSE 消费者 POST 到 `/api/ai/chat`；打字机光标效果；可折叠思维块；错误 + 免责声明状态
-- **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子（跟随 `language` 变化自动重置，仅限无用户消息时）、AbortController 支持
-- **i18n**：所有文本通过 `t()`（ai 命名空间）
+- **停止生成**：流式输出期间，输入框保持显示（disabled），右侧发送按钮替换为红色方形停止按钮（`Square` 图标，红色光晕）；点击触发 `handleStop` → `abortRef.current.abort()` 中止 SSE + `abortStreaming()` 保存部分内容（附加 "(interrupted)"）→ 恢复输入框
+- **功能**：快捷提示按钮自动发送 AI 请求、流式打字机效果、可折叠推理展示、AnalysisCard（雷达图 + 概率 + 洞察）、自动滚动、欢迎消息种子（跟随 `language` 变化自动重置，仅限无用户消息时）、AbortController 中止支持
+- **i18n**：所有文本通过 `t()`（ai 命名空间，含 `stopGenerating` 停止按钮标签）
 - **导入类型**：`TeamAnalysis`、`TeamStats` 来自 `@/lib/types`；`ChatMessageItem` 来自 `@/lib/api/ai-chat`
-- **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`、`MarkdownRenderer`
+- **依赖**：`Input`、`Button`（shadcn）、`cn`、`lucide-react`（含 `Square`）、`useAIChatStore`、`usePreferencesStore`、`useTranslation`、`streamChat`、`MarkdownRenderer`
 - **行数**：~596
 
 ### `ai-copilot-mobile.tsx` — `AICopilotMobile`
@@ -215,7 +216,7 @@
 | `match` | 14 | 比赛卡片标签（实时/焦点战/完赛/助威/liveUpdates/disconnected 等） |
 | `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
 | `bracket` | 20 | 淘汰赛对阵图标签（6 轮、待定、状态、上半区、下半区、小组球队列表） |
-| `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |
+| `ai` | 30 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription、stopGenerating） |
 | `footer` | 4 | 页脚状态栏标签 |
 | `groups` | 18 | 小组积分榜标签（标题、表格列、导航、状态） |
 | `common` | 22 | 星期、月份、通用消息 |

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
-import { Send, Sparkles, Bot, User, Zap } from "lucide-react"
+import { Send, Sparkles, Bot, User, Zap, Square } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -44,6 +44,7 @@ export function AICopilotPanel() {
     appendThinkingContent,
     setPendingAnalysis,
     finishStreaming,
+    abortStreaming,
   } = useAIChatStore()
 
   const [input, setInput] = useState("")
@@ -179,6 +180,14 @@ export function AICopilotPanel() {
       handleSend()
     }
   }
+
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    abortStreaming()
+    setErrorMessage(null)
+    setShowDisclaimer(false)
+  }, [abortStreaming])
 
   return (
     <aside className="w-full h-full flex flex-col relative">
@@ -340,7 +349,7 @@ export function AICopilotPanel() {
           <div
             className={cn(
               "relative rounded-xl transition-all duration-300",
-              isFocused && "shadow-[0_0_20px_rgba(0,240,255,0.3)]"
+              isFocused && !isStreaming && "shadow-[0_0_20px_rgba(0,240,255,0.3)]"
             )}
           >
             <Input
@@ -353,22 +362,32 @@ export function AICopilotPanel() {
               disabled={isStreaming}
               className={cn(
                 "pr-12 bg-secondary/30 border-glass-border focus:border-[#00F0FF]/50 placeholder:text-muted-foreground/50 rounded-xl transition-all duration-300",
-                isFocused && "border-[#00F0FF] ring-1 ring-[#00F0FF]/30"
+                isFocused && !isStreaming && "border-[#00F0FF] ring-1 ring-[#00F0FF]/30"
               )}
             />
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!input.trim() || isStreaming}
-              className={cn(
-                "absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg transition-all duration-300",
-                input.trim() && !isStreaming
-                  ? "bg-[#CCFF00] text-[#020617] hover:bg-[#CCFF00]/90 shadow-[0_0_20px_rgba(204,255,0,0.4)]"
-                  : "bg-secondary text-muted-foreground"
-              )}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            {isStreaming ? (
+              <button
+                onClick={handleStop}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg flex items-center justify-center bg-red-600 hover:bg-red-700 text-white transition-all duration-200 active:scale-[0.92] shadow-[0_0_12px_rgba(220,38,38,0.5)] hover:shadow-[0_0_20px_rgba(220,38,38,0.7)]"
+                title={t("ai.stopGenerating")}
+              >
+                <Square className="h-3.5 w-3.5 fill-current" />
+              </button>
+            ) : (
+              <Button
+                size="icon"
+                onClick={handleSend}
+                disabled={!input.trim()}
+                className={cn(
+                  "absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg transition-all duration-300",
+                  input.trim()
+                    ? "bg-[#CCFF00] text-[#020617] hover:bg-[#CCFF00]/90 shadow-[0_0_20px_rgba(204,255,0,0.4)]"
+                    : "bg-secondary text-muted-foreground"
+                )}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
