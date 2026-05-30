@@ -201,22 +201,25 @@ def _build_team_vo(match: object, side: str, *, lang: str = "en") -> dict:
 # Mirrors the data defined in scripts/generate_bracket.py::R32_QUALIFICATION.
 
 _R32_GROUP_MAP: dict[str, tuple[str, int, str, int]] = {
-    "R32_01": ("A", 1, "B", 2),
-    "R32_02": ("C", 1, "D", 2),
-    "R32_03": ("E", 1, "F", 2),
-    "R32_04": ("G", 1, "H", 2),
-    "R32_05": ("I", 1, "J", 2),
-    "R32_06": ("K", 1, "L", 2),
-    "R32_07": ("B", 1, "A", 2),
-    "R32_08": ("D", 1, "C", 2),
-    "R32_09": ("F", 1, "E", 2),
-    "R32_10": ("H", 1, "G", 2),
-    "R32_11": ("J", 1, "I", 2),
-    "R32_12": ("L", 1, "K", 2),
-    "R32_13": ("C", 3, "F", 3),
-    "R32_14": ("E", 3, "H", 3),
-    "R32_15": ("A", 3, "D", 3),
-    "R32_16": ("B", 3, "G", 3),
+    # Official FIFA 2026 bracket (M73–M88).
+    # For "best 3rd" slots, from_group is a "/"-separated list of eligible groups.
+    # Mirrors scripts/generate_bracket.py::R32_QUALIFICATION.
+    "R32_01": ("A", 2, "B", 2),               # M73: Runner-up A vs Runner-up B
+    "R32_02": ("C", 1, "F", 2),               # M76: Winner C vs Runner-up F
+    "R32_03": ("E", 1, "A/B/C/D/F", 3),       # M74: Winner E vs 3rd(A/B/C/D/F)
+    "R32_04": ("F", 1, "C", 2),               # M75: Winner F vs Runner-up C
+    "R32_05": ("E", 2, "I", 2),               # M78: Runner-up E vs Runner-up I
+    "R32_06": ("I", 1, "C/D/F/G/H", 3),       # M77: Winner I vs 3rd(C/D/F/G/H)
+    "R32_07": ("A", 1, "C/E/F/H/I", 3),       # M79: Winner A vs 3rd(C/E/F/H/I)
+    "R32_08": ("L", 1, "E/H/I/J/K", 3),       # M80: Winner L vs 3rd(E/H/I/J/K)
+    "R32_09": ("G", 1, "A/E/H/I/J", 3),       # M82: Winner G vs 3rd(A/E/H/I/J)
+    "R32_10": ("D", 1, "B/E/F/I/J", 3),       # M81: Winner D vs 3rd(B/E/F/I/J)
+    "R32_11": ("H", 1, "J", 2),               # M84: Winner H vs Runner-up J
+    "R32_12": ("K", 2, "L", 2),               # M83: Runner-up K vs Runner-up L
+    "R32_13": ("B", 1, "E/F/G/I/J", 3),       # M85: Winner B vs 3rd(E/F/G/I/J)
+    "R32_14": ("D", 2, "G", 2),               # M88: Runner-up D vs Runner-up G
+    "R32_15": ("J", 1, "H", 2),               # M86: Winner J vs Runner-up H
+    "R32_16": ("K", 1, "D/E/I/J/L", 3),       # M87: Winner K vs 3rd(D/E/I/J/L)
 }
 
 

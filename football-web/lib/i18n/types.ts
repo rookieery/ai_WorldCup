@@ -88,6 +88,7 @@ export interface LocaleMessages {
     advancementPath: string
     fullBracket: string
     tbd: string
+    bestThird: string
     errorLoading: string
   }
   ai: {

@@ -72,7 +72,7 @@ football-web/
 │   │       └── en-US.json    # 英文翻译（155+ 键，与 zh-CN 完全对齐）
 │   ├── api/                  # API 模块函数（每个后端资源一个文件）
 │   │   ├── matches.ts        # getMatchDates(options?)（含 timezone 参数）、getMatches(params)、getMatchById(id)、getLiveMatches()、apiMatchToUi()
-│   │   ├── bracket.ts        # getBracket() — 映射层含 from_group+from_position→fromGroup（如 A1、B2）
+│   │   ├── bracket.ts        # getBracket() — 映射层含 from_group+from_position→fromGroup（如 A1、B2）；最佳第三名显示为 3rd(A/B/C/D/F)
 │   │   ├── teams.ts          # getTeams(params)、getTeamByCode(code)、getTeamStats(code) — 球队详情含积分 + 比赛
 │   │   ├── groups.ts         # getGroups()、getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)
@@ -171,7 +171,7 @@ football-server/
 │   │   ├── venue_service.py     # VenueService：get_all_venues（分页）
 │   │   ├── match_service.py     # MatchService：get_match_dates、get_matches（多条件筛选 + Redis 实时合并）、get_match_by_id（含事件 + Redis 实时）、get_live_matches（Redis 实时合并）；使用共享 app.utils.timezone
 │   │   ├── group_service.py     # GroupService：get_all_groups（12 组积分榜）、get_group_detail（积分榜 + 比赛）；支持 lang + timezone（共享 utils）
-│   │   ├── bracket_service.py   # BracketService：get_full_bracket（R32→F 树形结构）、get_bracket_by_round、get_predictions（TBD 占位）；使用共享 app.utils.timezone
+│   │   ├── bracket_service.py   # BracketService：get_full_bracket（R32→F 官方对阵树）、get_bracket_by_round、get_predictions（TBD 占位 + 最佳第三名 from_group 显示）
 │   │   ├── cheer_service.py     # CheerService：get_cheers、vote_cheer（Redis HASH + 内存降级、IP 频率限制）
 │   │   ├── stats_service.py     # StatsService：get_scorers（从 MatchEventRepository 聚合射手榜）
 │   │   ├── live_service.py      # LiveService：update_match_status、update_score、update_activity、get_live_matches、get_match_live_data、apply_sync_data（Redis HASH + 内存降级、缓存失效、状态变化时 WebSocket 广播）
@@ -218,11 +218,11 @@ football-server/
 ├── scripts/                     # 数据库种子脚本
 │   ├── __init__.py              # 包初始化
 │   ├── seed_data.py             # 一键初始化编排（seed_venues→teams→matches→bracket→standings）
-│   ├── generate_bracket.py      # 对阵图验证 + R32 小组出线映射
+│   ├── generate_bracket.py      # 对阵图验证 + 晋级路径 + R32 官方对阵映射（8×1st-vs-3rd + 4×1st-vs-2nd + 4×2nd-vs-2nd）
 │   ├── seed_teams.py            # 种子 48 支球队（按 code 幂等 upsert）
 │   ├── team_data.py             # 48 支球队数据（双语、FIFA 排名、大洲）
 │   ├── seed_venues.py           # 种子 16 座球场（按 name 幂等 upsert）
 │   ├── venue_data.py            # 16 座球场数据（城市、国家、IANA 时区、容量 + 中文翻译）
-│   └── seed_matches.py          # 种子 104 场比赛（真实 FIFA 2026 开球时间 + 场馆、对阵链接、TBD 占位球队）
+│   └── seed_matches.py          # 种子 104 场比赛（真实 FIFA 2026 开球时间 + 官方场馆、官方对阵链接、TBD 占位球队）
 └── scalable-beaming-riddle.md   # 后端架构方案
 ```

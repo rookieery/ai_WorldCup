@@ -120,44 +120,47 @@ _GROUP_MATCH_DATA: dict[str, tuple[datetime, str]] = {
 # ── Knockout schedule definitions ──────────────────────────────────────────────
 
 _KNOCKOUT_DEFS: list[dict[str, Any]] = [
-    # Round of 32 — 16 matches (6 days, real FIFA 2026 schedule)
-    {"ext": "R32_01", "stage": "R32", "d": date(2026, 6, 28), "h": 19},
-    {"ext": "R32_02", "stage": "R32", "d": date(2026, 6, 29), "h": 17},
-    {"ext": "R32_03", "stage": "R32", "d": date(2026, 6, 29), "h": 21},
-    {"ext": "R32_04", "stage": "R32", "d": date(2026, 6, 29), "h": 13},
-    {"ext": "R32_05", "stage": "R32", "d": date(2026, 6, 30), "h": 21},
-    {"ext": "R32_06", "stage": "R32", "d": date(2026, 6, 30), "h": 13},
-    {"ext": "R32_07", "stage": "R32", "d": date(2026, 6, 30), "h": 17},
-    {"ext": "R32_08", "stage": "R32", "d": date(2026, 7, 1), "h": 16},
-    {"ext": "R32_09", "stage": "R32", "d": date(2026, 7, 1), "h": 20},
-    {"ext": "R32_10", "stage": "R32", "d": date(2026, 7, 1), "h": 13},
-    {"ext": "R32_11", "stage": "R32", "d": date(2026, 7, 2), "h": 19},
-    {"ext": "R32_12", "stage": "R32", "d": date(2026, 7, 2), "h": 15},
-    {"ext": "R32_13", "stage": "R32", "d": date(2026, 7, 2), "h": 23},
-    {"ext": "R32_14", "stage": "R32", "d": date(2026, 7, 3), "h": 18},
-    {"ext": "R32_15", "stage": "R32", "d": date(2026, 7, 3), "h": 22},
-    {"ext": "R32_16", "stage": "R32", "d": date(2026, 7, 3), "h": 14},
-    # Round of 16 — 8 matches (4 days x 2/day)
-    {"ext": "R16_01", "stage": "R16", "d": date(2026, 7, 4), "h": 21},
-    {"ext": "R16_02", "stage": "R16", "d": date(2026, 7, 4), "h": 17},
-    {"ext": "R16_03", "stage": "R16", "d": date(2026, 7, 5), "h": 20},
-    {"ext": "R16_04", "stage": "R16", "d": date(2026, 7, 6), "h": 19},
-    {"ext": "R16_05", "stage": "R16", "d": date(2026, 7, 6), "h": 23},
-    {"ext": "R16_06", "stage": "R16", "d": date(2026, 7, 7), "h": 16},
-    {"ext": "R16_07", "stage": "R16", "d": date(2026, 7, 7), "h": 20},
-    {"ext": "R16_08", "stage": "R16", "d": date(2026, 7, 8), "h": 16},
-    # Quarter-finals — 4 matches (real FIFA: Jul 9-11, offset for bracket display)
-    {"ext": "QF_01", "stage": "QF", "d": date(2026, 7, 9), "h": 20},
-    {"ext": "QF_02", "stage": "QF", "d": date(2026, 7, 10), "h": 19},
-    {"ext": "QF_03", "stage": "QF", "d": date(2026, 7, 11), "h": 21},
-    {"ext": "QF_04", "stage": "QF", "d": date(2026, 7, 12), "h": 1},
+    # Round of 32 — 16 matches (official FIFA 2026 schedule, UTC times)
+    # R32_01=M73, R32_02=M76, R32_03=M74, R32_04=M75, R32_05=M78, R32_06=M77,
+    # R32_07=M79, R32_08=M80, R32_09=M82, R32_10=M81, R32_11=M84, R32_12=M83,
+    # R32_13=M85, R32_14=M88, R32_15=M86, R32_16=M87
+    {"ext": "R32_01", "stage": "R32", "d": date(2026, 6, 28), "h": 19},   # M73 2Avs2B   Inglewood
+    {"ext": "R32_02", "stage": "R32", "d": date(2026, 6, 29), "h": 17},   # M76 1Cvs2F   Houston
+    {"ext": "R32_03", "stage": "R32", "d": date(2026, 6, 29), "h": 20},   # M74 1Evs3rd  Foxborough
+    {"ext": "R32_04", "stage": "R32", "d": date(2026, 6, 30), "h": 1},    # M75 1Fvs2C   Guadalupe
+    {"ext": "R32_05", "stage": "R32", "d": date(2026, 6, 30), "h": 17},   # M78 2Evs2I   Arlington
+    {"ext": "R32_06", "stage": "R32", "d": date(2026, 6, 30), "h": 21},   # M77 1Ivs3rd  East Rutherford
+    {"ext": "R32_07", "stage": "R32", "d": date(2026, 7, 1), "h": 1},     # M79 1Avs3rd  Mexico City
+    {"ext": "R32_08", "stage": "R32", "d": date(2026, 7, 1), "h": 16},    # M80 1Lvs3rd  Atlanta
+    {"ext": "R32_09", "stage": "R32", "d": date(2026, 7, 1), "h": 20},    # M82 1Gvs3rd  Seattle
+    {"ext": "R32_10", "stage": "R32", "d": date(2026, 7, 2), "h": 0},     # M81 1Dvs3rd  Santa Clara
+    {"ext": "R32_11", "stage": "R32", "d": date(2026, 7, 2), "h": 19},    # M84 1Hvs2J   Inglewood
+    {"ext": "R32_12", "stage": "R32", "d": date(2026, 7, 2), "h": 23},    # M83 2Kvs2L   Toronto
+    {"ext": "R32_13", "stage": "R32", "d": date(2026, 7, 3), "h": 3},     # M85 1Bvs3rd  Vancouver
+    {"ext": "R32_14", "stage": "R32", "d": date(2026, 7, 3), "h": 18},    # M88 2Dvs2G   Arlington
+    {"ext": "R32_15", "stage": "R32", "d": date(2026, 7, 3), "h": 22},    # M86 1Jvs2H   Miami Gardens
+    {"ext": "R32_16", "stage": "R32", "d": date(2026, 7, 4), "h": 1},     # M87 1Kvs3rd  Kansas City
+    # Round of 16 — 8 matches (official FIFA schedule)
+    {"ext": "R16_01", "stage": "R16", "d": date(2026, 7, 4), "h": 21},    # M89 Philadelphia
+    {"ext": "R16_02", "stage": "R16", "d": date(2026, 7, 4), "h": 17},    # M90 Houston
+    {"ext": "R16_03", "stage": "R16", "d": date(2026, 7, 5), "h": 20},    # M91 East Rutherford
+    {"ext": "R16_04", "stage": "R16", "d": date(2026, 7, 6), "h": 0},     # M92 Mexico City
+    {"ext": "R16_05", "stage": "R16", "d": date(2026, 7, 6), "h": 19},    # M93 Arlington
+    {"ext": "R16_06", "stage": "R16", "d": date(2026, 7, 7), "h": 0},     # M94 Seattle
+    {"ext": "R16_07", "stage": "R16", "d": date(2026, 7, 7), "h": 16},    # M95 Atlanta
+    {"ext": "R16_08", "stage": "R16", "d": date(2026, 7, 7), "h": 20},    # M96 Vancouver
+    # Quarter-finals (official: Jul 9-11)
+    {"ext": "QF_01", "stage": "QF", "d": date(2026, 7, 9), "h": 20},      # M97 Foxborough
+    {"ext": "QF_02", "stage": "QF", "d": date(2026, 7, 10), "h": 19},     # M98 Inglewood
+    {"ext": "QF_03", "stage": "QF", "d": date(2026, 7, 11), "h": 21},     # M99 Miami Gardens
+    {"ext": "QF_04", "stage": "QF", "d": date(2026, 7, 12), "h": 1},      # M100 Kansas City
     # Semi-finals
-    {"ext": "SF_01", "stage": "SF", "d": date(2026, 7, 14), "h": 19},
-    {"ext": "SF_02", "stage": "SF", "d": date(2026, 7, 15), "h": 19},
+    {"ext": "SF_01", "stage": "SF", "d": date(2026, 7, 14), "h": 19},     # M101 Arlington
+    {"ext": "SF_02", "stage": "SF", "d": date(2026, 7, 15), "h": 19},     # M102 Atlanta
     # Third-place match
-    {"ext": "3RD_01", "stage": "3rd", "d": date(2026, 7, 18), "h": 21},
+    {"ext": "3RD_01", "stage": "3rd", "d": date(2026, 7, 18), "h": 21},   # M103 Miami Gardens
     # Final
-    {"ext": "F_01", "stage": "F", "d": date(2026, 7, 19), "h": 19},
+    {"ext": "F_01", "stage": "F", "d": date(2026, 7, 19), "h": 19},       # M104 East Rutherford
 ]
 
 _ROUND_NAMES: dict[str, str] = {
@@ -169,39 +172,68 @@ _ROUND_NAMES: dict[str, str] = {
     "F": "Final",
 }
 
-# Venue overrides for high-profile knockout matches (keyed by external_id).
-# Real FIFA 2026 venues for later knockout rounds.
+# Venue overrides for knockout matches (keyed by external_id).
+# Official FIFA 2026 venues.
 _VENUE_OVERRIDES: dict[str, str] = {
-    "QF_01": "Gillette Stadium",
-    "QF_02": "SoFi Stadium",
-    "QF_03": "Hard Rock Stadium",
-    "QF_04": "Arrowhead Stadium",
-    "SF_01": "AT&T Stadium",
-    "SF_02": "Mercedes-Benz Stadium",
-    "3RD_01": "Hard Rock Stadium",
-    "F_01": "MetLife Stadium",
+    # R32 venues (official FIFA schedule)
+    "R32_01": "SoFi Stadium",             # M73: Inglewood
+    "R32_02": "NRG Stadium",              # M76: Houston
+    "R32_03": "Gillette Stadium",         # M74: Foxborough
+    "R32_04": "Estadio BBVA",             # M75: Guadalupe
+    "R32_05": "AT&T Stadium",             # M78: Arlington
+    "R32_06": "MetLife Stadium",          # M77: East Rutherford
+    "R32_07": "Estadio Azteca",           # M79: Mexico City
+    "R32_08": "Mercedes-Benz Stadium",    # M80: Atlanta
+    "R32_09": "Lumen Field",             # M82: Seattle
+    "R32_10": "Levi's Stadium",           # M81: Santa Clara
+    "R32_11": "SoFi Stadium",             # M84: Inglewood
+    "R32_12": "BMO Field",               # M83: Toronto
+    "R32_13": "BC Place",                 # M85: Vancouver
+    "R32_14": "AT&T Stadium",             # M88: Arlington
+    "R32_15": "Hard Rock Stadium",        # M86: Miami Gardens
+    "R32_16": "Arrowhead Stadium",        # M87: Kansas City
+    # R16 venues
+    "R16_01": "Lincoln Financial Field",  # M89: Philadelphia
+    "R16_02": "NRG Stadium",              # M90: Houston
+    "R16_03": "MetLife Stadium",          # M91: East Rutherford
+    "R16_04": "Estadio Azteca",           # M92: Mexico City
+    "R16_05": "AT&T Stadium",             # M93: Arlington
+    "R16_06": "Lumen Field",              # M94: Seattle
+    "R16_07": "Mercedes-Benz Stadium",    # M95: Atlanta
+    "R16_08": "BC Place",                 # M96: Vancouver
+    # QF venues
+    "QF_01": "Gillette Stadium",          # M97: Foxborough
+    "QF_02": "SoFi Stadium",              # M98: Inglewood
+    "QF_03": "Hard Rock Stadium",         # M99: Miami Gardens
+    "QF_04": "Arrowhead Stadium",         # M100: Kansas City
+    # SF venues
+    "SF_01": "AT&T Stadium",              # M101: Arlington
+    "SF_02": "Mercedes-Benz Stadium",     # M102: Atlanta
+    # 3rd & Final
+    "3RD_01": "Hard Rock Stadium",        # M103: Miami Gardens
+    "F_01": "MetLife Stadium",            # M104: East Rutherford
 }
 
 # ── Bracket linkage: (source_ext_id, target_ext_id, position) ─────────────────
 
 _BRACKET_LINKS: list[tuple[str, str, int]] = [
-    # R32 -> R16
-    ("R32_01", "R16_01", 1), ("R32_02", "R16_01", 2),
-    ("R32_03", "R16_02", 1), ("R32_04", "R16_02", 2),
-    ("R32_05", "R16_03", 1), ("R32_06", "R16_03", 2),
-    ("R32_07", "R16_04", 1), ("R32_08", "R16_04", 2),
-    ("R32_09", "R16_05", 1), ("R32_10", "R16_05", 2),
-    ("R32_11", "R16_06", 1), ("R32_12", "R16_06", 2),
-    ("R32_13", "R16_07", 1), ("R32_14", "R16_07", 2),
-    ("R32_15", "R16_08", 1), ("R32_16", "R16_08", 2),
+    # R32 -> R16  (official FIFA 2026 bracket)
+    ("R32_03", "R16_01", 1), ("R32_06", "R16_01", 2),  # M74→M89, M77→M89
+    ("R32_01", "R16_02", 1), ("R32_04", "R16_02", 2),  # M73→M90, M75→M90
+    ("R32_02", "R16_03", 1), ("R32_05", "R16_03", 2),  # M76→M91, M78→M91
+    ("R32_07", "R16_04", 1), ("R32_08", "R16_04", 2),  # M79→M92, M80→M92
+    ("R32_12", "R16_05", 1), ("R32_11", "R16_05", 2),  # M83→M93, M84→M93
+    ("R32_10", "R16_06", 1), ("R32_09", "R16_06", 2),  # M81→M94, M82→M94
+    ("R32_15", "R16_07", 1), ("R32_14", "R16_07", 2),  # M86→M95, M88→M95
+    ("R32_13", "R16_08", 1), ("R32_16", "R16_08", 2),  # M85→M96, M87→M96
     # R16 -> QF
-    ("R16_01", "QF_01", 1), ("R16_02", "QF_01", 2),
-    ("R16_03", "QF_02", 1), ("R16_04", "QF_02", 2),
-    ("R16_05", "QF_03", 1), ("R16_06", "QF_03", 2),
-    ("R16_07", "QF_04", 1), ("R16_08", "QF_04", 2),
+    ("R16_01", "QF_01", 1), ("R16_02", "QF_01", 2),  # M89→M97, M90→M97
+    ("R16_05", "QF_02", 1), ("R16_06", "QF_02", 2),  # M93→M98, M94→M98
+    ("R16_03", "QF_03", 1), ("R16_04", "QF_03", 2),  # M91→M99, M92→M99
+    ("R16_07", "QF_04", 1), ("R16_08", "QF_04", 2),  # M95→M100, M96→M100
     # QF -> SF
-    ("QF_01", "SF_01", 1), ("QF_02", "SF_01", 2),
-    ("QF_03", "SF_02", 1), ("QF_04", "SF_02", 2),
+    ("QF_01", "SF_01", 1), ("QF_02", "SF_01", 2),  # M97→M101, M98→M101
+    ("QF_03", "SF_02", 1), ("QF_04", "SF_02", 2),  # M99→M102, M100→M102
     # SF -> Final
     ("SF_01", "F_01", 1), ("SF_02", "F_01", 2),
 ]

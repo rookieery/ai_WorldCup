@@ -86,6 +86,7 @@
     "advancementPath": "晋级路线",
     "fullBracket": "完整对阵图",
     "tbd": "待定",
+    "bestThird": "最佳第三",
     "errorLoading": "加载对阵图数据失败"
   },
   "ai": {

@@ -86,6 +86,7 @@
     "advancementPath": "Advancement Path",
     "fullBracket": "Full Bracket",
     "tbd": "TBD",
+    "bestThird": "Best 3rd",
     "errorLoading": "Failed to load bracket data"
   },
   "ai": {

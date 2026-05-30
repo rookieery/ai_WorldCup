@@ -50,7 +50,12 @@ function mapTeam(raw: BackendBracketTeam): BracketTeam {
   let fromGroup: string | undefined
 
   if (isTbd && raw.from_group && raw.from_position) {
-    fromGroup = `${raw.from_group}${raw.from_position}`
+    // "best 3rd" slots use "/"-separated eligible groups (e.g. "A/B/C/D/F")
+    if (raw.from_group.includes("/")) {
+      fromGroup = `3rd(${raw.from_group})`
+    } else {
+      fromGroup = `${raw.from_group}${raw.from_position}`
+    }
   }
 
   return {

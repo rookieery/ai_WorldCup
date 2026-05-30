@@ -187,7 +187,7 @@
 ### 语言文件
 | 文件 | 语言 | 键数 |
 |------|------|------|
-| `locales/zh-CN.json` | 简体中文 | 155+ 键，11 个命名空间（header、timeline、match、matchDetail、bracket、ai、footer、groups、stats、teamDetail、common） |
+| `locales/zh-CN.json` | 简体中文 | 156+ 键，11 个命名空间（header、timeline、match、matchDetail、bracket、ai、footer、groups、stats、teamDetail、common） |
 | `locales/en-US.json` | English | 155+ 键，11 个命名空间（与 zh-CN 结构完全一致） |
 
 ### 命名空间
@@ -230,7 +230,7 @@ function MyComponent() {
 | 模块 | 函数 | 后端端点 |
 |------|------|----------|
 | `matches.ts` | `getMatchDates(options?)`（含 timezone 参数）、`getMatches(params)`、`getMatchById(id, opts)`、`getLiveMatches(opts)`、`apiMatchToUi(item)` | `GET /api/matches/dates`、`GET /api/matches`、`GET /api/matches/:id`、`GET /api/matches/live` |
-| `bracket.ts` | `getBracket(opts)` — 映射后端 VO 字段（`round_name`→`round`、`home_team`→`team1`、`stage`→`round`、`id:int`→`id:string`） | `GET /api/bracket` |
+| `bracket.ts` | `getBracket(opts)` — 映射后端 VO 字段（`round_name`→`round`、`home_team`→`team1`、`stage`→`round`、`id:int`→`id:string`）；最佳第三名 `from_group` 含 `/` 时显示为 `3rd(A/B/C/D/F)` | `GET /api/bracket` |
 | `teams.ts` | `getTeams(params)`、`getTeamByCode(code)` | `GET /api/teams`、`GET /api/teams/:code` |
 | `groups.ts` | `getGroups()`、`getGroupDetail(group, opts)` | `GET /api/groups`、`GET /api/groups/:group` |
 | `venues.ts` | `getVenues(params)` | `GET /api/venues` |
