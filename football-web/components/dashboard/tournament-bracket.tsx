@@ -46,11 +46,7 @@ function TeamRow({ team, isCompleted }: { team: BracketTeam; isCompleted: boolea
 
   const isTbd = team.code === "---" || team.code === "TBD"
   const displayName = isTbd
-    ? team.fromGroup
-      ? t("bracket.fromGroup")
-          .replace("{position}", team.fromGroup.replace(/[^1st2nd3rd4th]/g, ""))
-          .replace("{group}", team.fromGroup.replace(/[0-9stndrdth]/g, ""))
-      : t("bracket.tbd")
+    ? team.fromGroup ?? t("bracket.tbd")
     : team.code
 
   return (

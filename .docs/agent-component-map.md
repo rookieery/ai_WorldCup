@@ -82,7 +82,7 @@
 - **子组件**：`BracketCard`、`TeamRow`、`RoundConnector`、`DesktopBracket`、`MobileBracket`
 - **比赛详情**：BracketCard 点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（parseInt 从 string match.id）
 - **UI**：6 轮横向滚动 + SVG 连接线（桌面端）、垂直堆叠（移动端）
-- **功能**：API 数据获取含加载/错误/重试、TBD 球队显示 fromGroup 信息、赢家金色高亮、LIVE 脉冲、季军赛单独分支
+- **功能**：API 数据获取含加载/错误/重试、TBD 球队显示小组排名标签（如 A1、B2）、赢家金色高亮、LIVE 脉冲、季军赛单独分支
 - **响应式**：`hidden md:block` 用于 DesktopBracket，`md:hidden` 用于 MobileBracket
 - **颜色**：全部使用语义化主题变量（text-gold、text-accent、bg-primary/20 等）
 - **文本**：全部通过 `t()` 国际化
@@ -197,7 +197,7 @@
 | `timeline` | 8 | 阶段标签（小组赛/R32/R16/QF/SF/季军赛/决赛/休息日） |
 | `match` | 14 | 比赛卡片标签（实时/焦点战/完赛/助威/liveUpdates/disconnected 等） |
 | `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
-| `bracket` | 16 | 淘汰赛对阵图标签（6 轮、fromGroup、待定、状态） |
+| `bracket` | 15 | 淘汰赛对阵图标签（6 轮、待定、状态） |
 | `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |
 | `footer` | 4 | 页脚状态栏标签 |
 | `groups` | 18 | 小组积分榜标签（标题、表格列、导航、状态） |

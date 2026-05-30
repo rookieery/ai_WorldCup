@@ -50,11 +50,7 @@ function mapTeam(raw: BackendBracketTeam): BracketTeam {
   let fromGroup: string | undefined
 
   if (isTbd && raw.from_group && raw.from_position) {
-    const posLabel =
-      raw.from_position === 1 ? "1st" :
-      raw.from_position === 2 ? "2nd" :
-      raw.from_position === 3 ? "3rd" : "4th"
-    fromGroup = `${posLabel}${raw.from_group}`
+    fromGroup = `${raw.from_group}${raw.from_position}`
   }
 
   return {

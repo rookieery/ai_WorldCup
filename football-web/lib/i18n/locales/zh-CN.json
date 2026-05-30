@@ -85,7 +85,6 @@
     "winnerAdvances": "胜者晋级",
     "advancementPath": "晋级路线",
     "fullBracket": "完整对阵图",
-    "fromGroup": "{position}{group}组",
     "tbd": "待定",
     "errorLoading": "加载对阵图数据失败"
   },

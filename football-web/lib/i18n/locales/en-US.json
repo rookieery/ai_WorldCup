@@ -85,7 +85,6 @@
     "winnerAdvances": "Winner Advances",
     "advancementPath": "Advancement Path",
     "fullBracket": "Full Bracket",
-    "fromGroup": "{position} Group {group}",
     "tbd": "TBD",
     "errorLoading": "Failed to load bracket data"
   },

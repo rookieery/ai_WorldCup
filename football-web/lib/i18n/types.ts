@@ -87,7 +87,6 @@ export interface LocaleMessages {
     winnerAdvances: string
     advancementPath: string
     fullBracket: string
-    fromGroup: string
     tbd: string
     errorLoading: string
   }
