@@ -23,6 +23,7 @@ export type BracketMatchStatus = "upcoming" | "live" | "completed"
 
 export interface BracketMatch {
   id: string
+  externalId: string
   round: BracketRoundName
   team1: BracketTeam
   team2: BracketTeam

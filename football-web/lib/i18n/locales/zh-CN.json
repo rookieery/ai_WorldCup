@@ -87,6 +87,10 @@
     "fullBracket": "完整对阵图",
     "tbd": "待定",
     "bestThird": "最佳第三",
+    "upperHalf": "上半区",
+    "lowerHalf": "下半区",
+    "upperHalfShort": "上半",
+    "lowerHalfShort": "下半",
     "errorLoading": "加载对阵图数据失败"
   },
   "ai": {

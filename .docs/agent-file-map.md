@@ -47,7 +47,8 @@ football-web/
 │   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息、AI 分析按钮）— 赛博朋克毛玻璃风格
 │   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem）+ dispatchMatchAnalysis 共享分析流调度器
 │   │   ├── group-standings.tsx   # 小组积分榜网格（12 组 A-L，出线区高亮）
-│   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动）+ 点击打开比赛详情
+│   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动，双行半区布局）+ 点击打开比赛详情
+│   │   ├── bracket-halves.tsx     # 对阵图半区布局子组件（HalfBracket、HalfDivider、SfToFinalConnector、FinalSection、splitByHalf）
 │   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、analysis-context 消息特殊渲染、Zustand 存储）
 │   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）+ 导出 openMobileCopilotSheet() 供外部触发
 │   ├── stats/
@@ -68,11 +69,11 @@ football-web/
 │   │   ├── use-translation.ts # useTranslation Hook — 轻量封装，暴露 { t, locale, setLocale }
 │   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构，含 matchDetail/stats/teamDetail 命名空间）
 │   │   └── locales/
-│   │       ├── zh-CN.json    # 中文翻译（155+ 键，11 个命名空间）
-│   │       └── en-US.json    # 英文翻译（155+ 键，与 zh-CN 完全对齐）
+│   │       ├── zh-CN.json    # 中文翻译（157+ 键，11 个命名空间）
+│   │       └── en-US.json    # 英文翻译（157+ 键，与 zh-CN 完全对齐）
 │   ├── api/                  # API 模块函数（每个后端资源一个文件）
 │   │   ├── matches.ts        # getMatchDates(options?)（含 timezone 参数）、getMatches(params)、getMatchById(id)、getLiveMatches()、apiMatchToUi()
-│   │   ├── bracket.ts        # getBracket() — 映射层含 from_group+from_position→fromGroup（如 A1、B2）；最佳第三名显示为 3rd(A/B/C/D/F)
+│   │   │   ├── bracket.ts        # getBracket() — 映射层含 from_group+from_position→fromGroup（如 A1、B2）；最佳第三名显示为 3rd(A/B/C/D/F)；支持 BracketMatch.position 用于半区拆分
 │   │   ├── teams.ts          # getTeams(params)、getTeamByCode(code)、getTeamStats(code) — 球队详情含积分 + 比赛
 │   │   ├── groups.ts         # getGroups()、getGroupDetail(group)
 │   │   ├── venues.ts         # getVenues(params)
@@ -90,7 +91,7 @@ football-web/
 │       ├── index.ts          # 统一导出
 │       ├── team.ts           # Team、TeamDetail、TeamStanding
 │       ├── match.ts          # Match、MatchStatus、MatchEvent、MatchQueryParams、CityIcon、MatchDateInfo
-│       ├── bracket.ts        # BracketTeam、BracketMatch、BracketRound、BracketTree、BracketRoundName
+│       ├── bracket.ts        # BracketTeam、BracketMatch（含 position 字段）、BracketRound、BracketTree、BracketRoundName、BracketMatchStatus
 │       ├── ai.ts             # Message（含 analysis-context 类型）、TeamAnalysis、TeamStats、SSEEvent
 │       └── api.ts            # ApiResponse<T>、PaginatedResponse<T>、ApiError
 ├── styles/
@@ -116,7 +117,9 @@ data/
 skills/
 ├── README.md                     # Skills 概览
 ├── group_stage_predict.md        # 小组赛预测 6 步推理
-└── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
+├── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
+├── 冠亚军分析.md                   # 冠亚军分析策略（7 大核心策略：Underdog Pruning / Seed Dominance / Bracket Collision / Powerhouse Amnesty / Dynamic 3rd-Place Matrix / Tournament Grit / Chronological Game Theory）
+└── worldcup-upset-analyst/       # 爆冷预测模块（4 模型量化框架 + 历史数据 + CLI 脚本）
 ```
 
 ## football-server/ — 后端（FastAPI + SQLite + Redis）
@@ -224,5 +227,6 @@ football-server/
 │   ├── seed_venues.py           # 种子 16 座球场（按 name 幂等 upsert）
 │   ├── venue_data.py            # 16 座球场数据（城市、国家、IANA 时区、容量 + 中文翻译）
 │   └── seed_matches.py          # 种子 104 场比赛（真实 FIFA 2026 开球时间 + 官方场馆、官方对阵链接、TBD 占位球队）
+│   └── monte_carlo_finals.py    # 蒙特卡洛决赛预测模拟（2000次，7大策略模型，输出 Top 20 决赛场景）
 └── scalable-beaming-riddle.md   # 后端架构方案
 ```

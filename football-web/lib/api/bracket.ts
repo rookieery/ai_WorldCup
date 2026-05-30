@@ -71,6 +71,7 @@ function mapTeam(raw: BackendBracketTeam): BracketTeam {
 function mapMatch(raw: BackendBracketMatch): BracketMatch {
   return {
     id: String(raw.id),
+    externalId: raw.external_id,
     round: raw.stage as BracketRoundName,
     team1: mapTeam(raw.home_team),
     team2: mapTeam(raw.away_team),

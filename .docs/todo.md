@@ -8,7 +8,9 @@
 
 <!-- 格式：### [ISSUE-XXX] 标题 (日期) -->
 
-*（暂无待解决问题）*
+### [ISSUE-001] monte_carlo_finals.py 超过 600 行硬限制 (2026-05-30)
+- 文件 `football-server/scripts/monte_carlo_finals.py` 当前 716 行，超出 600 行硬限制
+- 需委派 refactor-expert 子智能体进行模块化拆分（模拟引擎 / 策略模型 / 结果输出）
 
 ---
 

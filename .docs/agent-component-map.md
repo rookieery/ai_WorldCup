@@ -79,16 +79,23 @@
 
 ### `tournament-bracket.tsx` — `TournamentBracket`
 - **数据**：通过 `getBracket()` 从 API 获取 — 完整 BracketTree（R32→R16→QF→SF→3rd→F）
-- **子组件**：`BracketCard`、`TeamRow`、`RoundConnector`、`DesktopBracket`、`MobileBracket`
+- **子组件**：`BracketCard`、`TeamRow`、`DesktopBracket`、`MobileBracket`、`HalfBracket`/`HalfDivider`/`SfToFinalConnector`/`FinalSection`（来自 `bracket-halves.tsx`）
 - **比赛详情**：BracketCard 点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（parseInt 从 string match.id）
-- **UI**：6 轮横向滚动 + SVG 连接线（桌面端）、垂直堆叠（移动端）
-- **功能**：API 数据获取含加载/错误/重试、TBD 球队显示小组排名标签（如 A1、B2）、赢家金色高亮、LIVE 脉冲、季军赛单独分支
+- **UI**：桌面端双行半区布局（上半区 + 分隔线 + 下半区）+ 决赛/季军赛连接器；移动端垂直堆叠
+- **功能**：API 数据获取含加载/错误/重试、`splitByHalf()` 将每轮比赛拆分为上半区/下半区、TBD 球队显示小组排名标签（如 A1、B2）、赢家金色高亮、LIVE 脉冲、季军赛+决赛单独渲染
 - **响应式**：`hidden md:block` 用于 DesktopBracket，`md:hidden` 用于 MobileBracket
 - **颜色**：全部使用语义化主题变量（text-gold、text-accent、bg-primary/20 等）
-- **文本**：全部通过 `t()` 国际化
+- **文本**：全部通过 `t()` 国际化（含 `bracket.upperHalf`、`bracket.lowerHalf` 新增键）
 - **导入类型**：`BracketMatch`、`BracketTeam`、`BracketRoundName`、`BracketTree` 来自 `@/lib/types`
-- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Zap、Loader2、AlertCircle、Medal）、`getBracket` API、`useTranslation` i18n、`MatchDetailDialog`
-- **行数**：~430
+- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Zap、Medal、Loader2、AlertCircle）、`getBracket` API、`useTranslation` i18n、`MatchDetailDialog`、`bracket-halves` 子组件
+- **行数**：~310
+
+### `bracket-halves.tsx` — 对阵图半区布局子组件
+- **导出组件**：`HalfBracket`（单半区渲染：标签 + 各轮卡片 + SVG 连接线）、`HalfDivider`（上下半区分隔线）、`SfToFinalConnector`（半决赛到决赛 SVG 连接）、`FinalSection`（决赛+季军赛区域）
+- **导出函数**：`splitByHalf(matches, round)` — 根据 `BracketMatch.position` 将比赛拆分为 upper/lower 两个数组
+- **内部组件**：`RoundConnector`（轮次间 SVG 连接线，带渐变和脉冲动画）
+- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Medal）、`useTranslation` i18n、`MatchDetailDialog`
+- **行数**：~250
 
 ### `match-detail-dialog.tsx` — `MatchDetailDialog`
 - **Props**：`matchId`（number | null）、`open`、`onOpenChange`、`onAnalyzeMatch?: (matchData: MatchDetailData, skillId: string) => void`
@@ -197,7 +204,7 @@
 | `timeline` | 8 | 阶段标签（小组赛/R32/R16/QF/SF/季军赛/决赛/休息日） |
 | `match` | 14 | 比赛卡片标签（实时/焦点战/完赛/助威/liveUpdates/disconnected 等） |
 | `matchDetail` | 26 | 比赛详情弹窗标签（事件、统计、场馆、助威、AI 分析区域） |
-| `bracket` | 15 | 淘汰赛对阵图标签（6 轮、待定、状态） |
+| `bracket` | 17 | 淘汰赛对阵图标签（6 轮、待定、状态、上半区、下半区） |
 | `ai` | 29 | AI 助手面板标签（含 fabLabel、sheetTitle、sheetDescription） |
 | `footer` | 4 | 页脚状态栏标签 |
 | `groups` | 18 | 小组积分榜标签（标题、表格列、导航、状态） |

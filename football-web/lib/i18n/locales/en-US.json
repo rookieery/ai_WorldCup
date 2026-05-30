@@ -87,6 +87,10 @@
     "fullBracket": "Full Bracket",
     "tbd": "TBD",
     "bestThird": "Best 3rd",
+    "upperHalf": "Upper Half",
+    "lowerHalf": "Lower Half",
+    "upperHalfShort": "UPPER",
+    "lowerHalfShort": "LOWER",
     "errorLoading": "Failed to load bracket data"
   },
   "ai": {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Trophy, Zap, Loader2, AlertCircle, Medal } from "lucide-react"
+import { Trophy, Zap, Medal, Loader2, AlertCircle } from "lucide-react"
 import { getBracket } from "@/lib/api/bracket"
 import { useTranslation } from "@/lib/i18n"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
@@ -15,6 +15,13 @@ import type {
   BracketTree,
 } from "@/lib/types"
 import { TeamFlag } from "@/lib/flags"
+import {
+  splitByHalf,
+  HalfBracket,
+  HalfDivider,
+  SfToFinalConnector,
+  FinalSection,
+} from "@/components/dashboard/bracket-halves"
 
 // ── Round config ──────────────────────────────────────────────────────────────
 
@@ -147,173 +154,164 @@ function BracketCard({ match, onClick }: { match: BracketMatch; onClick: () => v
   )
 }
 
-// ── SVG Connector between rounds ─────────────────────────────────────────────
-
-function RoundConnector({
-  matchCount,
-  isActive,
-  connId,
-}: {
-  matchCount: number
-  isActive: boolean
-  connId: string
-}) {
-  const cardHeight = 120
-  const gap = 16
-  const totalHeight = matchCount * 2 * (cardHeight + gap)
-  const halfCard = cardHeight / 2
-
-  return (
-    <svg width="50" height={totalHeight} className="overflow-visible flex-shrink-0">
-      <defs>
-        <linearGradient id={"conn-" + connId} x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity={isActive ? 0.8 : 0.3} />
-          <stop offset="100%" stopColor="var(--magenta)" stopOpacity={isActive ? 0.8 : 0.3} />
-        </linearGradient>
-      </defs>
-      {Array.from({ length: matchCount }, (_, i) => {
-        const blockHeight = 2 * (cardHeight + gap)
-        const y1Top = i * blockHeight + halfCard
-        const y1Bot = i * blockHeight + cardHeight + gap + halfCard
-        const yMid = i * blockHeight + cardHeight + gap / 2
-        return (
-          <g key={i}>
-            <path
-              d={"M 0 " + y1Top + " H 25 V " + yMid + " H 50"}
-              fill="none"
-              stroke={"url(#conn-" + connId + ")"}
-              strokeWidth={isActive ? 2 : 1.5}
-              opacity={isActive ? 0.9 : 0.4}
-              className={isActive ? "animate-pulse" : ""}
-            />
-            <path
-              d={"M 0 " + y1Bot + " H 25 V " + yMid + " H 50"}
-              fill="none"
-              stroke={"url(#conn-" + connId + ")"}
-              strokeWidth={isActive ? 2 : 1.5}
-              opacity={isActive ? 0.9 : 0.4}
-              className={isActive ? "animate-pulse" : ""}
-            />
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// ── Desktop Bracket (horizontal scroll) ──────────────────────────────────────
+// ── Desktop Bracket (two-row half layout) ─────────────────────────────────────
 
 function DesktopBracket({ data, onMatchClick }: { data: BracketTree; onMatchClick: (matchId: number) => void }) {
   const { t } = useTranslation()
 
-  const mainRounds = data.rounds.filter((r) => r.round !== "3rd" && r.round !== "F")
+  const hasLive = data.rounds.some((r) => r.matches.some((m) => m.status === "live"))
   const finalRound = data.rounds.find((r) => r.round === "F")
   const thirdPlaceRound = data.rounds.find((r) => r.round === "3rd")
   const sfRound = data.rounds.find((r) => r.round === "SF")
-  const hasLive = data.rounds.some((r) => r.matches.some((m) => m.status === "live"))
+
+  // Split all main rounds (R32, R16, QF, SF) into upper/lower halves
+  const mainRounds = data.rounds.filter((r) => r.round !== "3rd" && r.round !== "F")
+  const upperRounds = mainRounds.map((r) => ({
+    round: r.round,
+    matches: splitByHalf(r.matches, r.round).upper,
+  }))
+  const lowerRounds = mainRounds.map((r) => ({
+    round: r.round,
+    matches: splitByHalf(r.matches, r.round).lower,
+  }))
+
+  const sfActive = sfRound ? sfRound.matches.some((m) => m.status !== "upcoming") : false
 
   return (
     <div className="overflow-x-auto scrollbar-hide h-full">
       <div className="flex items-center min-w-max px-4 h-full">
-        {mainRounds.map((round, idx) => {
-          const nextRound = mainRounds[idx + 1]
-          const isRoundActive = round.matches.some((m) => m.status === "live")
-          const colors = ROUND_COLORS[round.round]
-          return (
-            <div key={round.round} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div className={cn("text-[10px] font-bold tracking-wider mb-3", colors.text)}>
-                  {getRoundLabel(round.round, t)}
-                </div>
-                <div className="flex flex-col gap-3">
-                  {round.matches.map((match) => (
-                    <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
-                  ))}
-                </div>
-              </div>
-              {nextRound && (
-                <RoundConnector
-                  matchCount={nextRound.matches.length}
-                  isActive={isRoundActive || hasLive}
-                  connId={round.round}
-                />
-              )}
-            </div>
-          )
-        })}
+        {/* Two-row bracket stack */}
+        <div className="flex flex-col gap-0">
+          {/* Upper Half */}
+          <HalfBracket
+            label={t("bracket.upperHalf")}
+            halfRounds={upperRounds}
+            hasLive={hasLive}
+            onMatchClick={onMatchClick}
+          />
 
-        {/* SF -> Final connector + Final */}
-        {finalRound && sfRound && (
-          <div className="flex items-center">
-            <RoundConnector
-              matchCount={1}
-              isActive={sfRound.matches.some((m) => m.status !== "upcoming")}
-              connId="sf-to-f"
-            />
-            <div className="flex flex-col items-center">
-              <div className="text-[10px] font-bold tracking-wider mb-3 text-gold">
-                {getRoundLabel("F", t)}
-              </div>
-              <div className="relative">
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2">
-                  <div className="relative">
-                    <Trophy className="h-7 w-7 text-gold" />
-                    <div className="absolute inset-0 blur-xl bg-gold/30" />
-                  </div>
-                </div>
-                {finalRound.matches.map((match) => (
-                  <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+          {/* Divider */}
+          <HalfDivider />
 
-        {/* 3rd Place branch */}
-        {thirdPlaceRound && (
-          <div className="flex items-center ml-6">
-            <RoundConnector
-              matchCount={1}
-              isActive={sfRound ? sfRound.matches.some((m) => m.status === "completed") : false}
-              connId="sf-to-3rd"
-            />
-            <div className="flex flex-col items-center">
-              <div className="text-[10px] font-bold tracking-wider mb-3 text-muted-foreground">
-                {getRoundLabel("3rd", t)}
-              </div>
-              {thirdPlaceRound.matches.map((match) => (
-                <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
-              ))}
-            </div>
-          </div>
-        )}
+          {/* Lower Half */}
+          <HalfBracket
+            label={t("bracket.lowerHalf")}
+            halfRounds={lowerRounds}
+            hasLive={hasLive}
+            onMatchClick={onMatchClick}
+          />
+        </div>
+
+        {/* SF → Final connector spanning both rows */}
+        <SfToFinalConnector isActive={sfActive} />
+
+        {/* Final + 3rd Place */}
+        <FinalSection
+          finalRound={finalRound}
+          thirdPlaceRound={thirdPlaceRound}
+          sfActive={sfActive}
+          onMatchClick={onMatchClick}
+        />
       </div>
     </div>
   )
 }
 
-// ── Mobile Bracket (vertical stack) ──────────────────────────────────────────
+// ── Mobile Bracket (vertical stack with half labels) ──────────────────────────
 
 function MobileBracket({ data, onMatchClick }: { data: BracketTree; onMatchClick: (matchId: number) => void }) {
   const { t } = useTranslation()
 
+  const mainRounds = data.rounds.filter((r) => r.round !== "3rd" && r.round !== "F")
+  const finalRound = data.rounds.find((r) => r.round === "F")
+  const thirdPlaceRound = data.rounds.find((r) => r.round === "3rd")
+
   return (
-    <div className="flex flex-col gap-6 px-4">
-      {data.rounds.map((round) => {
+    <div className="flex flex-col gap-4 px-4">
+      {/* Upper Half Section */}
+      <div className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground/60 text-center uppercase">
+        {t("bracket.upperHalf")}
+      </div>
+      {mainRounds.map((round) => {
+        const { upper } = splitByHalf(round.matches, round.round)
+        if (upper.length === 0) return null
         const colors = ROUND_COLORS[round.round]
         return (
-          <div key={round.round} className="flex flex-col items-center">
+          <div key={`${round.round}-upper`} className="flex flex-col items-center">
             <div className={cn("text-[10px] font-bold tracking-wider mb-3", colors.text)}>
               {getRoundLabel(round.round, t)}
             </div>
             <div className="flex flex-wrap justify-center gap-3">
-              {round.matches.map((match) => (
+              {upper.map((match) => (
                 <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
               ))}
             </div>
           </div>
         )
       })}
+
+      {/* Divider */}
+      <div className="flex items-center gap-3 py-2">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-muted-foreground/30 to-muted-foreground/15" />
+        <span className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground/60 uppercase select-none">
+          {t("bracket.upperHalfShort")} / {t("bracket.lowerHalfShort")}
+        </span>
+        <div className="flex-1 h-px bg-gradient-to-l from-transparent via-muted-foreground/30 to-muted-foreground/15" />
+      </div>
+
+      {/* Lower Half Section */}
+      <div className="text-[9px] font-bold tracking-[0.15em] text-muted-foreground/60 text-center uppercase">
+        {t("bracket.lowerHalf")}
+      </div>
+      {mainRounds.map((round) => {
+        const { lower } = splitByHalf(round.matches, round.round)
+        if (lower.length === 0) return null
+        const colors = ROUND_COLORS[round.round]
+        return (
+          <div key={`${round.round}-lower`} className="flex flex-col items-center">
+            <div className={cn("text-[10px] font-bold tracking-wider mb-3", colors.text)}>
+              {getRoundLabel(round.round, t)}
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              {lower.map((match) => (
+                <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
+              ))}
+            </div>
+          </div>
+        )
+      })}
+
+      {/* Final */}
+      {finalRound && (
+        <div className="flex flex-col items-center">
+          <div className="text-[10px] font-bold tracking-wider mb-3 text-gold">
+            {getRoundLabel("F", t)}
+          </div>
+          <div className="relative">
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2">
+              <div className="relative">
+                <Trophy className="h-7 w-7 text-gold" />
+                <div className="absolute inset-0 blur-xl bg-gold/30" />
+              </div>
+            </div>
+            {finalRound.matches.map((match) => (
+              <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3rd Place */}
+      {thirdPlaceRound && (
+        <div className="flex flex-col items-center">
+          <div className="text-[10px] font-bold tracking-wider mb-3 text-muted-foreground">
+            {getRoundLabel("3rd", t)}
+          </div>
+          {thirdPlaceRound.matches.map((match) => (
+            <BracketCard key={match.id} match={match} onClick={() => onMatchClick(parseInt(match.id, 10))} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
