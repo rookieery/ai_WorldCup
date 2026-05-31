@@ -65,7 +65,7 @@ football-web/
 │   ├── websocket.ts          # WebSocket 客户端单例（自动连接/重连、事件分发到 Zustand 实时存储）
 │   ├── i18n/                 # 国际化基础设施
 │   │   ├── index.ts          # 统一导出（I18nProvider、useI18n、useTranslation、类型）
-│   │   ├── context.tsx       # I18nProvider（React Context：locale 状态、t() 函数、localStorage 持久化 + API 语言同步 + locale 切换时存储缓存失效）
+│   │   ├── context.tsx       # I18nProvider（React Context：locale 状态、t() 函数、localStorage 持久化 + API 语言同步 + locale 切换时同步 preferencesStore.language + 存储缓存失效）
 │   │   ├── use-translation.ts # useTranslation Hook — 轻量封装，暴露 { t, locale, setLocale }
 │   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构，含 matchDetail/stats/teamDetail 命名空间）
 │   │   └── locales/

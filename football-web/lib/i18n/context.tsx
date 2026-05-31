@@ -12,7 +12,7 @@ import type { Locale, LocaleMessages } from "./types"
 import zhCN from "./locales/zh-CN.json"
 import enUS from "./locales/en-US.json"
 import { setApiClientLanguage } from "@/lib/api-client"
-import { useMatchesStore } from "@/lib/store"
+import { useMatchesStore, usePreferencesStore } from "@/lib/store"
 
 const localeMap: Record<Locale, LocaleMessages> = {
   "zh-CN": zhCN as LocaleMessages,
@@ -65,6 +65,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setLocaleState(detected)
     }
     setApiClientLanguage(detected === "zh-CN" ? "zh" : "en")
+    // Sync the preferences store so all consumers (AI chat, championship
+    // prediction, match detail, etc.) read the correct language instead of
+    // the hardcoded "en-US" default.
+    usePreferencesStore.getState().setLanguage(detected)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const setLocale = useCallback((newLocale: Locale) => {
@@ -72,6 +76,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, newLocale)
     document.documentElement.lang = newLocale === "zh-CN" ? "zh" : "en"
     setApiClientLanguage(newLocale === "zh-CN" ? "zh" : "en")
+    // Keep preferences store in sync so every consumer reads the right lang.
+    usePreferencesStore.getState().setLanguage(newLocale)
     useMatchesStore.getState().invalidateAll()
   }, [])
 
