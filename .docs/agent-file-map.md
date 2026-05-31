@@ -117,7 +117,7 @@ data/
 ```
 skills/
 ├── README.md                     # Skills 概览
-├── group_stage_predict.md        # 小组赛预测 6 步推理
+├── group_stage_predict.md        # 小组赛预测 v2.1（8 步推理 + LLM 自主搜索实时数据 + 内嵌对阵表 + 比分概率，完全自包含）
 ├── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
 ├── 冠亚军分析.md                   # 冠亚军预测 v2.0（自包含：官方对阵表 + 7 大策略 + 5 步推理链 + 因子权重）
 └── worldcup-upset-analyst/       # 爆冷预测模块（4 模型量化框架 + 历史数据 + CLI 脚本）
