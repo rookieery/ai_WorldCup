@@ -86,7 +86,40 @@ model: opus
 ## 成功标准 (Success Criteria)
 - [ ] 标准 1
 - [ ] 标准 2
+
+## Ralph Stories (PRD 可消费段)
+
+> 将上方实施步骤提炼为 Ralph 循环可消费的 User Stories。
+> 每条 Story 对应一个 Ralph 迭代（一个 context window 可完成的工作量）。
+
+### US-001: [Story 标题]
+- **Description**: As a [角色], I want [功能] so that [收益]
+- **Acceptance Criteria**:
+  1. [可验证的具体条件，如 "GET /api/xxx 返回 200 并包含 yyy 字段"]
+  2. [禁止模糊描述如 "工作正常" 或 "功能完善"]
+  3. TypeScript 项目构建通过 (`npm run build` 无错误)
+- **Priority**: 1
+
+### US-002: [Story 标题]
+- **Description**: As a [角色], I want [功能] so that [收益]
+- **Acceptance Criteria**:
+  1. ...
+  2. ...
+  3. TypeScript 项目构建通过
+- **Priority**: 2
+
+...（依此类推，按依赖顺序排列）
 ```
+
+### Ralph Stories 粒度规则
+
+1. **一个 Story = 一个迭代**：每个 Story 必须在单次 Claude/Amp 会话中可完成。合理的粒度示例：
+   - "创建 Team 数据模型和 Repository" ✅
+   - "搭建整个后端认证系统" ❌（太大，需拆分）
+2. **依赖排序**：Priority 数字越小越先执行。Schema/DB → Service → Controller → UI → 集成测试。
+3. **可验证的验收标准**：每条验收标准必须是可以明确判断 pass/fail 的条件。
+4. **每条 Story 必须包含构建检查**：验收标准最后一条固定为 "TypeScript 项目构建通过" 或 "Python 类型检查通过"。
+5. **UI 相关 Story 必须包含视觉验证**：验收标准中包含 "通过浏览器验证布局和主题一致性"。
 
 ## 最佳实践 (Best Practices)
 
@@ -207,4 +240,48 @@ model: opus
 - 没有清晰文件路径的步骤
 - 无法独立交付的阶段
 
-**记住**：一个出色的计划是具体的、可执行的，并且同时考虑了理想路径和边界情况。最好的计划能让人充满信心地进行增量实施。
+## Ralph Stories 提炼指引
+
+当实施步骤总数 **≥ 3 步** 或涉及 **≥ 2 个文件** 时，必须在计划末尾输出 Ralph Stories 段。
+
+### 提炼方法
+
+1. **按阶段分组**：将实施步骤按依赖关系分组，每组提炼为一条 Story。
+2. **合并原子步骤**：高度耦合的步骤（如"创建模型" + "创建迁移脚本"）合并为一条 Story。
+3. **保留关键文件路径**：Story 的 Description 中应标注主要涉及的文件路径，方便 Ralph 迭代时快速定位。
+4. **Story ID 顺序即执行顺序**：US-001 必须是 US-002 的前置依赖或无依赖的基础步骤。
+
+### 提炼示例
+
+```
+实施步骤（技术级）:
+  阶段一：数据库层
+    1. 创建 Team 模型 (app/models/team.py)
+    2. 创建 Team Schema (app/schemas/team_schema.py)
+    3. 创建 Team Repository (app/repositories/team_repo.py)
+  阶段二：业务层
+    4. 创建 Team Service (app/services/team_service.py)
+    5. 创建 Team Controller (app/controllers/team_controller.py)
+
+↓ 提炼为 Ralph Stories（产品级）↓
+
+US-001: Team 数据层（模型 + Schema + Repository）
+  Description: As a developer, I want to establish the Team data layer
+    so that higher-level services can query team information.
+  Acceptance Criteria:
+    1. Team model 包含 name, name_zh, code, group_label 等字段
+    2. TeamCreate/TeamResponse Schema 严格区分 DTO 和 VO
+    3. TeamRepository 支持 get_by_code 和 get_by_group 查询
+    4. Python 类型检查通过
+
+US-002: Team 业务接口（Service + Controller）
+  Description: As a user, I want to browse team information via API
+    so that I can view all participating teams and their groups.
+  Acceptance Criteria:
+    1. GET /api/teams 返回全部队伍列表
+    2. GET /api/teams/:code 返回单支队伍详情
+    3. 支持 ?lang=zh 查询参数切换中英文字段
+    4. Python 类型检查通过
+```
+
+**记住**：一个出色的计划是具体的、可执行的，并且同时考虑了理想路径和边界情况。最好的计划能让人充满信心地进行增量实施。计划末尾的 Ralph Stories 段让技术方案可以直接流转为自动化执行，消除"规划完还要手工转 PRD"的断层。

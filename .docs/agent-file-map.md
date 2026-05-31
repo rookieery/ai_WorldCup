@@ -10,7 +10,7 @@ ai_WorldCup/
 ├── prompt.md                 # Ralph Agent 循环指令
 ├── prd.json                  # Story 追踪器（分支 + story 通过标记）
 ├── progress.txt              # Ralph 执行进度日志
-├── archive.js                # 未知工具脚本
+├── archive.js                # Ralph 自动瘦身归档（completed stories → prd_archive.json + progress 日志归档 + .all_done 信号）
 ├── ralph.sh                  # Ralph Agent Shell 入口
 ├── .claudeignore             # Claude 忽略规则
 ├── .docs/                    # 本文档目录

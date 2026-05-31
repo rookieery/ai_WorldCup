@@ -25,3 +25,6 @@
 | `skills/group_stage_predict.md` | AI 预测技能（小组赛） |
 | `skills/knockout_stage_predict.md` | AI 预测技能（淘汰赛） |
 | `skills/冠亚军分析.md` | AI 预测技能（冠亚军预测 v2.0：自包含对阵表 + 7 大策略 + 5 步推理链） |
+| `.claude/skills/prd/SKILL.md` | `/prd` Skill — 根据功能描述生成结构化 PRD 文档 |
+| `.claude/skills/ralph/SKILL.md` | `/ralph` Skill — 将 PRD 转换为 prd.json（Ralph 自动循环消费） |
+| `.claude/agents/planner.md` | Planner Subagent — 复杂功能技术级实施规划（含 Ralph Stories 输出） |
