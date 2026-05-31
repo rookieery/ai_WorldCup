@@ -264,10 +264,11 @@ async def championship_analysis(
     summary="List available AI analysis skills",
 )
 async def list_skills() -> ApiResponse[List[SkillInfo]]:
-    """Return metadata for all registered AI analysis skills.
+    """Return metadata for all available AI analysis skills.
 
-    No database query is performed — the data is read from the in-memory
-    ``_SKILL_REGISTRY`` populated at module load time.
+    Skills are discovered by scanning the ``skills/`` directory for ``*.md``
+    files.  Enriched metadata (bilingual names, descriptions, applicable
+    stages) is pulled from the in-memory registry when available.
     """
     skills = PromptBuilder.get_available_skills()
     return ApiResponse(data=skills, message="ok")

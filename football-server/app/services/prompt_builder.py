@@ -73,6 +73,7 @@ def _get_championship_skill() -> str:
 _SKILL_REGISTRY: Dict[str, Dict] = {
     "group_stage_predict": {
         "loader": _get_group_stage_skill,
+        "filename": "group_stage_predict.md",
         "name": "Group Stage Prediction",
         "name_zh": "小组赛单场预测",
         "description": "6-step reasoning chain for group stage matches",
@@ -81,6 +82,7 @@ _SKILL_REGISTRY: Dict[str, Dict] = {
     },
     "knockout_stage_predict": {
         "loader": _get_knockout_stage_skill,
+        "filename": "knockout_stage_predict.md",
         "name": "Knockout Stage Prediction",
         "name_zh": "淘汰赛单场预测",
         "description": "5-step reasoning chain for knockout matches",
@@ -89,12 +91,18 @@ _SKILL_REGISTRY: Dict[str, Dict] = {
     },
     "championship_predict": {
         "loader": _get_championship_skill,
+        "filename": "冠亚军分析.md",
         "name": "Championship Prediction",
         "name_zh": "冠亚军预测",
         "description": "Monte Carlo simulation for champion & runner-up prediction",
         "description_zh": "基于蒙特卡洛模拟的冠亚军预测分析（2000次推演）",
         "applicable_stages": ["tournament"],
     },
+}
+
+# Reverse mapping: filename → registry key (for backward-compatible lookup)
+_FILENAME_TO_SKILL_ID: Dict[str, str] = {
+    meta["filename"]: sid for sid, meta in _SKILL_REGISTRY.items()
 }
 
 
@@ -281,24 +289,54 @@ class PromptBuilder:
 
     @staticmethod
     def get_available_skills() -> List[SkillInfo]:
-        """Return metadata for all registered skills.
+        """Dynamically scan the ``skills/`` directory and return all ``*.md`` files.
+
+        Each file becomes a selectable skill.  Registry metadata (bilingual
+        names, descriptions, stages) is used when available; otherwise sensible
+        defaults are derived from the filename.
 
         Returns
         -------
         list[SkillInfo]
             Skill descriptors suitable for API responses.
         """
-        return [
-            SkillInfo(
-                skill_id=sid,
-                name=meta["name"],
-                name_zh=meta["name_zh"],
-                description=meta["description"],
-                description_zh=meta["description_zh"],
-                applicable_stages=meta["applicable_stages"],
-            )
-            for sid, meta in _SKILL_REGISTRY.items()
-        ]
+        skills: List[SkillInfo] = []
+
+        for path in sorted(_SKILLS_DIR.glob("*.md")):
+            if path.name == "README.md":
+                continue
+
+            filename = path.name  # e.g. "冠亚军分析.md"
+            stem = path.stem  # e.g. "冠亚军分析"
+
+            # Look up enriched metadata from the registry
+            sid = _FILENAME_TO_SKILL_ID.get(filename)
+            if sid is not None:
+                meta = _SKILL_REGISTRY[sid]
+                skills.append(
+                    SkillInfo(
+                        skill_id=filename,
+                        name=stem,
+                        name_zh=stem,
+                        description=meta["description"],
+                        description_zh=meta["description_zh"],
+                        applicable_stages=meta["applicable_stages"],
+                    )
+                )
+            else:
+                # No registry entry — use filename as display text
+                skills.append(
+                    SkillInfo(
+                        skill_id=filename,
+                        name=stem,
+                        name_zh=stem,
+                        description=f"Skill file: {filename}",
+                        description_zh=f"技能文件: {filename}",
+                        applicable_stages=["tournament"],
+                    )
+                )
+
+        return skills
 
     @staticmethod
     def build_skill_prompt(
@@ -416,18 +454,29 @@ class PromptBuilder:
         list[dict]
             Two-element message list ``[system, user]``.
         """
-        skill_id = request.skill_id or "championship_predict"
-        meta = _SKILL_REGISTRY.get(skill_id)
+        raw_id = request.skill_id or "冠亚军分析.md"
 
-        # Load skill content; fall back to empty string on failure
+        # Load skill content — accept filenames or legacy registry keys
         skill_content = ""
-        if meta is not None:
+        sid = _FILENAME_TO_SKILL_ID.get(raw_id)
+
+        if sid is not None:
+            # raw_id is a known filename → use registry loader
             try:
-                skill_content = meta["loader"]()
+                skill_content = _SKILL_REGISTRY[sid]["loader"]()
             except Exception:
-                logger.exception("Failed to load skill: %s", skill_id)
+                logger.exception("Failed to load skill: %s", raw_id)
+        elif raw_id in _SKILL_REGISTRY:
+            # Legacy registry key (backward compat)
+            try:
+                skill_content = _SKILL_REGISTRY[raw_id]["loader"]()
+            except Exception:
+                logger.exception("Failed to load skill: %s", raw_id)
         else:
-            logger.warning("Unknown championship skill_id: %s", skill_id)
+            # Unknown identifier — try reading as a raw filename
+            skill_content = _read_skill(raw_id)
+            if not skill_content:
+                logger.warning("Unknown championship skill_id: %s", raw_id)
 
         lang = request.lang if request.lang in ("zh-CN", "en-US") else "zh-CN"
         fragments = SYSTEM_FRAGMENTS.get(lang, SYSTEM_FRAGMENTS["zh-CN"])

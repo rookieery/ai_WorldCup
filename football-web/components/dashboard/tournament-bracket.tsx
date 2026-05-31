@@ -332,11 +332,6 @@ function MobileBracket({ data, onMatchClick }: { data: BracketTree; onMatchClick
 
 // ── Main exported component ──────────────────────────────────────────────────
 
-/** Filter skills to only show championship-related ones for the strategy selector. */
-function isChampionshipSkill(skill: SkillInfo): boolean {
-  return skill.applicable_stages.includes("tournament")
-}
-
 export function TournamentBracket() {
   const { t } = useTranslation()
   const [data, setData] = useState<BracketTree | null>(null)
@@ -355,7 +350,11 @@ export function TournamentBracket() {
     void (async () => {
       try {
         const skills = await getAvailableSkills(lang)
-        if (!cancelled) setAvailableSkills(skills)
+        if (!cancelled) {
+          setAvailableSkills(skills)
+          // Auto-select the first skill (fallback: "冠亚军分析.md")
+          setSelectedChampionshipSkill(skills.length > 0 ? skills[0].skill_id : "冠亚军分析.md")
+        }
       } catch {
         // Skills are optional — keep empty list
       }
@@ -373,7 +372,7 @@ export function TournamentBracket() {
   const handleChampionshipAnalysis = useCallback(() => {
     if (isStreaming) return
 
-    const skillId = selectedChampionshipSkill ?? "championship_predict"
+    const skillId = selectedChampionshipSkill ?? "冠亚军分析.md"
 
     const store = useAIChatStore.getState()
     const summary = lang === "zh-CN"
@@ -448,9 +447,6 @@ export function TournamentBracket() {
 
   if (!data) return null
 
-  // Filter championship skills for the strategy selector
-  const championshipSkills = availableSkills.filter(isChampionshipSkill)
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden min-h-0">
       {/* Header */}
@@ -466,19 +462,16 @@ export function TournamentBracket() {
 
         {/* Championship Prediction Button */}
         <div className="mt-3 flex items-center justify-center gap-2">
-          {championshipSkills.length > 0 && (
+          {availableSkills.length > 0 && (
             <Select
-              value={selectedChampionshipSkill ?? "__default__"}
-              onValueChange={(v) => setSelectedChampionshipSkill(v === "__default__" ? null : v)}
+              value={selectedChampionshipSkill ?? availableSkills[0]?.skill_id ?? ""}
+              onValueChange={setSelectedChampionshipSkill}
             >
               <SelectTrigger className="w-auto min-w-[120px] max-w-[180px] bg-secondary/30 border-glass-border text-[11px] h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__default__">
-                  {lang === "zh-CN" ? "冠亚军分析" : "Championship"}
-                </SelectItem>
-                {championshipSkills.map((skill) => (
+                {availableSkills.map((skill) => (
                   <SelectItem key={skill.skill_id} value={skill.skill_id}>
                     {lang === "zh-CN" ? skill.name_zh : skill.name}
                   </SelectItem>
