@@ -47,7 +47,7 @@ football-web/
 │   │   ├── match-detail-dialog.tsx # 比赛详情弹窗（队伍+比分、事件时间线、统计数据、助威、场馆信息、AI 分析按钮）— 赛博朋克毛玻璃风格
 │   │   ├── match-detail-helpers.tsx # 比赛详情辅助组件 + 类型（EventsSection、StatRow、VenueInfoItem）+ dispatchMatchAnalysis 共享分析流调度器
 │   │   ├── group-standings.tsx   # 小组积分榜网格（12 组 A-L，出线区高亮）
-│   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动，双行半区布局，DesktopBracket 使用 scrollbar-thin 独立滚动）+ 冠亚军预测按钮（蒙特卡洛 2000 次模拟）+ 策略选择器 + 点击打开比赛详情
+│   │   ├── tournament-bracket.tsx # 完整6轮淘汰赛对阵图（R32→R16→QF→SF→3rd→F，API 驱动，双行半区布局，DesktopBracket 使用 scrollbar-thin 独立滚动）+ 冠亚军预测按钮（蒙特卡洛模拟次数可配置：默认 2000，范围 100-10000）+ 策略选择器 + 模拟次数输入框 + 点击打开比赛详情
 │   │   ├── bracket-halves.tsx     # 对阵图半区布局子组件（HalfBracket、HalfDivider、SfToFinalConnector、FinalSection、splitByHalf）
 │   │   ├── ai-copilot-panel.tsx   # AI 聊天侧边栏（真实 SSE 流式、打字机效果、思维块、分析卡片、analysis-context 消息特殊渲染、Zustand 存储）
 │   │   └── ai-copilot-mobile.tsx  # 移动端 AI 助手 — FAB 入口 + Sheet 底部抽屉（lg 断点以下可见）+ 导出 openMobileCopilotSheet() 供外部触发
@@ -69,7 +69,7 @@ football-web/
 │   │   ├── use-translation.ts # useTranslation Hook — 轻量封装，暴露 { t, locale, setLocale }
 │   │   ├── types.ts          # Locale 联合类型 + LocaleMessages 接口（镜像 JSON 结构，含 matchDetail/stats/teamDetail 命名空间）
 │   │   └── locales/
-│   │       ├── zh-CN.json    # 中文翻译（160+ 键，含 bracket.championshipPrediction 等 4 个新增冠亚军预测键）
+│   │       ├── zh-CN.json    # 中文翻译（160+ 键，含 bracket.championshipPrediction、bracket.simulationCount、bracket.championshipDesc（{count} 动态模板）等冠亚军预测键）
 │   │       └── en-US.json    # 英文翻译（160+ 键，与 zh-CN 完全对齐）
 │   ├── api/                  # API 模块函数（每个后端资源一个文件）
 │   │   ├── matches.ts        # getMatchDates(options?)（含 timezone 参数）、getMatches(params)、getMatchById(id)、getLiveMatches()、apiMatchToUi()
@@ -81,7 +81,7 @@ football-web/
 │   │   ├── stats.ts          # getScorers(params) — 射手榜数据
 │   │   ├── ai-chat.ts        # streamChat() SSE 消费者（fetch+ReadableStream，POST /api/ai/chat）+ 导出 parseSSELines/parseSSEPayload/StreamCallbacks
 │   │   ├── match-analysis.ts # streamMatchAnalysis() SSE 消费者（POST /api/ai/match-analysis）+ getAvailableSkills()（GET /api/ai/skills）
-│   │   └── championship-analysis.ts # streamChampionshipAnalysis() SSE 消费者（POST /api/ai/championship-analysis，蒙特卡洛冠亚军预测）
+│   │   └── championship-analysis.ts # streamChampionshipAnalysis() SSE 消费者（POST /api/ai/championship-analysis，蒙特卡洛冠亚军预测，支持 simulation_count 参数）
 │   ├── store/                # Zustand 全局状态存储
 │   │   ├── index.ts          # 统一导出所有存储
 │   │   ├── preferences.ts    # 用户偏好（语言、时区、视图模式、主题）— localStorage 持久化
@@ -170,11 +170,11 @@ football-server/
 │   ├── services/
 │   │   ├── __init__.py          # 统一导出所有 Service 类
 │   │   ├── ai_service.py        # AIService：Deepseek API 客户端（stream_chat AsyncGenerator → SSEEvent 对象：thinking/answer/analysis/done/error，30s 超时，优雅错误处理）
-│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt、_format_match_context（_SKILL_REGISTRY 3 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
+│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入）、_format_match_context（_SKILL_REGISTRY 3 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
 │   │   └── prompts/             # 提示词常量子模块
-│   │       ├── __init__.py      # 统一导出 SYSTEM_FRAGMENTS、ANALYSIS_PROMPTS、CHAMPIONSHIP_INSTRUCTION
+│   │       ├── __init__.py      # 统一导出 SYSTEM_FRAGMENTS、ANALYSIS_PROMPTS、get_championship_instruction
 │   │       ├── system_prompts.py # SYSTEM_FRAGMENTS（双语角色/赛事上下文/规则）+ ANALYSIS_PROMPTS（双语小组赛/淘汰赛分析引导模板）
-│   │       └── championship_prompts.py # CHAMPIONSHIP_INSTRUCTION（双语冠亚军预测指令：3 阶段 2000 次模拟 + TOP 20 输出格式 + 数据约束）
+│   │       └── championship_prompts.py # get_championship_instruction(lang, simulation_count)（函数式生成双语冠亚军预测指令：3 阶段 N 次模拟 + TOP 20 输出格式 + 数据约束）
 │   │   ├── team_service.py      # TeamService：get_all_teams、get_team_by_code、get_teams_by_group、get_team_stats（支持 lang + timezone）
 │   │   ├── venue_service.py     # VenueService：get_all_venues（分页）
 │   │   ├── match_service.py     # MatchService：get_match_dates、get_matches（多条件筛选 + Redis 实时合并）、get_match_by_id（含事件 + Redis 实时）、get_live_matches（Redis 实时合并）；使用共享 app.utils.timezone
@@ -213,7 +213,7 @@ football-server/
 │       ├── bracket_schema.py    # BracketTeam/Match/Round/TreeResponse VO（支持 TBD）
 │       ├── cheer_schema.py      # CheerVoteRequest DTO + CheerResponse VO
 │       ├── stats_schema.py      # ScorerItem VO（排名、球员名、球队信息、进球、助攻）
-│       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO + MatchAnalysisRequest DTO + ChampionshipAnalysisRequest DTO + TeamBrief/MatchEventBrief/SkillInfo VO
+│       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO + MatchAnalysisRequest DTO + ChampionshipAnalysisRequest DTO（含 simulation_count 字段，默认 2000，范围 100-10000）+ TeamBrief/MatchEventBrief/SkillInfo VO
 │       ├── ws_schema.py         # WSEventType 枚举 + WSMessage VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VO 用于爬虫数据验证
 ├── scraping/                    # 网页爬虫基础设施

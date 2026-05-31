@@ -90,14 +90,14 @@
 - **数据**：通过 `getBracket()` 从 API 获取 — 完整 BracketTree（R32→R16→QF→SF→3rd→F）
 - **子组件**：`BracketCard`、`TeamRow`、`DesktopBracket`、`MobileBracket`、`HalfBracket`/`HalfDivider`/`SfToFinalConnector`/`FinalSection`（来自 `bracket-halves.tsx`）、`GroupTeamList`（小组球队右侧边栏）
 - **比赛详情**：BracketCard 点击通过 `onMatchClick` 回调打开 `MatchDetailDialog`（parseInt 从 string match.id）
-- **冠亚军预测**：Header 区域含「冠亚军预测」金色渐变按钮（Crown 图标）+ 可选策略选择器（shadcn Select）；点击后通过 `streamChampionshipAnalysis()` API 启动 SSE 流，结果在 AI Copilot 面板展示；流式状态通过 `useAIChatStore.isStreaming` 读取；移动端自动打开底部抽屉
+- **冠亚军预测**：Header 区域含「冠亚军预测」金色渐变按钮（Crown 图标）+ 可选策略选择器（shadcn Select）+ 模拟次数输入框（`Input` number，默认 2000，范围 100-10000，步进 100，blur 时自动校验边界）；点击后通过 `streamChampionshipAnalysis()` API 启动 SSE 流，将 `simulationCount` 透传至后端；结果在 AI Copilot 面板展示；流式状态通过 `useAIChatStore.isStreaming` 读取；移动端自动打开底部抽屉
 - **UI**：桌面端双行半区布局（上半区 + 分隔线 + 下半区）+ 决赛/季军赛连接器 + 右侧 GroupTeamList 侧边栏；移动端垂直堆叠
 - **功能**：API 数据获取含加载/错误/重试、`splitByHalf()` 将每轮比赛拆分为上半区/下半区、TBD 球队显示小组排名标签（如 A1、B2）、赢家金色高亮、LIVE 脉冲、季军赛+决赛单独渲染
 - **响应式**：桌面端 `hidden md:flex` 水平布局（bracket + GroupTeamList 侧边栏），移动端 `md:hidden` 垂直堆叠
 - **颜色**：全部使用语义化主题变量（text-gold、text-accent、bg-primary/20 等）
-- **文本**：全部通过 `t()` 国际化（含 `bracket.championshipPrediction`、`bracket.championshipAnalyzing`、`bracket.championshipDesc` 等新增键）
+- **文本**：全部通过 `t()` 国际化（含 `bracket.championshipPrediction`、`bracket.championshipAnalyzing`、`bracket.championshipDesc`（含 `{count}` 动态模板）、`bracket.simulationCount` 等键）
 - **导入类型**：`BracketMatch`、`BracketTeam`、`BracketRoundName`、`BracketTree` 来自 `@/lib/types`；`SkillInfo` 来自 `@/lib/api/match-analysis`
-- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Zap、Medal、Loader2、AlertCircle、Crown）、`getBracket` API、`getAvailableSkills` API、`streamChampionshipAnalysis` API、`useAIChatStore`、`usePreferencesStore`、`openMobileCopilotSheet`、shadcn `Select`、`useTranslation` i18n、`MatchDetailDialog`、`bracket-halves` 子组件、`GroupTeamList`
+- **依赖**：`cn` 工具、`lucide-react` 图标（Trophy、Zap、Medal、Loader2、AlertCircle、Crown）、`Input`（shadcn）、`getBracket` API、`getAvailableSkills` API、`streamChampionshipAnalysis` API、`useAIChatStore`、`usePreferencesStore`、`openMobileCopilotSheet`、shadcn `Select`、`useTranslation` i18n、`MatchDetailDialog`、`bracket-halves` 子组件、`GroupTeamList`
 - **行数**：~545
 
 ### `bracket-halves.tsx` — 对阵图半区布局子组件

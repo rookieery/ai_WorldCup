@@ -171,6 +171,12 @@ class ChampionshipAnalysisRequest(BaseModel):
         default=None,
         description="Skill to use; defaults to championship_predict",
     )
+    simulation_count: int = Field(
+        default=2000,
+        ge=100,
+        le=10000,
+        description="Number of Monte Carlo simulation runs (100-10000)",
+    )
     lang: str = Field(
         default="zh-CN",
         description="Response language",

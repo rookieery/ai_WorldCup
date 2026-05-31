@@ -18,7 +18,7 @@ from app.schemas.ai_schema import (
     MatchAnalysisRequest,
     SkillInfo,
 )
-from app.services.prompts.championship_prompts import CHAMPIONSHIP_INSTRUCTION
+from app.services.prompts.championship_prompts import get_championship_instruction
 from app.services.prompts.system_prompts import ANALYSIS_PROMPTS, SYSTEM_FRAGMENTS
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ _SKILL_REGISTRY: Dict[str, Dict] = {
         "name": "Championship Prediction",
         "name_zh": "冠亚军预测",
         "description": "Monte Carlo simulation for champion & runner-up prediction",
-        "description_zh": "基于蒙特卡洛模拟的冠亚军预测分析（2000次推演）",
+        "description_zh": "基于蒙特卡洛模拟的冠亚军预测分析（可自定义推演次数）",
         "applicable_stages": ["tournament"],
     },
 }
@@ -110,7 +110,7 @@ _FILENAME_TO_SKILL_ID: Dict[str, str] = {
 # Prompt constants are imported from app.services.prompts:
 #   SYSTEM_FRAGMENTS  -> prompts.system_prompts
 #   ANALYSIS_PROMPTS  -> prompts.system_prompts
-#   CHAMPIONSHIP_INSTRUCTION -> prompts.championship_prompts
+#   get_championship_instruction -> prompts.championship_prompts
 # ---------------------------------------------------------------------------
 
 
@@ -510,9 +510,7 @@ class PromptBuilder:
         system_content = "\n".join(system_parts)
 
         # User message: championship analysis instruction
-        user_content = CHAMPIONSHIP_INSTRUCTION.get(
-            lang, CHAMPIONSHIP_INSTRUCTION["zh-CN"]
-        )
+        user_content = get_championship_instruction(lang, request.simulation_count)
 
         return [
             {"role": "system", "content": system_content},

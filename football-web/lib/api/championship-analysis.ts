@@ -20,6 +20,7 @@ import type { StreamCallbacks } from "@/lib/api/ai-chat"
 /** Request body matching the backend `ChampionshipAnalysisRequest` schema. */
 export interface ChampionshipAnalysisRequestBody {
   skill_id?: string
+  simulation_count?: number
   lang: string
 }
 

@@ -96,8 +96,9 @@
     "expandGroups": "展开小组列表",
     "collapseGroups": "收起小组列表",
     "championshipPrediction": "冠亚军预测",
-    "championshipAnalyzing": "正在模拟2000场比赛...",
-    "championshipDesc": "基于蒙特卡洛模拟（2000次推演），预测世界杯冠亚军",
+    "championshipAnalyzing": "正在模拟...",
+    "championshipDesc": "基于蒙特卡洛模拟（{count}次推演），预测世界杯冠亚军",
+    "simulationCount": "模拟次数",
     "selectStrategy": "选择分析策略"
   },
   "ai": {

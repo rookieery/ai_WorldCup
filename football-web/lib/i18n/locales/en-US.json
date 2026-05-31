@@ -96,8 +96,9 @@
     "expandGroups": "Expand group list",
     "collapseGroups": "Collapse group list",
     "championshipPrediction": "Champion Prediction",
-    "championshipAnalyzing": "Simulating 2,000 matches...",
-    "championshipDesc": "Monte Carlo simulation (2,000 runs) for World Cup champion & runner-up prediction",
+    "championshipAnalyzing": "Simulating...",
+    "championshipDesc": "Monte Carlo simulation ({count} runs) for World Cup champion & runner-up prediction",
+    "simulationCount": "Sim Count",
     "selectStrategy": "Select Strategy"
   },
   "ai": {

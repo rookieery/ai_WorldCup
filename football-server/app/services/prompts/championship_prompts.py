@@ -3,6 +3,9 @@
 Contains the bilingual (zh-CN / en-US) detailed championship prediction
 instructions used in the championship analysis prompt.  Extracted from
 ``prompt_builder.py`` to keep that module under the 600-line hard-limit.
+
+Templates use ``{simulation_count}`` placeholder so the caller can inject
+a user-configurable Monte Carlo run count.
 """
 
 from __future__ import annotations
@@ -10,12 +13,10 @@ from __future__ import annotations
 from typing import Dict
 
 
-# ---------------------------------------------------------------------------
-# Championship prediction prompts
-# ---------------------------------------------------------------------------
-
-CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
-    "zh-CN": (
+def _build_zh_instruction(simulation_count: int) -> str:
+    """Build the zh-CN championship instruction with the given simulation count."""
+    count_str = f"{simulation_count:,}"
+    return (
         "## 冠亚军预测任务\n\n"
         "请对 2026 年 FIFA 世界杯进行完整的冠亚军预测分析。你必须严格按照以下流程执行：\n\n"
         "### 第一阶段：小组赛模拟\n"
@@ -24,7 +25,7 @@ CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
         "3. 给出每个小组最可能的前两名和进入「最佳第三名」的球队\n\n"
         "### 第二阶段：淘汰赛落位与蒙特卡洛模拟\n"
         "1. 根据小组赛结果，按照 FIFA 官方对阵表将 32 支球队落位\n"
-        "2. 模拟 **2000 次** 完整的淘汰赛过程，从 1/16 决赛一直到决赛\n"
+        f"2. 模拟 **{count_str} 次** 完整的淘汰赛过程，从 1/16 决赛一直到决赛\n"
         "3. 在每次模拟中，必须遵循真实的赛程时间线（小组赛 → 32强 → 16强 → 8强 → 半决赛 → 决赛）\n"
         "4. 严格应用策略文件中的七大核心预测策略：\n"
         "   - 第三名逆袭惩罚机制（Underdog Pruning）\n"
@@ -39,7 +40,7 @@ CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
         "#### 🏆 决赛名单 TOP 20（按概率从高到低排列）\n\n"
         "对每个决赛组合，输出：\n"
         "- **决赛对阵**：球队 A vs 球队 B\n"
-        "- **出现概率**：X.X%（基于 2000 次模拟）\n"
+        f"- **出现概率**：X.X%（基于 {count_str} 次模拟）\n"
         "- **入选原因**：简要说明这两支球队各自从小组赛到决赛的晋级路径、关键策略因素\n\n"
         "#### 📊 核心发现\n"
         "- 最可能的冠军及原因\n"
@@ -51,8 +52,13 @@ CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
         "- 概率之和必须合理（TOP 20 的概率总和应在合理范围内）\n"
         "- 不得出现明显不合理的晋级路径（如 FIFA 排名 100+ 的球队进入决赛）\n\n"
         "在末尾附上免责声明：以上预测基于模拟分析，仅供参考。\n"
-    ),
-    "en-US": (
+    )
+
+
+def _build_en_instruction(simulation_count: int) -> str:
+    """Build the en-US championship instruction with the given simulation count."""
+    count_str = f"{simulation_count:,}"
+    return (
         "## Championship Prediction Task\n\n"
         "Please conduct a complete champion and runner-up prediction analysis for the "
         "2026 FIFA World Cup. Follow this process strictly:\n\n"
@@ -64,7 +70,7 @@ CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
         "3. Predict the most likely top 2 and 'best third-placed' teams for each group\n\n"
         "### Phase 2: Knockout Placement & Monte Carlo Simulation\n"
         "1. Place the 32 qualified teams according to the official FIFA bracket\n"
-        "2. Simulate **2,000** complete knockout runs from R32 through the Final\n"
+        f"2. Simulate **{count_str}** complete knockout runs from R32 through the Final\n"
         "3. Each simulation must follow the real tournament timeline "
         "(Group Stage → R32 → R16 → QF → SF → Final)\n"
         "4. Strictly apply the 7 core prediction strategies from the strategy file:\n"
@@ -80,7 +86,7 @@ CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
         "#### 🏆 Final Matchup TOP 20 (Ranked by Probability)\n\n"
         "For each final combination:\n"
         "- **Final Matchup**: Team A vs Team B\n"
-        "- **Probability**: X.X% (based on 2,000 simulations)\n"
+        f"- **Probability**: X.X% (based on {count_str} simulations)\n"
         "- **Reasoning**: Brief explanation of each team's path from group stage to final, "
         "key strategic factors\n\n"
         "#### 📊 Key Findings\n"
@@ -93,5 +99,11 @@ CHAMPIONSHIP_INSTRUCTION: Dict[str, str] = {
         "- Probabilities must sum to reasonable totals (TOP 20 should have a plausible combined probability)\n"
         "- No implausible advancement paths (e.g., FIFA rank 100+ teams reaching the final)\n\n"
         "Append a disclaimer: The above predictions are based on simulation analysis and are for reference only.\n"
-    ),
-}
+    )
+
+
+def get_championship_instruction(lang: str, simulation_count: int) -> str:
+    """Return the championship instruction string for the given language and sim count."""
+    if lang == "en-US":
+        return _build_en_instruction(simulation_count)
+    return _build_zh_instruction(simulation_count)

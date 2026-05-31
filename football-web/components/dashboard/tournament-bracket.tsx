@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { Trophy, Zap, Medal, Loader2, AlertCircle, Crown } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { getBracket } from "@/lib/api/bracket"
 import { useTranslation } from "@/lib/i18n"
 import { MatchDetailDialog } from "@/components/dashboard/match-detail-dialog"
@@ -343,7 +344,7 @@ export function TournamentBracket() {
   const lang = usePreferencesStore((s) => s.language)
   const [selectedChampionshipSkill, setSelectedChampionshipSkill] = useState<string | null>(null)
   const [availableSkills, setAvailableSkills] = useState<SkillInfo[]>([])
-
+  const [simulationCount, setSimulationCount] = useState(2000)
   // Fetch available skills once on mount
   useEffect(() => {
     let cancelled = false
@@ -373,11 +374,13 @@ export function TournamentBracket() {
     if (isStreaming) return
 
     const skillId = selectedChampionshipSkill ?? "冠亚军分析.md"
+    const count = Math.min(10000, Math.max(100, simulationCount))
+    const countDisplay = count.toLocaleString()
 
     const store = useAIChatStore.getState()
     const summary = lang === "zh-CN"
-      ? "世界杯冠亚军预测 — 2000 次蒙特卡洛模拟"
-      : "World Cup Champion Prediction — 2,000 Monte Carlo Simulations"
+      ? `世界杯冠亚军预测 — ${countDisplay} 次蒙特卡洛模拟`
+      : `World Cup Champion Prediction — ${countDisplay} Monte Carlo Simulations`
 
     store.addAnalysisContextMessage(summary)
     store.startStreaming()
@@ -388,7 +391,7 @@ export function TournamentBracket() {
 
     const controller = new AbortController()
     void streamChampionshipAnalysis(
-      { skill_id: skillId, lang },
+      { skill_id: skillId, simulation_count: count, lang },
       {
         onThinking: (delta) => useAIChatStore.getState().appendThinkingContent(delta),
         onAnswer: (delta) => useAIChatStore.getState().appendStreamContent(delta),
@@ -398,7 +401,7 @@ export function TournamentBracket() {
       },
       controller.signal,
     )
-  }, [isStreaming, selectedChampionshipSkill, lang])
+  }, [isStreaming, selectedChampionshipSkill, simulationCount, lang])
 
   const fetchData = useCallback(async () => {
     try {
@@ -461,7 +464,7 @@ export function TournamentBracket() {
         <p className="text-xs text-muted-foreground mt-1">{t("bracket.roadToGlory")}</p>
 
         {/* Championship Prediction Button */}
-        <div className="mt-3 flex items-center justify-center gap-2">
+        <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
           {availableSkills.length > 0 && (
             <Select
               value={selectedChampionshipSkill ?? availableSkills[0]?.skill_id ?? ""}
@@ -479,6 +482,27 @@ export function TournamentBracket() {
               </SelectContent>
             </Select>
           )}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+              {t("bracket.simulationCount")}
+            </span>
+            <Input
+              type="number"
+              min={100}
+              max={10000}
+              step={100}
+              value={simulationCount}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10)
+                if (!isNaN(val)) setSimulationCount(val)
+              }}
+              onBlur={() => {
+                setSimulationCount((prev) => Math.min(10000, Math.max(100, prev)))
+              }}
+              disabled={isStreaming}
+              className="w-[80px] h-8 text-[11px] text-center bg-secondary/30 border-glass-border"
+            />
+          </div>
           <button
             disabled={isStreaming}
             onClick={handleChampionshipAnalysis}
@@ -495,7 +519,9 @@ export function TournamentBracket() {
             }
           </button>
         </div>
-        <p className="text-[10px] text-muted-foreground/60 mt-1">{t("bracket.championshipDesc")}</p>
+        <p className="text-[10px] text-muted-foreground/60 mt-1">
+          {t("bracket.championshipDesc").replace("{count}", simulationCount.toLocaleString())}
+        </p>
       </div>
 
       {/* Desktop bracket + group sidebar */}
