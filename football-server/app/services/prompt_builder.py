@@ -492,6 +492,11 @@ class PromptBuilder:
         ]
 
         if skill_content:
+            # Substitute dynamic placeholders in skill content
+            sim_count_fmt = f"{request.simulation_count:,}"
+            skill_content = skill_content.replace(
+                "{simulation_count}", sim_count_fmt
+            )
             system_parts.extend([
                 "",
                 "---",

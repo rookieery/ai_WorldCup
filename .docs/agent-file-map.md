@@ -170,11 +170,11 @@ football-server/
 │   ├── services/
 │   │   ├── __init__.py          # 统一导出所有 Service 类
 │   │   ├── ai_service.py        # AIService：Deepseek API 客户端（stream_chat AsyncGenerator → SSEEvent 对象：thinking/answer/analysis/done/error，30s 超时，优雅错误处理）
-│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入）、_format_match_context（_SKILL_REGISTRY 3 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
+│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入，对 skill_content 中 {simulation_count} 占位符做替换）、_format_match_context（_SKILL_REGISTRY 3 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
 │   │   └── prompts/             # 提示词常量子模块
 │   │       ├── __init__.py      # 统一导出 SYSTEM_FRAGMENTS、ANALYSIS_PROMPTS、get_championship_instruction
 │   │       ├── system_prompts.py # SYSTEM_FRAGMENTS（双语角色/赛事上下文/规则）+ ANALYSIS_PROMPTS（双语小组赛/淘汰赛分析引导模板）
-│   │       └── championship_prompts.py # get_championship_instruction(lang, simulation_count)（函数式生成双语冠亚军预测指令：3 阶段 N 次模拟 + TOP 20 输出格式 + 数据约束）
+│   │       └── championship_prompts.py # get_championship_instruction(lang, simulation_count)（函数式生成双语冠亚军预测指令：含 ⚠️ 强制声明 + 3 阶段 N 次模拟 + TOP 20 输出格式 + 数据约束）
 │   │   ├── team_service.py      # TeamService：get_all_teams、get_team_by_code、get_teams_by_group、get_team_stats（支持 lang + timezone）
 │   │   ├── venue_service.py     # VenueService：get_all_venues（分页）
 │   │   ├── match_service.py     # MatchService：get_match_dates、get_matches（多条件筛选 + Redis 实时合并）、get_match_by_id（含事件 + Redis 实时）、get_live_matches（Redis 实时合并）；使用共享 app.utils.timezone

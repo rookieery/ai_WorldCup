@@ -17,6 +17,8 @@ def _build_zh_instruction(simulation_count: int) -> str:
     """Build the zh-CN championship instruction with the given simulation count."""
     count_str = f"{simulation_count:,}"
     return (
+        f"> ⚠️ **强制要求**：本次分析必须模拟 **{count_str} 次**（用户指定），"
+        "所有输出中的模拟次数必须与此数字一致，不得使用其他数值。\n\n"
         "## 冠亚军预测任务\n\n"
         "请对 2026 年 FIFA 世界杯进行完整的冠亚军预测分析。你必须严格按照以下流程执行：\n\n"
         "### 第一阶段：小组赛模拟\n"
@@ -59,6 +61,8 @@ def _build_en_instruction(simulation_count: int) -> str:
     """Build the en-US championship instruction with the given simulation count."""
     count_str = f"{simulation_count:,}"
     return (
+        f"> ⚠️ **MANDATORY**: This analysis MUST simulate exactly **{count_str}** runs "
+        "(user-specified). All output references to simulation count MUST match this number exactly.\n\n"
         "## Championship Prediction Task\n\n"
         "Please conduct a complete champion and runner-up prediction analysis for the "
         "2026 FIFA World Cup. Follow this process strictly:\n\n"
