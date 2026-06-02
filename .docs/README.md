@@ -24,7 +24,9 @@
 | `data/2022_FIFA_World_Cup_Results.md` | 历史比赛结果 |
 | `skills/group_stage_predict.md` | AI 预测技能（小组赛） |
 | `skills/knockout_stage_predict.md` | AI 预测技能（淘汰赛） |
-| `skills/冠亚军分析.md` | AI 预测技能（冠亚军预测 v2.0：自包含对阵表 + 7 大策略 + 5 步推理链） |
+| `skills/冠亚军分析.md` | AI 预测技能（冠亚军预测 v2.2：11大策略 + 5步推理链 + 2018+2022双重复测校准） |
+| `skills/冠亚军分析-2022回测.md` | 2022世界杯回测分析（10轮×1000次蒙特卡洛，校准策略六/八/九） |
+| `skills/冠亚军分析-2018回测.md` | 2018世界杯回测分析（10轮×1000次蒙特卡洛，发现东道主效应/卫冕魔咒/死亡半区溢价） |
 | `.claude/skills/prd/SKILL.md` | `/prd` Skill — 根据功能描述生成结构化 PRD 文档 |
 | `.claude/skills/ralph/SKILL.md` | `/ralph` Skill — 将 PRD 转换为 prd.json（Ralph 自动循环消费） |
 | `.claude/agents/planner.md` | Planner Subagent — 复杂功能技术级实施规划（含 Ralph Stories 输出） |
