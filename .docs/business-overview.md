@@ -17,7 +17,7 @@
 | 路由 | 多页面（/、/groups、/groups/:group、/bracket、/stats、/teams/:code） |
 | AI 服务 | 真实 SSE 流式（Deepseek API，打字机效果） |
 | 实时更新 | WebSocket 已实现（实时比分、助威更新） |
-| 飞书 Bot | 已集成（Phase 1 推送通知 + Phase 3 交互式 AI Bot，hook into LiveService 事件管线） |
+| 飞书 Bot | 已集成（Phase 1 推送通知 + Phase 3 交互式 AI Bot，hook into LiveService 事件管线，分析使用完整 group_stage_predict 推理链） |
 
 ## 核心业务实体
 
@@ -204,6 +204,10 @@ ws_schema.py
 - `skills/冠亚军分析.md` — v2.0 自包含冠亚军预测（内嵌官方对阵表 + 7 大策略 + 5 步推理链 + 策略优先级矩阵 + 因子权重与规律迁移）
 
 这些技能驱动后端 AI 服务（`POST /api/ai/chat`、`POST /api/ai/match-analysis`、`POST /api/ai/championship-analysis`）。
+
+### 飞书 Bot 分析流程
+
+飞书端的比赛分析（`feishu_bot_service._handle_match_analysis()`）调用 `PromptBuilder.build_match_analysis_prompt()` 加载完整 `group_stage_predict.md` 推理链，AI 按 STEP 0→6 严格逐步执行，输出 Markdown 格式分析（非 JSON），通过飞书交互卡片回复。与 Web 端 `build_skill_prompt()` 的区别：飞书端仅接受纯文本队名（无结构化 `MatchAnalysisRequest`），skill 内容嵌入 user message。
 
 ### 冠亚军预测分析
 

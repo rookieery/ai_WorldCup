@@ -89,8 +89,14 @@ SYSTEM_FRAGMENTS: Dict[str, Dict[str, str]] = {
 ANALYSIS_PROMPTS: Dict[str, Dict[str, str]] = {
     "zh-CN": {
         "group_analysis_intro": (
-            "请基于以下小组赛预测推理链，对比赛 {match_id}（{team1} vs {team2}）进行分析。"
-            "严格按照 STEP 1 → STEP 6 的顺序执行推理，输出 JSON 格式的完整分析结果。\n\n"
+            "请基于以下小组赛预测推理链，对比赛 {match_id}（{team1} vs {team2}）进行完整分析。\n\n"
+            "要求：\n"
+            "1. 严格按照 STEP 0 → STEP 6 的顺序逐步执行推理\n"
+            "2. 每个 STEP 必须引用推理链中对应的公式、概率表和修正系数进行计算\n"
+            "3. 使用 Markdown 格式输出，每个推理步骤使用二级标题（## Step N）\n"
+            "4. 关键数据（概率、排名差、修正系数等）使用加粗或列表展示\n"
+            "5. 最终在「## 综合预测」中汇总所有步骤的结果\n"
+            "6. 末尾附上免责声明\n\n"
             "推理链模板：\n"
         ),
         "knockout_analysis_intro": (
@@ -102,8 +108,15 @@ ANALYSIS_PROMPTS: Dict[str, Dict[str, str]] = {
     "en-US": {
         "group_analysis_intro": (
             "Analyse match {match_id} ({team1} vs {team2}) using the group-stage "
-            "prediction reasoning chain below. Follow STEP 1 → STEP 6 strictly and "
-            "output the complete analysis as JSON.\n\n"
+            "prediction reasoning chain below.\n\n"
+            "Requirements:\n"
+            "1. Follow STEP 0 → STEP 6 strictly in order\n"
+            "2. Each STEP must reference the corresponding formulas, probability tables "
+            "and correction factors from the reasoning chain\n"
+            "3. Use Markdown format with level-2 headings for each step (## Step N)\n"
+            "4. Key data (probabilities, rank diff, correction factors) in bold or lists\n"
+            "5. Summarise all steps in a final '## Final Prediction' section\n"
+            "6. Append a disclaimer at the end\n\n"
             "Reasoning chain template:\n"
         ),
         "knockout_analysis_intro": (

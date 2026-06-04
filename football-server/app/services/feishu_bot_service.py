@@ -197,32 +197,19 @@ class FeishuBotService:
         message_id: str,
         lang: str,
     ) -> None:
-        """Build analysis prompt, stream AI, reply with card.
+        """Build analysis prompt with full skill reasoning chain, stream AI, reply with card.
 
-        Unlike the web UI which passes structured ``MatchAnalysisRequest``
-        with full ``TeamBrief`` objects, the Feishu bot only has plain
-        team names extracted from user text.  We therefore build a
-        simplified prompt using the system role + a natural-language
-        analysis request.
+        Uses ``PromptBuilder.build_match_analysis_prompt()`` to inject the
+        complete ``group_stage_predict.md`` reasoning chain (STEP 0→6) so the
+        AI follows the formulas and probability tables strictly rather than
+        producing free-form analysis.
         """
-        messages = PromptBuilder.build_system_prompt(lang=lang)
-
-        if lang == "zh-CN":
-            user_msg = (
-                f"请对以下比赛进行详细分析并给出预测：\n\n"
-                f"**{team1}** vs **{team2}**\n\n"
-                f"请从双方实力对比、战术特点、历史交锋、关键球员等角度进行分析，"
-                f"并给出胜负概率和比分预测。"
-            )
-        else:
-            user_msg = (
-                f"Please provide a detailed analysis and prediction for:\n\n"
-                f"**{team1}** vs **{team2}**\n\n"
-                f"Analyze from perspectives of team strength, tactical style, "
-                f"head-to-head record, key players, and provide a match outcome prediction."
-            )
-
-        messages.append({"role": "user", "content": user_msg})
+        messages = PromptBuilder.build_match_analysis_prompt(
+            match_id="feishu_auto",
+            team1=team1,
+            team2=team2,
+            lang=lang,
+        )
         answer = await self._collect_ai_answer(messages, lang)
         query = f"{team1} vs {team2}"
         card = build_ai_analysis_card(answer, query=query, lang=lang)
