@@ -140,9 +140,9 @@ football-server/
 │       └── 002_venue_zh_fields.py # 为 venues 表添加 name_zh、city_zh、country_zh 字段
 ├── app/
 │   ├── __init__.py              # 包初始化（空）
-│   ├── config.py                # Pydantic Settings：所有环境变量及默认值（含 REDIS_URL、REDIS_ENABLED、SCRAPER_*、爬虫间隔）
-│   ├── main.py                  # FastAPI 应用工厂（生命周期：DB + Redis 初始化/关闭，ScraperScheduler 启动/停止，中间件，路由，/docs）
-│   ├── dependencies.py          # DI 提供者：get_db、get_*_service、get_ai_service、get_language；Redis DI 通过 app.redis.get_redis
+│   ├── config.py                # Pydantic Settings：所有环境变量及默认值（含 REDIS_URL、REDIS_ENABLED、SCRAPER_*、爬虫间隔、FEISHU_* 飞书 Bot 配置）
+│   ├── main.py                  # FastAPI 应用工厂（生命周期：DB + Redis 初始化/关闭，ScraperScheduler 启动/停止，FeishuPushService 初始化/关闭，中间件，路由，/docs）
+│   ├── dependencies.py          # DI 提供者：get_db、get_*_service、get_ai_service、get_feishu_client、get_language；Redis DI 通过 app.redis.get_redis
 │   ├── exceptions/
 │   │   ├── __init__.py          # 统一导出所有异常类
 │   │   └── exceptions.py        # AppException 层级（NotFound、Validation、Business、ExternalService）
@@ -182,8 +182,12 @@ football-server/
 │   │   ├── bracket_service.py   # BracketService：get_full_bracket（R32→F 官方对阵树）、get_bracket_by_round、get_predictions（TBD 占位 + 最佳第三名 from_group 显示）
 │   │   ├── cheer_service.py     # CheerService：get_cheers、vote_cheer（Redis HASH + 内存降级、IP 频率限制）
 │   │   ├── stats_service.py     # StatsService：get_scorers（从 MatchEventRepository 聚合射手榜）
-│   │   ├── live_service.py      # LiveService：update_match_status、update_score、update_activity、get_live_matches、get_match_live_data、apply_sync_data（Redis HASH + 内存降级、缓存失效、状态变化时 WebSocket 广播）
-│   │   └── websocket_manager.py # ConnectionManager：connect/disconnect、subscribe/unsubscribe、broadcast/broadcast_to_match、get_manager 单例
+│   │   ├── live_service.py      # LiveService：update_match_status、update_score、update_activity、get_live_matches、get_match_live_data、apply_sync_data（Redis HASH + 内存降级、缓存失效、状态变化时 WebSocket 广播 + 飞书推送）
+│   │   ├── websocket_manager.py # ConnectionManager：connect/disconnect、subscribe/unsubscribe、broadcast/broadcast_to_match、get_manager 单例
+│   │   ├── feishu_client.py     # FeishuClient：飞书 Open API HTTP 客户端（tenant_access_token 自动管理，Redis/内存双层缓存，send_card_message、reply_message，401 自动刷新）
+│   │   ├── feishu_card_builder.py # 飞书 Interactive Card 消息构建器（纯函数：build_match_start_card、build_score_update_card、build_match_end_card、build_today_matches_card、build_ai_analysis_card、build_error_card，双语 zh-CN/en-US）
+│   │   ├── feishu_push_service.py # FeishuPushService：比赛事件推送（hook into _broadcast_event → MATCH_START/SCORE_UPDATE/MATCH_END → 飞书卡片），防抖机制，get_push_service 单例
+│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复）
 │   ├── controllers/
 │   │   ├── __init__.py          # 统一导出所有路由器
 │   │   ├── ai_controller.py    # POST /api/ai/chat + POST /api/ai/match-analysis + POST /api/ai/championship-analysis（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse）+ GET /api/ai/skills（3 个 SkillInfo 列表）
@@ -194,7 +198,8 @@ football-server/
 │   │   ├── bracket_controller.py # GET /api/bracket、/predictions（使用 get_bracket_service DI）
 │   │   ├── cheer_controller.py  # GET /api/cheers/:matchId、POST /api/cheers/:matchId（IP 频率限制投票）
 │   │   ├── stats_controller.py  # GET /api/stats/scorers（射手榜，使用 StatsService DI）
-│   │   └── ws_controller.py     # WS /ws/live（WebSocket 端点：初始载荷、subscribe/unsubscribe、ping/pong 心跳）
+│   │   ├── ws_controller.py     # WS /ws/live（WebSocket 端点：初始载荷、subscribe/unsubscribe、ping/pong 心跳）
+│   │   └── feishu_controller.py  # POST /api/feishu/webhook（飞书事件回调：URL 验证 challenge + im.message.receive_v1 分发）+ GET /api/feishu/health（飞书集成状态检查）
 │   ├── redis/
 │   │   ├── __init__.py          # 统一导出 RedisKeys、get_redis、init_redis_pool、close_redis_pool、is_redis_available
 │   │   ├── client.py            # Redis 连接池（init_redis_pool、close_redis_pool、get_redis DI、is_redis_available）
@@ -215,6 +220,7 @@ football-server/
 │       ├── stats_schema.py      # ScorerItem VO（排名、球员名、球队信息、进球、助攻）
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO + MatchAnalysisRequest DTO + ChampionshipAnalysisRequest DTO（含 simulation_count 字段，默认 2000，范围 100-10000）+ TeamBrief/MatchEventBrief/SkillInfo VO
 │       ├── ws_schema.py         # WSEventType 枚举 + WSMessage VO
+│       ├── feishu_schema.py     # FeishuIntent 枚举 + FeishuIntentResult/FeishuWebhookEvent/FeishuEventHeader/FeishuMessageEvent/FeishuSender/FeishuCardConfig DTO/VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VO 用于爬虫数据验证
 ├── scraping/                    # 网页爬虫基础设施
 │   ├── __init__.py              # 统一导出 BaseScraper、FIFAScraper、LiveScoreScraper、DataSyncService、ScraperScheduler
@@ -226,6 +232,7 @@ football-server/
 ├── scripts/                     # 数据库种子脚本
 │   ├── __init__.py              # 包初始化
 │   ├── seed_data.py             # 一键初始化编排（seed_venues→teams→matches→bracket→standings）
+│   └── feishu_event_bridge.py   # 飞书 CLI 事件桥接（lark-cli event consume → 转发到本地 /api/feishu/webhook，用于本地开发 Phase 3 Bot）
 │   ├── generate_bracket.py      # 对阵图验证 + 晋级路径 + R32 官方对阵映射（8×1st-vs-3rd + 4×1st-vs-2nd + 4×2nd-vs-2nd）
 │   ├── seed_teams.py            # 种子 48 支球队（按 code 幂等 upsert）
 │   ├── team_data.py             # 48 支球队数据（双语、FIFA 排名、大洲）

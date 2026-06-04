@@ -44,6 +44,21 @@ class Settings(BaseSettings):
     SCRAPER_FINISHED_INTERVAL: int = 300
     SCRAPER_GROUP_INTERVAL: int = 3600
 
+    # ── Feishu Bot ─────────────────────────────────────────────────────
+    FEISHU_APP_ID: str = ""
+    FEISHU_APP_SECRET: str = ""
+    FEISHU_VERIFY_TOKEN: str = ""       # Webhook event verification
+    FEISHU_ENCRYPT_KEY: str = ""        # Optional, for event payload encryption
+    FEISHU_ENABLED: bool = False        # Master switch for all Feishu features
+    FEISHU_PUSH_ENABLED: bool = False   # Phase 1: push notifications
+    FEISHU_BOT_ENABLED: bool = False    # Phase 3: interactive bot
+    FEISHU_CHAT_ID: str = ""            # Target group chat ID for push notifications
+
+    @property
+    def feishu_configured(self) -> bool:
+        """Return True if all required Feishu credentials are present."""
+        return bool(self.FEISHU_APP_ID and self.FEISHU_APP_SECRET)
+
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"

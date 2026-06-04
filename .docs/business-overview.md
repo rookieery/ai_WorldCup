@@ -12,11 +12,12 @@
 |------|------|
 | 前端 UI | 完整视觉框架（所有组件已构建） |
 | 数据来源 | 已接入后端 API |
-| 后端 API | 完整实现（异常层级 + 中间件 + ORM 模型（5 张表）+ Pydantic Schema（8 个模块）+ Alembic 迁移 + 应用工厂（main.py）+ DI（dependencies.py）+ run.py 入口） |
+| 后端 API | 完整实现（异常层级 + 中间件 + ORM 模型（5 张表）+ Pydantic Schema（9 个模块）+ Alembic 迁移 + 应用工厂（main.py）+ DI（dependencies.py）+ run.py 入口） |
 | 状态管理 | Zustand 全局存储（4 个 store） |
 | 路由 | 多页面（/、/groups、/groups/:group、/bracket、/stats、/teams/:code） |
 | AI 服务 | 真实 SSE 流式（Deepseek API，打字机效果） |
 | 实时更新 | WebSocket 已实现（实时比分、助威更新） |
+| 飞书 Bot | 已集成（Phase 1 推送通知 + Phase 3 交互式 AI Bot，hook into LiveService 事件管线） |
 
 ## 核心业务实体
 

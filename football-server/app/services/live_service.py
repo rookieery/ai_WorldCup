@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from redis.asyncio import Redis
 
+from app.config import settings
 from app.redis.keys import RedisKeys
 from app.schemas.ws_schema import WSEventType
 
@@ -538,4 +539,17 @@ async def _broadcast_event(
     except Exception:
         logger.warning(
             "WebSocket broadcast failed for %s", event_type.value, exc_info=True
+        )
+
+    # ── Feishu push (Phase 1) ───────────────────────────────────────────
+    try:
+        if settings.FEISHU_ENABLED and settings.FEISHU_PUSH_ENABLED:
+            from app.services.feishu_push_service import get_push_service
+
+            push_svc = get_push_service()
+            if push_svc is not None:
+                await push_svc.handle_event(event_type, data)
+    except Exception:
+        logger.warning(
+            "Feishu push failed for %s", event_type.value, exc_info=True
         )

@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # ── Module-level scheduler reference for lifespan ───────────────────────────
 
 _scheduler: ScraperScheduler | None = None
+_feishu_client: object | None = None
 
 
 # ── Lifespan ────────────────────────────────────────────────────────────────
@@ -56,12 +57,37 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "ready" if _deps._session_factory else "unavailable",
         )
 
+    # ── Start Feishu push service (Phase 1) ─────────────────────────────
+    global _feishu_client  # noqa: PLW0603
+    if settings.FEISHU_ENABLED and settings.FEISHU_PUSH_ENABLED and settings.feishu_configured:
+        from app.services.feishu_client import FeishuClient
+        from app.services.feishu_push_service import init_push_service
+        from app.services.match_service import MatchService
+
+        redis = get_redis()
+        _feishu_client = FeishuClient()
+
+        async with _deps._session_factory() as session:
+            match_svc = MatchService(session, redis=redis)
+            init_push_service(_feishu_client, match_svc, redis=redis)
+        logger.info("Feishu push service started")
+    elif settings.FEISHU_ENABLED:
+        logger.info(
+            "Feishu enabled but push not started (FEISHU_PUSH_ENABLED=%s, configured=%s)",
+            settings.FEISHU_PUSH_ENABLED,
+            settings.feishu_configured,
+        )
+
     yield
 
     # ── Shutdown ─────────────────────────────────────────────────────────
     if _scheduler is not None:
         await _scheduler.stop()
         _scheduler = None
+
+    if _feishu_client is not None:
+        await _feishu_client.close()
+        _feishu_client = None
 
     logger.info("Shutting down — disposing database engine")
     await close_redis_pool()
@@ -98,6 +124,7 @@ def create_app() -> FastAPI:
         ai_router,
         bracket_router,
         cheer_router,
+        feishu_router,
         group_router,
         match_router,
         stats_router,
@@ -115,6 +142,7 @@ def create_app() -> FastAPI:
     application.include_router(ws_router)
     application.include_router(ai_router)
     application.include_router(stats_router)
+    application.include_router(feishu_router)
 
     return application
 

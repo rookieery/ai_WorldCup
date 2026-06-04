@@ -141,3 +141,10 @@ def get_ai_service() -> "AIService":
     from app.services.ai_service import AIService
 
     return AIService()
+
+
+def get_feishu_client() -> "FeishuClient":
+    """Create or return the shared ``FeishuClient`` singleton."""
+    from app.services.feishu_client import FeishuClient
+
+    return FeishuClient()

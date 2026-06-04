@@ -2,9 +2,9 @@
 
 > 后端 API 契约文档。完整规格见 `football-web/REQUIREMENTS.md` 第七节。
 
-## 状态：应用工厂 + DI + 工具层 + 种子数据 + 前端 API 客户端 + Redis 基础设施 + 助威服务 + 实时服务 + WebSocket + AI 服务 + AI 控制器 + 爬虫基础设施 + 实时爬虫 + 数据同步 + 调度器 + AI 比赛分析端点 + Skill 列表端点 已全部完成
+## 状态：应用工厂 + DI + 工具层 + 种子数据 + 前端 API 客户端 + Redis 基础设施 + 助威服务 + 实时服务 + WebSocket + AI 服务 + AI 控制器 + 爬虫基础设施 + 实时爬虫 + 数据同步 + 调度器 + AI 比赛分析端点 + Skill 列表端点 + 飞书 Bot 集成（推送 + 交互式 AI Bot） 已全部完成
 
-后端脚手架、异常层级、中间件、ORM 模型、Pydantic Schema、Repository、Service、Controller、**应用工厂（main.py）**、**依赖注入（dependencies.py）**、**运行入口（run.py）**、**工具模块（utils/）**、**种子数据流水线**、**前端 API 客户端层**、**Redis 基础设施（app/redis/）**、**助威投票服务/控制器**、**实时服务**、**WebSocket 管理器 + 控制器**、**AI 服务（Deepseek API 客户端含 SSE 流式）**、**AI 控制器（POST /api/ai/chat SSE 端点）**、**爬虫基础设施（BaseScraper + FIFAScraper）**、**实时比分爬虫（LiveScoreScraper）**、**数据同步服务（DataSyncService）** 和 **调度器（ScraperScheduler）** 均已实现。
+后端脚手架、异常层级、中间件、ORM 模型、Pydantic Schema、Repository、Service、Controller、**应用工厂（main.py）**、**依赖注入（dependencies.py）**、**运行入口（run.py）**、**工具模块（utils/）**、**种子数据流水线**、**前端 API 客户端层**、**Redis 基础设施（app/redis/）**、**助威投票服务/控制器**、**实时服务**、**WebSocket 管理器 + 控制器**、**AI 服务（Deepseek API 客户端含 SSE 流式）**、**AI 控制器（POST /api/ai/chat SSE 端点）**、**爬虫基础设施（BaseScraper + FIFAScraper）**、**实时比分爬虫（LiveScoreScraper）**、**数据同步服务（DataSyncService）**、**调度器（ScraperScheduler）**、**飞书推送服务（FeishuPushService — hook into _broadcast_event）** 和 **飞书交互式 Bot（FeishuBotService — 意图解析 + AI 分析）** 均已实现。
 `uvicorn app.main:app --reload` 可正常启动；`/docs` 显示 OpenAPI 所有注册路由。
 种子数据：`python -m scripts.seed_data` — 一键初始化（16 座球场、48 支球队、104 场比赛、对阵链接、48 行小组积分）。
 前端 API 客户端：`football-web/lib/api-client.ts` + `football-web/lib/api/*.ts` — 类型安全的 fetch 封装，含 `ApiResponse<T>` 解包、语言头、超时和统一错误处理。
@@ -342,3 +342,53 @@ Response: SSE 流 (text/event-stream)
 | `match_end` | `{matchId, status, score}` |
 | `activity_update` | `{matchId, activityLevel}` |
 | `bracket_update` | `{matchId, winner, nextMatchId}` |
+
+## 飞书 Bot 集成 — 已实现
+
+### 配置（`app/config.py` 新增字段）
+
+| 变量 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `FEISHU_APP_ID` | str | "" | 飞书应用 App ID |
+| `FEISHU_APP_SECRET` | str | "" | 飞书应用 App Secret |
+| `FEISHU_VERIFY_TOKEN` | str | "" | Webhook 事件验证 Token |
+| `FEISHU_ENCRYPT_KEY` | str | "" | 可选，事件加密密钥 |
+| `FEISHU_ENABLED` | bool | False | 飞书功能总开关 |
+| `FEISHU_PUSH_ENABLED` | bool | False | Phase 1：推送通知开关 |
+| `FEISHU_BOT_ENABLED` | bool | False | Phase 3：交互式 Bot 开关 |
+| `FEISHU_CHAT_ID` | str | "" | 推送目标群聊 ID |
+
+计算属性：`feishu_configured` → bool（App ID + App Secret 均非空）
+
+### Phase 1：比赛事件推送
+
+**架构**：`LiveService._broadcast_event()` → `FeishuPushService.handle_event()` → `FeishuCardBuilder` → `FeishuClient.send_card_message()`
+
+| WSEventType | 飞书卡片 | 防抖 |
+|---|---|---|
+| `MATCH_START` | `build_match_start_card` — 开赛通知（队伍+场馆+阶段） | 60s |
+| `SCORE_UPDATE` | `build_score_update_card` — 进球/比分更新 | 10s |
+| `MATCH_END` | `build_match_end_card` — 比赛结果（最终比分+关键事件） | 60s |
+
+`ACTIVITY_UPDATE`、`CHEER_UPDATE`、`BRACKET_UPDATE` 被忽略（太频繁或被 MATCH_END 覆盖）。
+
+### Phase 3：交互式 Bot
+
+**端点**：
+```
+POST /api/feishu/webhook  — 飞书事件回调（URL 验证 challenge + im.message.receive_v1 消息分发）
+GET  /api/feishu/health   — 飞书集成状态检查（enabled/push_enabled/bot_enabled/configured/chat_id_set）
+```
+
+**意图解析**（`FeishuBotService._parse_intent`）：
+| 意图 | 中文关键词 | 英文关键词 | 动作 |
+|------|-----------|-----------|------|
+| `today_matches` | 今天、今日、赛程 | today, schedule | 查询当日比赛 |
+| `match_analysis` | 分析 + vs/对 | analyze + vs | AI 对阵分析 |
+| `champion_predict` | 冠军、预测冠军 | champion, predict | AI 冠军预测 |
+| `match_query` | 队名子串 | team name | 查询队伍比赛 |
+| `general_chat` | 兜底 | fallback | AI 通用对话 |
+
+**AI 集成**：收集 `AIService.stream_chat()` 全部 answer 事件 → `build_ai_analysis_card()` → `FeishuClient.reply_message()`（一次性发送完整卡片，非流式）。
+
+**Token 管理**：`FeishuClient.get_tenant_token()` — Redis 缓存 7000s，内存兜底，401 自动刷新重试。

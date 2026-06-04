@@ -3,6 +3,7 @@
 from app.controllers.ai_controller import router as ai_router
 from app.controllers.bracket_controller import router as bracket_router
 from app.controllers.cheer_controller import router as cheer_router
+from app.controllers.feishu_controller import router as feishu_router
 from app.controllers.group_controller import router as group_router
 from app.controllers.match_controller import router as match_router
 from app.controllers.stats_controller import router as stats_router
@@ -14,6 +15,7 @@ __all__ = [
     "ai_router",
     "bracket_router",
     "cheer_router",
+    "feishu_router",
     "group_router",
     "match_router",
     "stats_router",
