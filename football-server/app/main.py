@@ -59,18 +59,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # ── Start Feishu push service (Phase 1) ─────────────────────────────
     global _feishu_client  # noqa: PLW0603
-    if settings.FEISHU_ENABLED and settings.FEISHU_PUSH_ENABLED and settings.feishu_configured:
-        from app.services.feishu_client import FeishuClient
+    if settings.FEISHU_ENABLED and settings.feishu_configured:
         from app.services.feishu_push_service import init_push_service
         from app.services.match_service import MatchService
 
-        redis = get_redis()
-        _feishu_client = FeishuClient()
+        # Use the shared singleton so bot and push reuse the same client
+        _feishu_client = _deps.init_shared_feishu_client()
 
-        async with _deps._session_factory() as session:
-            match_svc = MatchService(session, redis=redis)
-            init_push_service(_feishu_client, match_svc, redis=redis)
-        logger.info("Feishu push service started")
+        if settings.FEISHU_PUSH_ENABLED:
+            redis = get_redis()
+            async with _deps._session_factory() as session:
+                match_svc = MatchService(session, redis=redis)
+                init_push_service(_feishu_client, match_svc, redis=redis)
+            logger.info("Feishu push service started")
+        else:
+            logger.info("Feishu push not started (FEISHU_PUSH_ENABLED=%s)", settings.FEISHU_PUSH_ENABLED)
     elif settings.FEISHU_ENABLED:
         logger.info(
             "Feishu enabled but push not started (FEISHU_PUSH_ENABLED=%s, configured=%s)",
@@ -86,7 +89,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         _scheduler = None
 
     if _feishu_client is not None:
-        await _feishu_client.close()
+        await _deps.close_shared_feishu_client()
         _feishu_client = None
 
     logger.info("Shutting down — disposing database engine")

@@ -100,12 +100,35 @@ async def feishu_webhook(
 async def _dispatch_bot_message(event: FeishuWebhookEvent) -> None:
     """Fire-and-forget: hand the event to ``FeishuBotService``."""
     try:
-        from app.dependencies import get_feishu_client
+        from app.dependencies import get_shared_feishu_client, _session_factory
         from app.services.feishu_bot_service import FeishuBotService
         from app.services.ai_service import AIService
+        from app.redis.client import get_redis
 
+        # ── Resolve FeishuClient (reuse shared singleton) ──────────────
+        feishu_client = get_shared_feishu_client()
+
+        # ── Resolve MatchService (requires DB session + optional Redis) ─
+        match_service = None
+        if _session_factory is not None:
+            try:
+                from app.services.match_service import MatchService
+                redis = get_redis()
+                async with _session_factory() as session:
+                    match_service = MatchService(session, redis=redis)
+                    bot_svc = FeishuBotService(
+                        feishu_client=feishu_client,
+                        ai_service=AIService(),
+                        match_service=match_service,
+                    )
+                    await bot_svc.handle_message(event)
+                return  # early return — session cleaned up via async with
+            except Exception:
+                logger.warning("Failed to create MatchService for Feishu bot", exc_info=True)
+
+        # Fallback: no match_service available (bot still works for AI chat)
         bot_svc = FeishuBotService(
-            feishu_client=get_feishu_client(),
+            feishu_client=feishu_client,
             ai_service=AIService(),
         )
         await bot_svc.handle_message(event)

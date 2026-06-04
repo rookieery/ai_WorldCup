@@ -144,7 +144,38 @@ def get_ai_service() -> "AIService":
 
 
 def get_feishu_client() -> "FeishuClient":
-    """Create or return the shared ``FeishuClient`` singleton."""
+    """Create a new ``FeishuClient`` (for backward compat; prefer ``get_shared_feishu_client``)."""
     from app.services.feishu_client import FeishuClient
 
     return FeishuClient()
+
+
+# ── Feishu client singleton ─────────────────────────────────────────────────
+
+_shared_feishu_client: Optional["FeishuClient"] = None
+
+
+def init_shared_feishu_client() -> "FeishuClient":
+    """Create the module-level FeishuClient singleton (called once at startup)."""
+    global _shared_feishu_client  # noqa: PLW0603
+    from app.services.feishu_client import FeishuClient
+
+    _shared_feishu_client = FeishuClient()
+    return _shared_feishu_client
+
+
+def get_shared_feishu_client() -> "FeishuClient":
+    """Return the shared ``FeishuClient`` singleton, creating one lazily if needed."""
+    global _shared_feishu_client  # noqa: PLW0603
+    if _shared_feishu_client is None:
+        from app.services.feishu_client import FeishuClient
+        _shared_feishu_client = FeishuClient()
+    return _shared_feishu_client
+
+
+async def close_shared_feishu_client() -> None:
+    """Close the shared ``FeishuClient`` singleton (called during shutdown)."""
+    global _shared_feishu_client  # noqa: PLW0603
+    if _shared_feishu_client is not None:
+        await _shared_feishu_client.close()
+        _shared_feishu_client = None

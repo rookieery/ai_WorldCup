@@ -22,12 +22,7 @@ import unicodedata
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from app.schemas.ai_schema import (
-    ChampionshipAnalysisRequest,
-    ChatMessageItem,
-    ChatRequest,
-    MatchAnalysisRequest,
-)
+from app.schemas.ai_schema import ChampionshipAnalysisRequest
 from app.schemas.feishu_schema import FeishuIntent, FeishuIntentResult, FeishuWebhookEvent
 from app.schemas.match_schema import MatchQueryParams
 from app.services.ai_service import AIService
@@ -185,7 +180,7 @@ class FeishuBotService:
     async def _handle_today_matches(self, chat_id: str, lang: str) -> None:
         """Query today's matches and send a card."""
         if self._match_service is None:
-            await self._send_no_service_reply(chat_id)
+            await self._send_no_service_reply(chat_id, lang=lang)
             return
 
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -202,15 +197,32 @@ class FeishuBotService:
         message_id: str,
         lang: str,
     ) -> None:
-        """Build analysis prompt, stream AI, reply with card."""
-        request = MatchAnalysisRequest(
-            home_team=team1,
-            away_team=team2,
-            stage="group",
-            status="upcoming",
-            lang=lang,
-        )
-        messages = PromptBuilder.build_skill_prompt(request)
+        """Build analysis prompt, stream AI, reply with card.
+
+        Unlike the web UI which passes structured ``MatchAnalysisRequest``
+        with full ``TeamBrief`` objects, the Feishu bot only has plain
+        team names extracted from user text.  We therefore build a
+        simplified prompt using the system role + a natural-language
+        analysis request.
+        """
+        messages = PromptBuilder.build_system_prompt(lang=lang)
+
+        if lang == "zh-CN":
+            user_msg = (
+                f"请对以下比赛进行详细分析并给出预测：\n\n"
+                f"**{team1}** vs **{team2}**\n\n"
+                f"请从双方实力对比、战术特点、历史交锋、关键球员等角度进行分析，"
+                f"并给出胜负概率和比分预测。"
+            )
+        else:
+            user_msg = (
+                f"Please provide a detailed analysis and prediction for:\n\n"
+                f"**{team1}** vs **{team2}**\n\n"
+                f"Analyze from perspectives of team strength, tactical style, "
+                f"head-to-head record, key players, and provide a match outcome prediction."
+            )
+
+        messages.append({"role": "user", "content": user_msg})
         answer = await self._collect_ai_answer(messages, lang)
         query = f"{team1} vs {team2}"
         card = build_ai_analysis_card(answer, query=query, lang=lang)
@@ -240,7 +252,7 @@ class FeishuBotService:
     ) -> None:
         """Query matches for a specific team."""
         if self._match_service is None:
-            await self._send_no_service_reply(chat_id)
+            await self._send_no_service_reply(chat_id, lang=lang)
             return
 
         params = MatchQueryParams(team=team_name[:3].upper())
@@ -296,7 +308,12 @@ class FeishuBotService:
         except Exception:
             logger.warning("Feishu reply failed (msg=%s)", message_id, exc_info=True)
 
-    async def _send_no_service_reply(self, chat_id: str) -> None:
+    async def _send_no_service_reply(self, chat_id: str, lang: str = "zh-CN") -> None:
         """Send an error card when MatchService is not available."""
-        card = build_error_card("Match service unavailable", lang="en-US")
+        message = (
+            "比赛数据服务暂时不可用，请稍后重试"
+            if lang == "zh-CN"
+            else "Match data service temporarily unavailable. Please try again later."
+        )
+        card = build_error_card(message, lang=lang)
         await self._client.send_card_message(chat_id, card)

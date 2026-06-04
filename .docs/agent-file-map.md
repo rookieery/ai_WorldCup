@@ -142,7 +142,7 @@ football-server/
 │   ├── __init__.py              # 包初始化（空）
 │   ├── config.py                # Pydantic Settings：所有环境变量及默认值（含 REDIS_URL、REDIS_ENABLED、SCRAPER_*、爬虫间隔、FEISHU_* 飞书 Bot 配置）
 │   ├── main.py                  # FastAPI 应用工厂（生命周期：DB + Redis 初始化/关闭，ScraperScheduler 启动/停止，FeishuPushService 初始化/关闭，中间件，路由，/docs）
-│   ├── dependencies.py          # DI 提供者：get_db、get_*_service、get_ai_service、get_feishu_client、get_language；Redis DI 通过 app.redis.get_redis
+│   ├── dependencies.py          # DI 提供者：get_db、get_*_service、get_ai_service、get_feishu_client、get_shared_feishu_client（单例）、init_shared_feishu_client、close_shared_feishu_client、get_language；Redis DI 通过 app.redis.get_redis
 │   ├── exceptions/
 │   │   ├── __init__.py          # 统一导出所有异常类
 │   │   └── exceptions.py        # AppException 层级（NotFound、Validation、Business、ExternalService）

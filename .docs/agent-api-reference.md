@@ -389,6 +389,8 @@ GET  /api/feishu/health   — 飞书集成状态检查（enabled/push_enabled/bo
 | `match_query` | 队名子串 | team name | 查询队伍比赛 |
 | `general_chat` | 兜底 | fallback | AI 通用对话 |
 
-**AI 集成**：收集 `AIService.stream_chat()` 全部 answer 事件 → `build_ai_analysis_card()` → `FeishuClient.reply_message()`（一次性发送完整卡片，非流式）。
+**AI 集成**：收集 `AIService.stream_chat()` 全部 answer 事件 → `build_ai_analysis_card()` → `FeishuClient.reply_message()`（一次性发送完整卡片，非流式）。`match_analysis` 意图使用 `build_system_prompt()` + 自然语言分析请求（非结构化 MatchAnalysisRequest），避免飞书纯文本场景下 TeamBrief 校验失败。
+
+**依赖注入**：`_dispatch_bot_message` 通过 `get_shared_feishu_client()` 复用单例 `FeishuClient`；通过 `_session_factory()` 创建临时 `MatchService`（async with 管理 session 生命周期），使 `today_matches` 和 `match_query` 意图可正常查询比赛数据。
 
 **Token 管理**：`FeishuClient.get_tenant_token()` — Redis 缓存 7000s，内存兜底，401 自动刷新重试。
