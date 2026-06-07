@@ -7,6 +7,7 @@
 | Skill | 文件 | 核心定位 | 分析粒度 |
 |-------|------|---------|---------|
 | 小组赛单场预测 | [group_stage_predict.md](group_stage_predict.md) | 赛制约束与博弈 | 单场胜负预测 |
+| 小组赛轮次策略预测 | [group_stage_round_strategy.md](group_stage_round_strategy.md) | 轮次差异化策略引导 | R1爆冷/大球 + R2稳定正向 + R3放水/默契球 |
 | 淘汰赛单场预测 | [knockout_stage_predict.md](knockout_stage_predict.md) | 球队特质与低容错环境 | 90分钟结果 + 晋级预测（含加时/点球） |
 
 ## 2026赛制适配
@@ -19,10 +20,12 @@
 ## 数据流
 
 ```
-group_stage_predict (72场)
-    │
-    ├── 每场输出：胜负预测 + 爆冷预警 + 动机分析
-    │
+group_stage_predict (72场)          group_stage_round_strategy (72场，轮次策略定制版)
+    │                                    │
+    ├── 每场输出：胜负预测 + 爆冷预警      ├── R1: 爆冷猎手 + 大球雷达
+    │                                    ├── R2: 稳定猎手（高置信度正向比分）
+    │                                    └── R3: 终局博弈猎手（放水/默契球/生死战）
+    │                                    │
     └── 汇总输出：12组最终排名 + 8个最佳第3名
           │
           ▼

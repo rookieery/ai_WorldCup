@@ -41,6 +41,7 @@ def _read_skill(filename: str) -> str:
 
 # Lazy-loaded skill content
 _GROUP_STAGE_SKILL: str | None = None
+_GROUP_STAGE_ROUND_STRATEGY_SKILL: str | None = None
 _KNOCKOUT_STAGE_SKILL: str | None = None
 _CHAMPIONSHIP_SKILL: str | None = None
 
@@ -50,6 +51,15 @@ def _get_group_stage_skill() -> str:
     if _GROUP_STAGE_SKILL is None:
         _GROUP_STAGE_SKILL = _read_skill("group_stage_predict.md")
     return _GROUP_STAGE_SKILL
+
+
+def _get_group_stage_round_strategy_skill() -> str:
+    global _GROUP_STAGE_ROUND_STRATEGY_SKILL  # noqa: PLW0603
+    if _GROUP_STAGE_ROUND_STRATEGY_SKILL is None:
+        _GROUP_STAGE_ROUND_STRATEGY_SKILL = _read_skill(
+            "group_stage_round_strategy.md"
+        )
+    return _GROUP_STAGE_ROUND_STRATEGY_SKILL
 
 
 def _get_knockout_stage_skill() -> str:
@@ -78,6 +88,15 @@ _SKILL_REGISTRY: Dict[str, Dict] = {
         "name_zh": "小组赛单场预测",
         "description": "6-step reasoning chain for group stage matches",
         "description_zh": "基于6步推理链的小组赛单场胜负预测",
+        "applicable_stages": ["group"],
+    },
+    "group_stage_round_strategy": {
+        "loader": _get_group_stage_round_strategy_skill,
+        "filename": "group_stage_round_strategy.md",
+        "name": "Group Stage Round Strategy",
+        "name_zh": "小组赛轮次策略预测",
+        "description": "Round-differentiated strategy: R1 upset/high-scoring + R2 stability + R3 rotation/tacit draw",
+        "description_zh": "轮次差异化策略：R1爆冷/大球 + R2稳定正向 + R3放水/默契球",
         "applicable_stages": ["group"],
     },
     "knockout_stage_predict": {

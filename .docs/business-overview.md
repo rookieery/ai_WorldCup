@@ -221,7 +221,14 @@ ws_schema.py
 
 ### AI 语言与格式控制
 
-Prompt 构建层 (`prompt_builder.py`) 通过 `_SYSTEM_FRAGMENTS` 双语系统提示实现语言一致性和输出格式规范化：
+Prompt 构建层 (`prompt_builder.py`) 管理以下 4 个预测技能（`_SKILL_REGISTRY`）：
+
+- **group_stage_predict**：小组赛单场预测（v2.1，中立综合模式）
+- **group_stage_round_strategy**：小组赛轮次策略预测（v1.0，R1爆冷/大球 + R2稳定正向 + R3放水/默契球，2018+2022回测校准）
+- **knockout_stage_predict**：淘汰赛单场预测
+- **championship_predict**：冠亚军蒙特卡洛预测
+
+通过 `_SYSTEM_FRAGMENTS` 双语系统提示实现语言一致性和输出格式规范化：
 
 - **语言强制**：`rules` 中包含显式语言指令（zh-CN: "思考过程和最终回答必须全部使用中文"；en-US: "reasoning and final answer must be in English"），确保 agent 思考和回答语种与项目选择一致。
 - **Markdown 格式**：`build_skill_prompt()` 的用户指令明确要求以 Markdown 格式输出（二级标题分段、加粗/列表展示关键数据），保证分析结果格式稳定可渲染。
