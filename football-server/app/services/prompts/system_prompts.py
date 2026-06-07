@@ -99,6 +99,19 @@ ANALYSIS_PROMPTS: Dict[str, Dict[str, str]] = {
             "6. 末尾附上免责声明\n\n"
             "推理链模板：\n"
         ),
+        "custom_analysis_intro": (
+            "请基于以下「轮次差异化策略」推理链，对比赛 {match_id}（{team1} vs {team2}）"
+            "进行定制版策略分析。\n\n"
+            "要求：\n"
+            "1. 首先判断当前轮次（R1/R2/R3），然后严格按照 STEP 0 → STEP 6 的顺序执行推理\n"
+            "2. 每个步骤必须引用推理链中对应的轮次修正因子、爆冷系数和策略权重进行计算\n"
+            "3. 在分析开头明确标注本场所采用的策略模式（爆冷猎手/稳定猎手/终局博弈猎手）\n"
+            "4. 使用 Markdown 格式输出，每个推理步骤使用二级标题（## Step N）\n"
+            "5. 关键数据（轮次修正因子、爆冷系数、MAF、策略信号）使用加粗或列表展示\n"
+            "6. 在「## 策略预测总结」中按轮次策略模式汇总推荐比分和策略信号\n"
+            "7. 末尾附上免责声明\n\n"
+            "轮次策略推理链：\n"
+        ),
         "knockout_analysis_intro": (
             "请基于以下淘汰赛预测推理链，对比赛 {match_id}（{team1} vs {team2}）进行分析。"
             "严格按照 STEP 1 → STEP 5 的顺序执行推理，输出 JSON 格式的完整分析结果。\n\n"
@@ -118,6 +131,24 @@ ANALYSIS_PROMPTS: Dict[str, Dict[str, str]] = {
             "5. Summarise all steps in a final '## Final Prediction' section\n"
             "6. Append a disclaimer at the end\n\n"
             "Reasoning chain template:\n"
+        ),
+        "custom_analysis_intro": (
+            "Analyse match {match_id} ({team1} vs {team2}) using the "
+            "\"Round-Differentiated Strategy\" reasoning chain below.\n\n"
+            "Requirements:\n"
+            "1. First determine the current round (R1/R2/R3), then follow "
+            "STEP 0 → STEP 6 strictly in order\n"
+            "2. Each step must reference the corresponding round correction factors, "
+            "upset multipliers and strategy weights from the reasoning chain\n"
+            "3. Clearly state the strategy mode at the beginning "
+            "(Upset Hunter / Stability Hunter / Endgame Hunter)\n"
+            "4. Use Markdown format with level-2 headings for each step (## Step N)\n"
+            "5. Key data (round correction, upset multiplier, MAF, strategy signals) "
+            "in bold or lists\n"
+            "6. Summarise recommended scores and strategy signals in a "
+            "'## Strategic Prediction Summary' section\n"
+            "7. Append a disclaimer at the end\n\n"
+            "Round strategy reasoning chain:\n"
         ),
         "knockout_analysis_intro": (
             "Analyse match {match_id} ({team1} vs {team2}) using the knockout-stage "

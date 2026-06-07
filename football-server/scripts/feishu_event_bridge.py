@@ -67,6 +67,7 @@ def main() -> None:
 
     proc = subprocess.Popen(
         ["lark-cli", "event", "consume", "im.message.receive_v1", "--quiet", "--as", "bot"],
+        stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

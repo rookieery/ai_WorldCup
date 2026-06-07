@@ -173,10 +173,10 @@ football-server/
 │   ├── services/
 │   │   ├── __init__.py          # 统一导出所有 Service 类
 │   │   ├── ai_service.py        # AIService：Deepseek API 客户端（stream_chat AsyncGenerator → SSEEvent 对象：thinking/answer/analysis/done/error，30s 超时，优雅错误处理）
-│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入，对 skill_content 中 {simulation_count} 占位符做替换）、_format_match_context（_SKILL_REGISTRY 3 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
+│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_custom_match_analysis_prompt（定制版轮次策略分析，加载 group_stage_round_strategy.md skill）、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入，对 skill_content 中 {simulation_count} 占位符做替换）、_format_match_context（_SKILL_REGISTRY 4 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
 │   │   └── prompts/             # 提示词常量子模块
 │   │       ├── __init__.py      # 统一导出 SYSTEM_FRAGMENTS、ANALYSIS_PROMPTS、get_championship_instruction
-│   │       ├── system_prompts.py # SYSTEM_FRAGMENTS（双语角色/赛事上下文/规则）+ ANALYSIS_PROMPTS（双语小组赛/淘汰赛分析引导模板）
+│   │       ├── system_prompts.py # SYSTEM_FRAGMENTS（双语角色/赛事上下文/规则）+ ANALYSIS_PROMPTS（双语小组赛/淘汰赛分析引导模板 + custom_analysis_intro 定制版轮次策略引导：R1爆冷猎手/R2稳定猎手/R3终局猎手）
 │   │       └── championship_prompts.py # get_championship_instruction(lang, simulation_count)（函数式生成双语冠亚军预测指令：含 ⚠️ 强制声明 + 3 阶段 N 次模拟 + TOP 20 输出格式 + 数据约束）
 │   │   ├── team_service.py      # TeamService：get_all_teams、get_team_by_code、get_teams_by_group、get_team_stats（支持 lang + timezone）
 │   │   ├── venue_service.py     # VenueService：get_all_venues（分页）
@@ -190,7 +190,7 @@ football-server/
 │   │   ├── feishu_client.py     # FeishuClient：飞书 Open API HTTP 客户端（tenant_access_token 自动管理，Redis/内存双层缓存，send_card_message、reply_message，401 自动刷新）
 │   │   ├── feishu_card_builder.py # 飞书 Interactive Card 消息构建器（纯函数：build_match_start_card、build_score_update_card、build_match_end_card、build_today_matches_card、build_ai_analysis_card、build_error_card，双语 zh-CN/en-US）
 │   │   ├── feishu_push_service.py # FeishuPushService：比赛事件推送（hook into _broadcast_event → MATCH_START/SCORE_UPDATE/MATCH_END → 飞书卡片），防抖机制，get_push_service 单例
-│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复）
+│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复；支持"定制版"关键词触发轮次策略分析：R1爆冷猎手/R2稳定猎手/R3终局猎手）
 │   ├── controllers/
 │   │   ├── __init__.py          # 统一导出所有路由器
 │   │   ├── ai_controller.py    # POST /api/ai/chat + POST /api/ai/match-analysis + POST /api/ai/championship-analysis（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse）+ GET /api/ai/skills（3 个 SkillInfo 列表）
@@ -223,7 +223,7 @@ football-server/
 │       ├── stats_schema.py      # ScorerItem VO（排名、球员名、球队信息、进球、助攻）
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO + MatchAnalysisRequest DTO + ChampionshipAnalysisRequest DTO（含 simulation_count 字段，默认 2000，范围 100-10000）+ TeamBrief/MatchEventBrief/SkillInfo VO
 │       ├── ws_schema.py         # WSEventType 枚举 + WSMessage VO
-│       ├── feishu_schema.py     # FeishuIntent 枚举 + FeishuIntentResult/FeishuWebhookEvent/FeishuEventHeader/FeishuMessageEvent/FeishuSender/FeishuCardConfig DTO/VO
+│       ├── feishu_schema.py     # FeishuIntent 枚举 + FeishuIntentResult（含 custom_strategy 字段，标识"定制版"关键词触发）/FeishuWebhookEvent/FeishuEventHeader/FeishuMessageEvent/FeishuSender/FeishuCardConfig DTO/VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VO 用于爬虫数据验证
 ├── scraping/                    # 网页爬虫基础设施
 │   ├── __init__.py              # 统一导出 BaseScraper、FIFAScraper、LiveScoreScraper、DataSyncService、ScraperScheduler
@@ -235,7 +235,7 @@ football-server/
 ├── scripts/                     # 数据库种子脚本
 │   ├── __init__.py              # 包初始化
 │   ├── seed_data.py             # 一键初始化编排（seed_venues→teams→matches→bracket→standings）
-│   └── feishu_event_bridge.py   # 飞书 CLI 事件桥接（lark-cli event consume → 转发到本地 /api/feishu/webhook，用于本地开发 Phase 3 Bot）
+│   └── feishu_event_bridge.py   # 飞书 CLI 事件桥接（lark-cli event consume → 转发到本地 /api/feishu/webhook，stdin=PIPE 保持长连接不断开，用于本地开发 Phase 3 Bot）
 │   ├── generate_bracket.py      # 对阵图验证 + 晋级路径 + R32 官方对阵映射（8×1st-vs-3rd + 4×1st-vs-2nd + 4×2nd-vs-2nd）
 │   ├── seed_teams.py            # 种子 48 支球队（按 code 幂等 upsert）
 │   ├── team_data.py             # 48 支球队数据（双语、FIFA 排名、大洲）

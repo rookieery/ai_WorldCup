@@ -220,6 +220,49 @@ class PromptBuilder:
 
         return system_messages + [{"role": "user", "content": user_content}]
 
+    # ── Custom round-strategy match analysis prompt ───────────────────────────────────
+
+    @staticmethod
+    def build_custom_match_analysis_prompt(
+        match_id: str,
+        team1: str,
+        team2: str,
+        *,
+        lang: Literal["zh-CN", "en-US"] = "zh-CN",
+    ) -> List[Dict[str, str]]:
+        """Build a custom round-strategy match analysis prompt.
+
+        Uses the group_stage_round_strategy.md skill (R1 upset hunter /
+        R2 stability hunter / R3 endgame hunter) instead of the standard
+        6-step reasoning chain.
+
+        Parameters
+        ----------
+        match_id:
+            Match identifier (e.g. "A_M1").
+        team1, team2:
+            Team names for the home and away sides.
+        lang:
+            Language for the prompt.
+
+        Returns
+        -------
+        list[dict]
+            System message + user message containing the round-strategy chain.
+        """
+        system_messages = PromptBuilder.build_system_prompt(lang)
+        skill_content = _get_group_stage_round_strategy_skill()
+        prompts = ANALYSIS_PROMPTS.get(lang, ANALYSIS_PROMPTS["zh-CN"])
+
+        user_content = prompts["custom_analysis_intro"].format(
+            match_id=match_id,
+            team1=team1,
+            team2=team2,
+        )
+        user_content += skill_content
+
+        return system_messages + [{"role": "user", "content": user_content}]
+
     # ── Knockout match prediction prompt ───────────────────────────────────
 
     @staticmethod

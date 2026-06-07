@@ -32,6 +32,7 @@ class FeishuIntentResult(BaseModel):
     team2: Optional[str] = None
     team_name: Optional[str] = None
     raw_text: str = ""
+    custom_strategy: bool = False
 
 
 # ── Webhook event payloads ──────────────────────────────────────────────────

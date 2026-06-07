@@ -103,6 +103,7 @@ class FeishuBotService:
                     chat_id,
                     message_id,
                     lang,
+                    custom_strategy=intent_result.custom_strategy,
                 )
             elif intent_result.intent == FeishuIntent.CHAMPION_PREDICT:
                 await self._handle_champion_predict(chat_id, message_id, lang)
@@ -129,6 +130,9 @@ class FeishuBotService:
         """Parse natural language text into a structured intent."""
         lower = text.lower().strip()
 
+        # Detect "定制版" keyword for round-strategy analysis mode
+        custom_strategy = "定制版" in text or "custom" in lower
+
         # Check for match analysis pattern first (highest specificity)
         match = _ANALYSIS_PATTERN.search(text)
         if match:
@@ -137,6 +141,7 @@ class FeishuBotService:
                 team1=match.group(1).strip(),
                 team2=match.group(2).strip(),
                 raw_text=text,
+                custom_strategy=custom_strategy,
             )
 
         # Check keyword-based intents
@@ -196,20 +201,31 @@ class FeishuBotService:
         chat_id: str,
         message_id: str,
         lang: str,
+        *,
+        custom_strategy: bool = False,
     ) -> None:
         """Build analysis prompt with full skill reasoning chain, stream AI, reply with card.
 
-        Uses ``PromptBuilder.build_match_analysis_prompt()`` to inject the
-        complete ``group_stage_predict.md`` reasoning chain (STEP 0→6) so the
-        AI follows the formulas and probability tables strictly rather than
-        producing free-form analysis.
+        When *custom_strategy* is ``True``, uses the round-differentiated
+        strategy skill (``group_stage_round_strategy.md``) which provides
+        R1 upset hunter / R2 stability hunter / R3 endgame hunter analysis.
+        Otherwise falls back to the standard 6-step reasoning chain
+        (``group_stage_predict.md``).
         """
-        messages = PromptBuilder.build_match_analysis_prompt(
-            match_id="feishu_auto",
-            team1=team1,
-            team2=team2,
-            lang=lang,
-        )
+        if custom_strategy:
+            messages = PromptBuilder.build_custom_match_analysis_prompt(
+                match_id="feishu_auto",
+                team1=team1,
+                team2=team2,
+                lang=lang,
+            )
+        else:
+            messages = PromptBuilder.build_match_analysis_prompt(
+                match_id="feishu_auto",
+                team1=team1,
+                team2=team2,
+                lang=lang,
+            )
         answer = await self._collect_ai_answer(messages, lang)
         query = f"{team1} vs {team2}"
         card = build_ai_analysis_card(answer, query=query, lang=lang)
