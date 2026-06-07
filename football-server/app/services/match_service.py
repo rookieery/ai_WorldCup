@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.redis.keys import RedisKeys
 from app.repositories.match_event_repo import MatchEventRepository
 from app.repositories.match_repo import MatchRepository
+from app.repositories.team_repo import TeamRepository
 from app.schemas.match_schema import (
     MatchDetailResponse,
     MatchEventResponse,
@@ -43,6 +44,7 @@ class MatchService:
     ) -> None:
         self._match_repo = MatchRepository(session)
         self._event_repo = MatchEventRepository(session)
+        self._team_repo = TeamRepository(session)
         self._redis = redis
 
     # ── public methods ─────────────────────────────────────────────────────
@@ -178,6 +180,69 @@ class MatchService:
             await self._merge_live_data_batch(items_vo)
 
         return items_vo
+
+    # ── Feishu bot context enrichment ──────────────────────────────────────
+
+    async def find_match_context(
+        self,
+        team1_name: str,
+        team2_name: str,
+        *,
+        lang: str = "zh",
+    ) -> Optional[dict]:
+        """Look up a match between two teams and return structured context.
+
+        Used by the Feishu bot to inject real match data (group, round,
+        FIFA rankings, confederations) into the AI prompt so the model
+        does not hallucinate facts.
+
+        Returns ``None`` when no match is found in the database.
+        """
+        match = await self._match_repo.find_by_team_names(team1_name, team2_name)
+        if match is None:
+            return None
+
+        home = match.home_team
+        away = match.away_team
+
+        round_number = match.match_day if match.match_day else None
+
+        group_teams = await self._team_repo.get_by_group(match.group_label)
+        group_team_names = []
+        for t in group_teams:
+            label = t.name_zh if lang == "zh" else t.name
+            group_team_names.append(label)
+
+        return {
+            "external_id": match.external_id,
+            "stage": match.stage,
+            "group_label": match.group_label,
+            "round_number": round_number,
+            "round_display": match.round,
+            "status": match.status,
+            "kickoff_utc": match.kickoff_utc.isoformat() if match.kickoff_utc else None,
+            "home_team": {
+                "name": home.name_zh if lang == "zh" else home.name,
+                "name_en": home.name,
+                "code": home.code,
+                "flag": home.flag,
+                "fifa_ranking": home.fifa_ranking,
+                "confederation": home.confederation,
+                "world_cup_appearances": home.world_cup_appearances,
+                "group_label": home.group_label,
+            },
+            "away_team": {
+                "name": away.name_zh if lang == "zh" else away.name,
+                "name_en": away.name,
+                "code": away.code,
+                "flag": away.flag,
+                "fifa_ranking": away.fifa_ranking,
+                "confederation": away.confederation,
+                "world_cup_appearances": away.world_cup_appearances,
+                "group_label": away.group_label,
+            },
+            "group_teams": group_team_names,
+        }
 
     # ── private helpers ────────────────────────────────────────────────────
 

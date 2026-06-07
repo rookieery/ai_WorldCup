@@ -212,6 +212,7 @@ class AIService:
             "model": self._model,
             "messages": messages,
             "stream": True,
+            "max_tokens": 8192,
         }
 
         answer_buffer: list[str] = []

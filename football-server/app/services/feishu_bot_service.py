@@ -222,18 +222,28 @@ class FeishuBotService:
     ) -> None:
         """Build analysis prompt with full skill reasoning chain, stream AI, reply with card.
 
-        When *custom_strategy* is ``True``, uses the round-differentiated
-        strategy skill (``group_stage_round_strategy.md``) which provides
-        R1 upset hunter / R2 stability hunter / R3 endgame hunter analysis.
-        Otherwise falls back to the standard 6-step reasoning chain
-        (``group_stage_predict.md``).
+        Queries the database for real match context (group, round, rankings)
+        before building the prompt, so the AI uses factual data instead of
+        hallucinating.
         """
+        # Enrich with real match data from the database
+        match_context = None
+        if self._match_service is not None:
+            try:
+                match_context = await self._match_service.find_match_context(
+                    team1, team2,
+                    lang="zh" if lang == "zh-CN" else "en",
+                )
+            except Exception:
+                logger.warning("Failed to lookup match context", exc_info=True)
+
         if custom_strategy:
             messages = PromptBuilder.build_custom_match_analysis_prompt(
                 match_id="feishu_auto",
                 team1=team1,
                 team2=team2,
                 lang=lang,
+                match_context=match_context,
             )
         else:
             messages = PromptBuilder.build_match_analysis_prompt(

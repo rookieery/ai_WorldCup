@@ -207,10 +207,21 @@ ws_schema.py
 
 ### 飞书 Bot 分析流程
 
-飞书端的比赛分析（`feishu_bot_service._handle_match_analysis()`）支持两种模式：
+飞书端的比赛分析（`feishu_bot_service._handle_match_analysis()`）支持两种模式，均通过 **DB 数据富化** 减少AI幻觉：
 
-1. **标准分析**（默认）：调用 `PromptBuilder.build_match_analysis_prompt()` 加载完整 `group_stage_predict.md` 推理链，AI 按 STEP 0→6 严格逐步执行，输出 Markdown 格式分析（非 JSON），通过飞书交互卡片回复。
-2. **定制版轮次策略分析**（专用正则触发）：通过独立的 `_CUSTOM_ANALYSIS_PATTERN` 正则优先匹配"定制版"前缀（如"定制版分析阿根廷vs巴西"），`FeishuIntentResult.custom_strategy` 设为 `True`，调用 `PromptBuilder.build_custom_match_analysis_prompt()` 加载 `group_stage_round_strategy.md` skill + `custom_analysis_intro` 模板，引导 AI 按轮次差异化策略分析：R1 爆冷猎手（关注大球/爆冷）→ R2 稳定猎手（关注正路/强势队）→ R3 终局猎手（关注放水/默契球）。意图解析顺序：定制版正则 → 标准分析正则 → 关键词匹配。
+**DB 数据富化流程**（`match_service.find_match_context()`）：
+1. `TeamRepository.search_by_name()` — 按 code（不区分大小写）、name（ILIKE 模糊匹配）或 name_zh（精确匹配）解析用户输入的队名 → 获取 `Team` 记录
+2. `MatchRepository.find_by_team_names()` — 双向匹配主客队名称查找小组赛比赛，优先返回未开赛比赛 → 获取 `Match` 记录
+3. 组装结构化上下文字典返回：`external_id`、`group`、`round`、`status`、主客队详情（`fifa_ranking`、`confederation`、`world_cup_appearances`）、小组球队列表
+
+`_handle_match_analysis()` 在构建 prompt 前先调用 `find_match_context()` 获取真实比赛数据，再传递给 `PromptBuilder`。当数据可用时，队名和 match_id 从 DB 真实数据中提取，避免 AI 凭空编造。
+
+1. **标准分析**（默认）：调用 `PromptBuilder.build_match_analysis_prompt()` 加载完整 `group_stage_predict.md` 推理链，AI 按 STEP 0→6 逐步执行，输出 Markdown 格式分析（非 JSON），通过飞书交互卡片回复。
+2. **定制版轮次策略分析**（专用正则触发）：通过独立的 `_CUSTOM_ANALYSIS_PATTERN` 正则优先匹配"定制版"前缀（如"定制版分析阿根廷vs巴西"），`FeishuIntentResult.custom_strategy` 设为 `True`，调用 `PromptBuilder.build_custom_match_analysis_prompt(match_id, team1, team2, lang, match_context)` 加载 `group_stage_round_strategy.md` skill + `custom_analysis_intro` 模板，可选 `match_context` 参数注入真实 DB 数据（通过 `_format_feishu_match_context()` 静态方法格式化为提示词段落），引导 AI 按轮次差异化策略分析：R1 爆冷猎手（关注大球/爆冷）→ R2 稳定猎手（关注正路/强势队）→ R3 终局猎手（关注放水/默契球）。意图解析顺序：定制版正则 → 标准分析正则 → 关键词匹配。
+
+**输出控制**：
+- AI 请求设置 `max_tokens=8192`，定制版分析增加精简原则（每步仅展示核心计算与结论，省略不适用分支，总输出控制在 3000 字以内）。
+- 飞书卡片截断上限为 8000 字符（`_FEISHU_CARD_CHAR_LIMIT`），超出时附加中英文截断提示，引导用户到 Web 端查看完整分析。
 
 与 Web 端 `build_skill_prompt()` 的区别：飞书端仅接受纯文本队名（无结构化 `MatchAnalysisRequest`），skill 内容嵌入 user message。
 

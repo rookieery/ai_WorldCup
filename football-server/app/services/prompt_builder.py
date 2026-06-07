@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional
 
 from app.schemas.ai_schema import (
     ChampionshipAnalysisRequest,
@@ -229,12 +229,17 @@ class PromptBuilder:
         team2: str,
         *,
         lang: Literal["zh-CN", "en-US"] = "zh-CN",
+        match_context: Optional[Dict] = None,
     ) -> List[Dict[str, str]]:
         """Build a custom round-strategy match analysis prompt.
 
         Uses the group_stage_round_strategy.md skill (R1 upset hunter /
         R2 stability hunter / R3 endgame hunter) instead of the standard
         6-step reasoning chain.
+
+        When *match_context* is provided (from MatchService.find_match_context),
+        it is formatted and prepended to the user message so the AI uses real
+        data instead of hallucinating group, round, and ranking values.
 
         Parameters
         ----------
@@ -244,24 +249,85 @@ class PromptBuilder:
             Team names for the home and away sides.
         lang:
             Language for the prompt.
+        match_context:
+            Optional structured match data dict from MatchService.
 
         Returns
         -------
         list[dict]
             System message + user message containing the round-strategy chain.
         """
+        from typing import Optional as _Opt  # noqa: already imported at top
+
         system_messages = PromptBuilder.build_system_prompt(lang)
         skill_content = _get_group_stage_round_strategy_skill()
         prompts = ANALYSIS_PROMPTS.get(lang, ANALYSIS_PROMPTS["zh-CN"])
 
+        # Build real match context block when DB data is available
+        context_block = ""
+        if match_context:
+            context_block = PromptBuilder._format_feishu_match_context(
+                match_context, lang
+            )
+
         user_content = prompts["custom_analysis_intro"].format(
-            match_id=match_id,
-            team1=team1,
-            team2=team2,
+            match_id=match_context.get("external_id", match_id) if match_context else match_id,
+            team1=match_context["home_team"]["name"] if match_context else team1,
+            team2=match_context["away_team"]["name"] if match_context else team2,
         )
+
+        if context_block:
+            user_content = context_block + "\n\n" + user_content
+
         user_content += skill_content
 
         return system_messages + [{"role": "user", "content": user_content}]
+
+    @staticmethod
+    def _format_feishu_match_context(
+        ctx: Dict,
+        lang: str,
+    ) -> str:
+        """Format structured match context from DB into a prompt section."""
+        home = ctx["home_team"]
+        away = ctx["away_team"]
+        if lang == "zh-CN":
+            lines = [
+                "=== 实时数据上下文（数据库查询）===",
+                f"比赛ID: {ctx.get('external_id', 'N/A')}",
+                f"组别: {ctx.get('group_label', 'N/A')}组",
+                f"轮次: 第{ctx.get('round_number', '?')}轮 ({ctx.get('round_display', '')})",
+                f"状态: {ctx.get('status', 'N/A')}",
+                "",
+                f"主队: {home['flag']} {home['name']} ({home['name_en']}) [{home['code']}]",
+                f"  FIFA排名: {home['fifa_ranking']} | 联合会: {home['confederation']} | 世界杯参赛次数: {home['world_cup_appearances']}",
+                "",
+                f"客队: {away['flag']} {away['name']} ({away['name_en']}) [{away['code']}]",
+                f"  FIFA排名: {away['fifa_ranking']} | 联合会: {away['confederation']} | 世界杯参赛次数: {away['world_cup_appearances']}",
+                "",
+                f"同组球队: {', '.join(ctx.get('group_teams', []))}",
+                "",
+                "ℹ️ 以上为数据库真实数据，请严格使用以上信息进行分析，不要编造或篡改。",
+            ]
+        else:
+            lines = [
+                "=== Real-time Match Context (from database) ===",
+                f"Match ID: {ctx.get('external_id', 'N/A')}",
+                f"Group: {ctx.get('group_label', 'N/A')}",
+                f"Round: {ctx.get('round_number', '?')} ({ctx.get('round_display', '')})",
+                f"Status: {ctx.get('status', 'N/A')}",
+                "",
+                f"Home: {home['flag']} {home['name']} ({home['name_en']}) [{home['code']}]",
+                f"  FIFA Ranking: {home['fifa_ranking']} | Confederation: {home['confederation']} | WC Appearances: {home['world_cup_appearances']}",
+                "",
+                f"Away: {away['flag']} {away['name']} ({away['name_en']}) [{away['code']}]",
+                f"  FIFA Ranking: {away['fifa_ranking']} | Confederation: {away['confederation']} | WC Appearances: {away['world_cup_appearances']}",
+                "",
+                f"Group teams: {', '.join(ctx.get('group_teams', []))}",
+                "",
+                "ℹ️ The above is real data from the database. Use it strictly and do not fabricate or modify any values.",
+            ]
+        return "\n".join(lines)
 
     # ── Knockout match prediction prompt ───────────────────────────────────
 

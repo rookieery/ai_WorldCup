@@ -7,9 +7,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 from zoneinfo import ZoneInfo
 
 from app.models.match import Match
+from app.models.team import Team
 from app.repositories.base import BaseRepository
 
 
@@ -253,3 +255,45 @@ class MatchRepository(BaseRepository[Match]):
             stmt.order_by(self.model.kickoff_utc.asc()).offset(offset).limit(page_size)
         )
         return result.unique().scalars().all(), total
+
+    async def find_by_team_names(
+        self,
+        team1_name: str,
+        team2_name: str,
+    ) -> Optional[Match]:
+        """Find a group-stage match between two teams by name (name / name_zh / code).
+
+        Handles home/away order ambiguity by checking both directions.
+        Returns the first upcoming match if multiple exist, otherwise the
+        earliest match.
+        """
+        Home = aliased(Team)
+        Away = aliased(Team)
+
+        def _team_filter(team_alias: aliased, name: str):
+            return or_(
+                team_alias.code == name.upper(),
+                team_alias.name.ilike(f"%{name}%"),
+                team_alias.name_zh == name,
+            )
+
+        stmt = (
+            self._base_query()
+            .join(Home, self.model.home_team_id == Home.id)
+            .join(Away, self.model.away_team_id == Away.id)
+            .where(
+                self.model.stage == "group",
+                or_(
+                    and_(_team_filter(Home, team1_name), _team_filter(Away, team2_name)),
+                    and_(_team_filter(Home, team2_name), _team_filter(Away, team1_name)),
+                ),
+            )
+            .order_by(self.model.kickoff_utc.asc())
+        )
+        result = await self.session.execute(stmt)
+        matches = result.unique().scalars().all()
+        if not matches:
+            return None
+        # Prefer upcoming match over finished
+        upcoming = [m for m in matches if m.status == "upcoming"]
+        return upcoming[0] if upcoming else matches[0]

@@ -259,12 +259,24 @@ def build_ai_analysis_card(
 ) -> Dict[str, Any]:
     """Build a card wrapping an AI analysis response.
 
-    Truncates *analysis_text* to ~4000 chars to stay within Feishu limits.
+    Truncates *analysis_text* to ~8000 chars to stay within Feishu limits.
+    When truncated, appends a notice so the user knows the output was cut.
     """
     t = _t(lang)
 
     # Feishu card markdown has a practical length limit
-    truncated = analysis_text[:4000] + ("..." if len(analysis_text) > 4000 else "")
+    _FEISHU_CARD_CHAR_LIMIT = 8000
+    if len(analysis_text) > _FEISHU_CARD_CHAR_LIMIT:
+        truncation_notice = (
+            "\n\n---\n⚠️ *分析内容过长，已截断。"
+            "如需完整分析，请在 Web 端查看。*"
+            if lang == "zh-CN"
+            else "\n\n---\n⚠️ *Analysis truncated due to length. "
+            "View the full analysis on the Web app.*"
+        )
+        truncated = analysis_text[:_FEISHU_CARD_CHAR_LIMIT] + truncation_notice
+    else:
+        truncated = analysis_text
 
     elements: List[Dict[str, Any]] = []
     if query:

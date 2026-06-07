@@ -165,22 +165,22 @@ football-server/
 │   ├── repositories/
 │   │   ├── __init__.py          # 统一导出所有 Repository 类
 │   │   ├── base.py              # BaseRepository[T] 泛型 CRUD（get_by_id、get_all、create、update、delete）
-│   │   ├── team_repo.py         # TeamRepository：get_by_code、get_by_group
-│   │   ├── match_repo.py        # MatchRepository：get_by_date(支持timezone)、get_by_stage、get_by_status、get_live_matches、get_bracket_matches、get_by_group_label、get_by_team_code、get_match_dates(支持timezone)
+│   │   ├── team_repo.py         # TeamRepository：get_by_code、get_by_group、search_by_name（code 不区分大小写 / name ILIKE / name_zh 精确匹配）
+│   │   ├── match_repo.py        # MatchRepository：get_by_date(支持timezone)、get_by_stage、get_by_status、get_live_matches、get_bracket_matches、get_by_group_label、get_by_team_code、get_match_dates(支持timezone)、find_by_team_names（双向匹配主客队名称，优先未开赛比赛）
 │   │   ├── venue_repo.py        # VenueRepository：仅继承基础 CRUD
 │   │   ├── group_repo.py        # GroupRepository：get_by_group_label（按积分排序）、get_group_matches
 │   │   └── match_event_repo.py  # MatchEventRepository：get_by_match（按分钟排序）
 │   ├── services/
 │   │   ├── __init__.py          # 统一导出所有 Service 类
-│   │   ├── ai_service.py        # AIService：Deepseek API 客户端（stream_chat AsyncGenerator → SSEEvent 对象：thinking/answer/analysis/done/error，30s 超时，优雅错误处理）
-│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_custom_match_analysis_prompt（定制版轮次策略分析，加载 group_stage_round_strategy.md skill）、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入，对 skill_content 中 {simulation_count} 占位符做替换）、_format_match_context（_SKILL_REGISTRY 4 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）
+│   │   ├── ai_service.py        # AIService：Deepseek API 客户端（stream_chat AsyncGenerator → SSEEvent 对象：thinking/answer/analysis/done/error，30s 超时，max_tokens=8192，优雅错误处理）
+│   │   ├── prompt_builder.py    # PromptBuilder：build_system_prompt、build_match_analysis_prompt、build_custom_match_analysis_prompt（定制版轮次策略分析，加载 group_stage_round_strategy.md skill，可选 match_context 参数注入真实比赛数据）、build_knockout_prompt、build_chat_context、resolve_skill_id、get_available_skills、build_skill_prompt、build_championship_prompt（支持 simulation_count 动态注入，对 skill_content 中 {simulation_count} 占位符做替换）、_format_match_context（_SKILL_REGISTRY 4 个 skill，双语 zh-CN/en-US，读取 skills/ markdown，显式语言强制 + Markdown 输出格式指令）、_format_feishu_match_context（静态方法，将结构化 match_context dict 格式化为提示词段落，含真实小组/轮次/排名数据）
 │   │   └── prompts/             # 提示词常量子模块
 │   │       ├── __init__.py      # 统一导出 SYSTEM_FRAGMENTS、ANALYSIS_PROMPTS、get_championship_instruction
 │   │       ├── system_prompts.py # SYSTEM_FRAGMENTS（双语角色/赛事上下文/规则）+ ANALYSIS_PROMPTS（双语小组赛/淘汰赛分析引导模板 + custom_analysis_intro 定制版轮次策略引导：R1爆冷猎手/R2稳定猎手/R3终局猎手）
 │   │       └── championship_prompts.py # get_championship_instruction(lang, simulation_count)（函数式生成双语冠亚军预测指令：含 ⚠️ 强制声明 + 3 阶段 N 次模拟 + TOP 20 输出格式 + 数据约束）
 │   │   ├── team_service.py      # TeamService：get_all_teams、get_team_by_code、get_teams_by_group、get_team_stats（支持 lang + timezone）
 │   │   ├── venue_service.py     # VenueService：get_all_venues（分页）
-│   │   ├── match_service.py     # MatchService：get_match_dates、get_matches（多条件筛选 + Redis 实时合并）、get_match_by_id（含事件 + Redis 实时）、get_live_matches（Redis 实时合并）；使用共享 app.utils.timezone
+│   │   ├── match_service.py     # MatchService：get_match_dates、get_matches（多条件筛选 + Redis 实时合并）、get_match_by_id（含事件 + Redis 实时）、get_live_matches（Redis 实时合并）、find_match_context（通过 TeamRepository + MatchRepository 查询真实比赛数据，返回结构化上下文含排名/大洲/参赛次数/小组球队列表）；使用共享 app.utils.timezone
 │   │   ├── group_service.py     # GroupService：get_all_groups（12 组积分榜）、get_group_detail（积分榜 + 比赛）；支持 lang + timezone（共享 utils）
 │   │   ├── bracket_service.py   # BracketService：get_full_bracket（R32→F 官方对阵树）、get_bracket_by_round、get_predictions（TBD 占位 + 最佳第三名 from_group 显示）
 │   │   ├── cheer_service.py     # CheerService：get_cheers、vote_cheer（Redis HASH + 内存降级、IP 频率限制）
@@ -190,7 +190,7 @@ football-server/
 │   │   ├── feishu_client.py     # FeishuClient：飞书 Open API HTTP 客户端（tenant_access_token 自动管理，Redis/内存双层缓存，send_card_message、reply_message，401 自动刷新）
 │   │   ├── feishu_card_builder.py # 飞书 Interactive Card 消息构建器（纯函数：build_match_start_card、build_score_update_card、build_match_end_card、build_today_matches_card、build_ai_analysis_card、build_error_card，双语 zh-CN/en-US）
 │   │   ├── feishu_push_service.py # FeishuPushService：比赛事件推送（hook into _broadcast_event → MATCH_START/SCORE_UPDATE/MATCH_END → 飞书卡片），防抖机制，get_push_service 单例
-│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复；意图解析优先级：_CUSTOM_ANALYSIS_PATTERN定制版正则→_ANALYSIS_PATTERN标准分析→关键词→GENERAL_CHAT；"定制版"前缀触发轮次策略分析：R1爆冷猎手/R2稳定猎手/R3终局博弈猎手）
+│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复；意图解析优先级：_CUSTOM_ANALYSIS_PATTERN定制版正则→_ANALYSIS_PATTERN标准分析→关键词→GENERAL_CHAT；"定制版"前缀触发轮次策略分析：R1爆冷猎手/R2稳定猎手/R3终局博弈猎手；_handle_match_analysis 先调用 match_service.find_match_context() 注入真实比赛数据防止 AI 幻觉）
 │   ├── controllers/
 │   │   ├── __init__.py          # 统一导出所有路由器
 │   │   ├── ai_controller.py    # POST /api/ai/chat + POST /api/ai/match-analysis + POST /api/ai/championship-analysis（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse）+ GET /api/ai/skills（3 个 SkillInfo 列表）
