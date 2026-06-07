@@ -390,7 +390,7 @@ GET  /api/feishu/health   — 飞书集成状态检查（enabled/push_enabled/bo
 | `match_query` | 队名子串 | team name | 查询队伍比赛 |
 | `general_chat` | 兜底 | fallback | AI 通用对话 |
 
-**`custom_strategy` 标志**：`FeishuIntentResult` 新增 `custom_strategy: bool` 字段。当用户消息包含"定制版"或"custom"关键词时设为 `True`，`handle_message()` 将此标志透传至 `_handle_match_analysis()`，后者调用 `PromptBuilder.build_custom_match_analysis_prompt()` 加载 `group_stage_round_strategy.md` skill 替代标准 `build_match_analysis_prompt()`。
+**`custom_strategy` 标志**：`FeishuIntentResult` 新增 `custom_strategy: bool` 字段。由专用正则 `_CUSTOM_ANALYSIS_PATTERN` 优先匹配"定制版"前缀（如"定制版分析韩国对战捷克"），命中后 `custom_strategy=True`，`handle_message()` 将此标志透传至 `_handle_match_analysis()`，后者调用 `PromptBuilder.build_custom_match_analysis_prompt()` 加载 `group_stage_round_strategy.md` skill 替代标准 `build_match_analysis_prompt()`。意图解析优先级：定制版正则 → 标准分析正则 → 关键词匹配 → GENERAL_CHAT。
 
 **AI 集成**：收集 `AIService.stream_chat()` 全部 answer 事件 → `build_ai_analysis_card()` → `FeishuClient.reply_message()`（一次性发送完整卡片，非流式）。`match_analysis` 意图使用 `build_system_prompt()` + 自然语言分析请求（非结构化 MatchAnalysisRequest），避免飞书纯文本场景下 TeamBrief 校验失败。
 

@@ -210,7 +210,7 @@ ws_schema.py
 飞书端的比赛分析（`feishu_bot_service._handle_match_analysis()`）支持两种模式：
 
 1. **标准分析**（默认）：调用 `PromptBuilder.build_match_analysis_prompt()` 加载完整 `group_stage_predict.md` 推理链，AI 按 STEP 0→6 严格逐步执行，输出 Markdown 格式分析（非 JSON），通过飞书交互卡片回复。
-2. **定制版轮次策略分析**（关键词触发）：当用户消息包含"定制版"或"custom"关键词时，`FeishuIntentResult.custom_strategy` 设为 `True`，调用 `PromptBuilder.build_custom_match_analysis_prompt()` 加载 `group_stage_round_strategy.md` skill + `custom_analysis_intro` 模板，引导 AI 按轮次差异化策略分析：R1 爆冷猎手（关注大球/爆冷）→ R2 稳定猎手（关注正路/强势队）→ R3 终局猎手（关注放水/默契球）。
+2. **定制版轮次策略分析**（专用正则触发）：通过独立的 `_CUSTOM_ANALYSIS_PATTERN` 正则优先匹配"定制版"前缀（如"定制版分析阿根廷vs巴西"），`FeishuIntentResult.custom_strategy` 设为 `True`，调用 `PromptBuilder.build_custom_match_analysis_prompt()` 加载 `group_stage_round_strategy.md` skill + `custom_analysis_intro` 模板，引导 AI 按轮次差异化策略分析：R1 爆冷猎手（关注大球/爆冷）→ R2 稳定猎手（关注正路/强势队）→ R3 终局猎手（关注放水/默契球）。意图解析顺序：定制版正则 → 标准分析正则 → 关键词匹配。
 
 与 Web 端 `build_skill_prompt()` 的区别：飞书端仅接受纯文本队名（无结构化 `MatchAnalysisRequest`），skill 内容嵌入 user message。
 

@@ -49,10 +49,19 @@ _INTENT_KEYWORDS: Dict[FeishuIntent, Dict[str, List[str]]] = {
     },
 }
 
-# Pattern: "分析XvsY" or "analyze X vs Y" (team names separated by vs/对/against)
+# Pattern: "分析XvsY" or "analyze X vs Y" (team names separated by vs/对/对战/against)
 _ANALYSIS_PATTERN = re.compile(
     r"(?:分析|预测|分析一下|评估|analyze|analysis|predict)\s+"
-    r"(.+?)\s*(?:vs\.?|对|against|VS)\s*(.+)",
+    r"(.+?)\s*(?:vs\.?|对战|对|against|VS)\s*(.+)",
+    re.IGNORECASE,
+)
+
+# Pattern: "定制版分析XvsY" — flexible spacing for custom round-strategy analysis
+# Matches "定制版" prefix with optional analysis keyword, relaxed whitespace
+_CUSTOM_ANALYSIS_PATTERN = re.compile(
+    r"定制版\s*"
+    r"(?:分析|预测|分析一下|评估)?\s*"
+    r"(.+?)\s*(?:vs\.?|对战|对|against|VS)\s*(.+)",
     re.IGNORECASE,
 )
 
@@ -130,10 +139,18 @@ class FeishuBotService:
         """Parse natural language text into a structured intent."""
         lower = text.lower().strip()
 
-        # Detect "定制版" keyword for round-strategy analysis mode
-        custom_strategy = "定制版" in text or "custom" in lower
+        # Check for custom "定制版" analysis pattern first (highest specificity)
+        custom_match = _CUSTOM_ANALYSIS_PATTERN.search(text)
+        if custom_match:
+            return FeishuIntentResult(
+                intent=FeishuIntent.MATCH_ANALYSIS,
+                team1=custom_match.group(1).strip(),
+                team2=custom_match.group(2).strip(),
+                raw_text=text,
+                custom_strategy=True,
+            )
 
-        # Check for match analysis pattern first (highest specificity)
+        # Check standard match analysis pattern
         match = _ANALYSIS_PATTERN.search(text)
         if match:
             return FeishuIntentResult(
@@ -141,7 +158,6 @@ class FeishuBotService:
                 team1=match.group(1).strip(),
                 team2=match.group(2).strip(),
                 raw_text=text,
-                custom_strategy=custom_strategy,
             )
 
         # Check keyword-based intents

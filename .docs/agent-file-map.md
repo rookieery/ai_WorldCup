@@ -190,7 +190,7 @@ football-server/
 │   │   ├── feishu_client.py     # FeishuClient：飞书 Open API HTTP 客户端（tenant_access_token 自动管理，Redis/内存双层缓存，send_card_message、reply_message，401 自动刷新）
 │   │   ├── feishu_card_builder.py # 飞书 Interactive Card 消息构建器（纯函数：build_match_start_card、build_score_update_card、build_match_end_card、build_today_matches_card、build_ai_analysis_card、build_error_card，双语 zh-CN/en-US）
 │   │   ├── feishu_push_service.py # FeishuPushService：比赛事件推送（hook into _broadcast_event → MATCH_START/SCORE_UPDATE/MATCH_END → 飞书卡片），防抖机制，get_push_service 单例
-│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复；支持"定制版"关键词触发轮次策略分析：R1爆冷猎手/R2稳定猎手/R3终局猎手）
+│   │   └── feishu_bot_service.py # FeishuBotService：交互式飞书 Bot（意图解析：today_matches/match_analysis/champion_predict/match_query/general_chat → AI 分析 → 飞书卡片回复；意图解析优先级：_CUSTOM_ANALYSIS_PATTERN定制版正则→_ANALYSIS_PATTERN标准分析→关键词→GENERAL_CHAT；"定制版"前缀触发轮次策略分析：R1爆冷猎手/R2稳定猎手/R3终局博弈猎手）
 │   ├── controllers/
 │   │   ├── __init__.py          # 统一导出所有路由器
 │   │   ├── ai_controller.py    # POST /api/ai/chat + POST /api/ai/match-analysis + POST /api/ai/championship-analysis（SSE 流式：PromptBuilder + AIService.stream_chat → StreamingResponse）+ GET /api/ai/skills（3 个 SkillInfo 列表）
@@ -223,7 +223,7 @@ football-server/
 │       ├── stats_schema.py      # ScorerItem VO（排名、球员名、球队信息、进球、助攻）
 │       ├── ai_schema.py         # ChatRequest DTO + SSEEvent + TeamAnalysisResponse VO + MatchAnalysisRequest DTO + ChampionshipAnalysisRequest DTO（含 simulation_count 字段，默认 2000，范围 100-10000）+ TeamBrief/MatchEventBrief/SkillInfo VO
 │       ├── ws_schema.py         # WSEventType 枚举 + WSMessage VO
-│       ├── feishu_schema.py     # FeishuIntent 枚举 + FeishuIntentResult（含 custom_strategy 字段，标识"定制版"关键词触发）/FeishuWebhookEvent/FeishuEventHeader/FeishuMessageEvent/FeishuSender/FeishuCardConfig DTO/VO
+│       ├── feishu_schema.py     # FeishuIntent 枚举 + FeishuIntentResult（含 custom_strategy 字段，标识"定制版"专用正则触发）/FeishuWebhookEvent/FeishuEventHeader/FeishuMessageEvent/FeishuSender/FeishuCardConfig DTO/VO
 │       └── scraper_schema.py   # ScrapedMatch/Schedule/LiveScore/LiveScoreBatch/Event/LiveEvent/MatchResult VO 用于爬虫数据验证
 ├── scraping/                    # 网页爬虫基础设施
 │   ├── __init__.py              # 统一导出 BaseScraper、FIFAScraper、LiveScoreScraper、DataSyncService、ScraperScheduler
