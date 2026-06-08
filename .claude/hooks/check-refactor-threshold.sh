@@ -38,6 +38,7 @@ while IFS= read -r f; do
     *.d.ts|*.config.*|*node_modules*|*dist*|*.next*) continue ;;
     *__pycache__*|*.pyc|.venv/*|*.egg-info*) continue ;;
     .docs/*|.claude/*|.git/*) continue ;;
+    *.md|*.txt|*.rst|*.adoc|*.pdf) continue ;;
   esac
 
   # Only check business code files (frontend + backend)
