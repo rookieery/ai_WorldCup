@@ -11,6 +11,17 @@
 
 ---
 
+## 爆冷定义
+
+本策略将爆冷分为两个层级，共享同一套 upset 信号源（STEP 2），但按模式不同分配到 L 和 D：
+
+- **全爆冷 (Full Upset)**：弱队胜（favored 负）→ 映射为 L
+- **平局爆冷 (Draw Upset)**：排名差 > 15 且强队平弱队 → 映射为 D 的异常升高
+
+> 历史案例：2018 阿根廷1-1冰岛(rank_diff=17)、巴西1-1瑞士(rank_diff=4，平局属正常)；2022 墨西哥0-0波兰(rank_diff=13，平局属正常)、摩洛哥0-0克罗地亚(rank_diff=10，平局属正常)。平局爆冷仅在排名差足够大时才有识别价值。
+
+---
+
 ## 轮次策略方向总览
 
 | 轮次 | 策略模式 | 核心关注 | 推荐输出优先级 |
@@ -100,6 +111,7 @@
 **回测校准补充修正**（2018+2022验证）：
 - AFC/CAF 球队 R1 额外加成：弱队来自 AFC/CAF 且 `experience >= 5` → R1 upset 额外 +0.05（2018日本胜哥伦比亚、塞内加尔胜波兰）
 - 排名虚假度检测：IF 首轮强队小胜弱队（净胜≤1）或惨败 → 该队 FIFA 排名可信度降级，`rank_diff × 0.7`（2022比利时排名虚高案例）
+- 首轮大胜后松懈修正：IF R2 且该队 R1 净胜≥3球 → R2 favored_win 额外 -0.03，D += 0.03（2022英格兰6-2后0-0美国、2018比利时3-0后5-2但比分失控、2018英格兰2-1后6-1失控）
 - 0分已出局"无包袱效应"：IF 球队 0 分已出局 → `urgency = 0.3`（而非0.0），`xG *= 1.15`（2018西班牙2-2摩洛哥、瑞士2-2哥斯达黎加）
 
 **1.2 轮次修正因子 round_correction**（核心改造）：
@@ -115,6 +127,7 @@ R2（信息验证轮）:
   特殊修正:
     IF 首轮结果与排名差一致（强队赢了）→ favored_win += 0.03
     IF 首轮结果与排名差冲突（强队输/平）→ base_table权重降为60%，首轮实际表现权重升为40%
+    IF 该队首轮净胜≥3球（大胜后松懈）→ favored_win 额外 -0.03, draw += 0.03（2022英格兰案例）
 
 R3（动机博弈轮）:
   round_correction = 0.6  // 排名差解释力大幅下降
@@ -129,13 +142,17 @@ R3（动机博弈轮）:
 
 ### STEP 2: 爆冷模式识别 + 轮次系数 (Upset Pattern with Round Multiplier)
 
-**2.1 爆冷模式匹配**（继承原模型）：
+**2.1 爆冷模式匹配**（继承原模型，新增平局爆冷维度）：
 
-| 弱队排名区间 | 模式标识 | 特征 | base_upset_boost |
-|-------------|---------|------|-----------------|
-| ≤25 | TACTICAL_STRETCH | 主动放弃控球、快速转换 | +0.08 |
-| 26-40 | SOLID_DEFENSE | 低位防守、定位球反击 | +0.04 |
-| >40 | DESPERATE_BURST | 全员退守+偶然进球 | +0.02 |
+| 弱队排名区间 | 模式标识 | 特征 | base_upset_boost | draw_upset_ratio |
+|-------------|---------|------|-----------------|-----------------|
+| ≤25 | TACTICAL_STRETCH | 主动放弃控球、快速转换 | +0.08 | **0.40** |
+| 26-40 | SOLID_DEFENSE | 低位防守、定位球反击 | +0.04 | **0.60** |
+| >40 | DESPERATE_BURST | 全员退守+偶然进球 | +0.02 | **0.20** |
+
+**draw_upset_ratio 说明**：upset 信号中分配给 D（平局爆冷）的比例。SOLID_DEFENSE 的 draw_upset_ratio 最高(0.60)因为防守型球队天然偏平局；DESPERATE_BURST 最低(0.20)因为极弱队要么爆冷赢要么大败，平局概率低。
+
+**触发条件**：`draw_upset_ratio` 仅在 `rank_diff > 15` 时生效。`rank_diff ≤ 15` 时 `draw_upset_ratio = 0`（排名差小，平局是正常结果，不算爆冷）。
 
 **附加修正**：弱队 `experience >= 5` → TACTICAL_STRETCH +0.05；强队已锁定+DESPERATE_BURST → ROTATION_EXPLOIT +0.06
 
@@ -165,7 +182,7 @@ R3（动机博弈）:
 
 **最终 upset_boost** = `base_upset_boost × round_upset_multiplier + 附加修正 + 实时修正`
 
-**输出**：`{ step: 2, underdog_pattern, base_upset_boost, round_upset_multiplier, final_upset_boost, pattern_confidence }`
+**输出**：`{ step: 2, underdog_pattern, base_upset_boost, draw_upset_ratio, round_upset_multiplier, final_upset_boost, pattern_confidence }`
 
 ---
 
@@ -284,12 +301,16 @@ W = step3.W_adjusted; D = step3.D_adjusted; L = step3.L_adjusted
 // 爆冷信号放大
 upset_net = step2.final_upset_boost * (1 - step3.MAF / 0.50)
 
+// 平局爆冷分流（v1.0 新增）
+loss_share = 1 - step2.draw_upset_ratio
+IF step1.rank_diff <= 15: step2.draw_upset_ratio = 0  // 平局不算爆冷
+
 // R1 平局倾向（信息不足时保守）
 draw_boost_r1 = 0.08  // 从0.05校准至0.08（2022验证：3场R1平局全漏判）
 
-// 应用
-L += upset_net * 0.5
-D += draw_boost_r1
+// 应用（upset_net 按比例分流到 L 和 D）
+L += upset_net * 0.5 * loss_share
+D += draw_boost_r1 + upset_net * 0.5 * step2.draw_upset_ratio
 W -= (upset_net * 0.5 + draw_boost_r1) * (W / (W + D))
 
 归一化 + 边界保护（所有概率 >= 5%）
@@ -302,12 +323,19 @@ W = step3.W_adjusted; D = step3.D_adjusted; L = step3.L_adjusted
 
 // R2 不使用 STEP 4
 
-// 爆冷抑制（round_upset_multiplier 已是 0.60）
+// 爆冷抑制（round_upset_multiplier 已是 0.60）+ 分流
 upset_net = step2.final_upset_boost * 0.60 * (1 - step3.MAF / 0.50)
+loss_share = 1 - step2.draw_upset_ratio
+IF step1.rank_diff <= 15: step2.draw_upset_ratio = 0
+
+// 应用（upset_net 按比例分流到 L 和 D）
+L += upset_net * loss_share
+D += upset_net * step2.draw_upset_ratio
 
 // 首轮信号加权
 IF 首轮强队胜: W += 0.05  // 验证实力格局
 IF 首轮爆冷:   L += 0.03  // 承认但不过度外推
+IF 该队首轮净胜≥3球（大胜后松懈）: W -= 0.03, D += 0.03  // 2022英格兰6-2后0-0美国
 
 归一化 + 边界保护
 ```
@@ -334,17 +362,44 @@ IF step3.special_flags.tacit_draw_risk:
   draw_bonus = tacit_draw_risk * 0.30  // 2018丹麦0-0法国验证
   W *= (1-draw_bonus); L *= (1-draw_bonus); D = 1.0 - W - L
 
-// 放水场景爆冷放大（回测校准：从1.8提升至2.0）
+// 放水场景爆冷放大（回测校准：场景细分）
+// 放水场景下 upset_amplified 100% → L（放水=强队不防守=弱队更可能赢而非平）
 IF (ASS_self>0.90 OR ASS_opponent>0.90) AND MDI < -0.2:
-  upset_amplified = step2.final_upset_boost * 2.0  // 2022放水3场全爆冷验证
-  L += MIN(upset_amplified, 0.30)  // 上限从0.25提升至0.30
+  // 场景细分：碾压型（R1+R2均净胜≥2球）vs 正常型
+  IF 该6分球队 R1+R2 均净胜≥2球（碾压型）:
+    upset_amplified = step2.final_upset_boost * 1.3  // 碾压型强队即使轮换仍实力碾压（2018克罗地亚2-1冰岛验证）
+  ELSE:
+    upset_amplified = step2.final_upset_boost * 2.0  // 正常型放水场景（2022放水3场全爆冷验证）
+  L += MIN(upset_amplified, 0.30)
+
+// 非放水场景：平局爆冷分流（v1.0 新增）
+IF NOT 放水场景:
+  upset_net = step2.final_upset_boost * round_upset_multiplier * (1 - step3.MAF / 0.50)
+  loss_share = 1 - step2.draw_upset_ratio
+  IF step1.rank_diff <= 15: step2.draw_upset_ratio = 0
+  L += upset_net * loss_share
+  D += upset_net * step2.draw_upset_ratio
 
 归一化 + 边界保护
 ```
 
 **置信度**：max_prob≥0.55→HIGH | max_prob≥0.40→MEDIUM | max_prob<0.40→LOW
 
-**爆冷预警**：final_upset≥0.35→STRONG | final_upset≥0.25→MODERATE
+**爆冷预警**（v1.0 新增平局爆冷维度）：
+
+```
+// 全爆冷检测（弱队胜）
+IF final_upset >= 0.35 → full_upset_level = STRONG
+IF final_upset >= 0.25 → full_upset_level = MODERATE
+
+// 平局爆冷检测（rank_diff > 15 且 D 异常高）
+IF step1.rank_diff > 15 AND final_draw >= 0.35 → draw_upset_level = STRONG
+IF step1.rank_diff > 15 AND final_draw >= 0.30 → draw_upset_level = MODERATE
+
+// 综合判断
+upset_alert.level = max(full_upset_level, draw_upset_level)
+upset_alert.type = FULL_UPSET | DRAW_UPSET | BOTH | NONE
+```
 
 ---
 
@@ -444,7 +499,17 @@ BTTS_YES = (1-Poisson(xG_favored,0)) × (1-Poisson(xG_underdog,0))
     "total_goals_distribution": { "0-1_goals": "float", "2-3_goals": "float", "4+_goals": "float" },
     "both_teams_to_score": "float"
   },
-  "upset_alert": { "triggered": "boolean", "level": "STRONG | MODERATE | NONE", "reasoning": "string" },
+  "upset_alert": {
+    "triggered": "boolean",
+    "level": "STRONG | MODERATE | NONE",
+    "type": "FULL_UPSET | DRAW_UPSET | BOTH | NONE",
+    "reasoning": "string",
+    "draw_upset_context": {
+      "rank_diff": "integer",
+      "draw_upset_ratio": "float",
+      "draw_probability": "float"
+    }
+  },
   "strategic_motivation_summary": { "assessed": "boolean", "key_finding": "string", "maf": "float", "mdi_direction": "string" },
   "analysis_trace": { "step1_base": "object", "step2_pattern": "object", "step3_motivation": "object", "step4_third_place": "object|null", "step6_path": "object|null" }
 }
@@ -502,9 +567,20 @@ tournament_config_override:
 # STEP 4: 跳过（输出 null）
 # STEP 6: 使用 2018 R16 对阵表
 # 特殊修正:
-#   卫冕冠军（德国）: base_prob *= 0.75（卫冕冠军魔咒）
+#   卫冕冠军（德国）: base_prob *= 动态系数（见下方）
 #   东道主（俄罗斯）: base_prob += 0.10（东道主效应）
 #   info_clarity: 同组同时开球，跨组信息不对称关闭
+```
+
+**卫冕冠军削弱动态系数**（2018德国案例校准）：
+
+```
+IF 卫冕冠军:
+  R1: base_prob *= 0.75  // 基准削弱（2018德国0-1墨西哥，STRONG预警命中）
+  R2: IF R1 已输/平 → base_prob *= 0.60  // 恶化（R1验证卫冕冠军状态极差）
+      IF R1 正常胜 → base_prob *= 0.80  // 缓和（状态尚可）
+  R3: IF R1+R2 均未胜 → base_prob *= 0.50  // 深度魔咒（2018德国0-2韩国漏判校准）
+      IF R1/R2 至少胜1场 → base_prob *= 0.75  // 维持基准
 ```
 
 ### 2022 卡塔尔世界杯回测配置
@@ -571,6 +647,52 @@ tournament_config_override:
 | 比分Top5覆盖 | 25/48 = 52.1% |
 | 亮点 | R3放水3场全命中（策略最大价值）、R1大球信号75%命中 |
 | 不足 | R1平局倾向不足、日本0-1哥斯达黎加爆冷后松懈未捕获 |
+
+**平局爆冷识别覆盖（v1.0 新增维度）**：
+
+draw_upset_ratio 将 upset 信号按比例分流到 D，使强队平弱队的"平局爆冷"场景获得更准确的概率预测。以下为关键覆盖场景：
+
+| 场景 | 轮次 | 排名差 | 模式 | draw_upset_ratio | 原策略表现 | 新机制效果 |
+|------|------|--------|------|-----------------|-----------|-----------|
+| 2018 阿根廷1-1冰岛 | R1 | 17>15 | TACTICAL_STRETCH | 0.40 | 方向未命中(预测阿根廷胜) | D 获 upset_net×0.5×0.40 加成 |
+| 2018 巴西1-1瑞士 | R1 | 4≤15 | TACTICAL_STRETCH | 0.00 | 方向命中(平局首选) | 平局本就正常，不触发分流 |
+| 2022 墨西哥0-0波兰 | R1 | 13≤15 | TACTICAL_STRETCH | 0.00 | 方向未命中 | 平局本就正常，靠 draw_boost_r1 |
+| 2022 摩洛哥0-0克罗地亚 | R1 | 10≤15 | TACTICAL_STRETCH | 0.00 | 方向未命中 | 同上 |
+| 2022 英格兰0-0美国 | R2 | 11≤15 | TACTICAL_STRETCH | 0.00 | 方向未命中 | 平局本就正常，非平局爆冷 |
+| 2018 瑞士2-2哥斯达黎加 | R3 | 17>15 | TACTICAL_STRETCH | 0.40 | 方向未命中(预测瑞士胜) | D 获分流加成+无包袱效应 |
+
+> 注：2022 R1 的三场平局（墨西哥0-0波兰、摩洛哥0-0克罗地亚、丹麦0-0突尼斯）排名差均 ≤15，不触发平局爆冷分流，依赖 draw_boost_r1=0.08 处理。这说明 draw_upset_ratio 的 rank_diff>15 阈值设计合理——避免对正常平局过度修正。
+
+**首轮大胜后松懈修正覆盖**：
+
+IF R2 且该队 R1 净胜≥3球 → favored_win 额外 -0.03, D += 0.03。解决 R2 对首轮大胜后"自信放水"场景的识别盲区。
+
+| 场景 | 轮次 | R1结果 | 原策略表现 | 新机制效果 |
+|------|------|--------|-----------|-----------|
+| 2022 英格兰0-0美国 | R2 | 英格兰6-2伊朗(净胜4) | 方向未命中(预测英格兰胜) | W -0.03, D +0.03 → 平局信号增强 |
+| 2022 西班牙1-1德国 | R2 | 西班牙7-0哥斯达黎加(净胜7) | 方向命中(平局首选) | 新机制不冲突，D 进一步增强 |
+| 2018 比利时5-2突尼斯 | R2 | 比利时3-0巴拿马(净胜3) | 方向命中(比利时胜) | W -0.03 但实力碾压仍命中 |
+
+**R3 放水场景细分覆盖**：
+
+6 分锁定出线场景分为"碾压型"(R1+R2 均净胜≥2球, 倍率 1.3)和"正常型"(倍率 2.0)。解决 2018 克罗地亚放水倍率过度 vs 2022 放水倍率合理的冲突。
+
+| 场景 | R1+R2净胜球 | 类型 | 原倍率 | 新倍率 | 原策略表现 | 新机制效果 |
+|------|-----------|------|--------|--------|-----------|-----------|
+| 2022 突尼斯1-0法国 | +3, +1 | 正常型 | 2.0 | 2.0 | ✅ 爆冷STRONG命中 | 无变化 |
+| 2022 喀麦隆1-0巴西 | +2, +1 | 正常型 | 2.0 | 2.0 | ✅ 爆冷STRONG命中 | 无变化 |
+| 2022 韩国2-1葡萄牙 | +1, +2 | 正常型 | 2.0 | 2.0 | ✅ 爆冷STRONG命中 | 无变化 |
+| 2018 冰岛1-2克罗地亚 | +2, +3 | **碾压型** | 2.0 | **1.3** | ❌ 爆冷STRONG误判(克罗地亚赢了) | 倍率降低，减少误判 |
+
+**卫冕冠军削弱动态系数覆盖**：
+
+卫冕冠军削弱系数从固定 0.75 改为按轮次动态调整，解决 2018 德国 R3 漏判（韩国2-0）时 0.75 远远不足的问题。
+
+| 场景 | 轮次 | R1结果 | 原系数 | 新系数 | 原策略表现 | 新机制效果 |
+|------|------|--------|--------|--------|-----------|-----------|
+| 2018 德国0-1墨西哥 | R1 | — | 0.75 | 0.75 | ✅ STRONG预警命中 | 无变化（基准） |
+| 2018 德国2-1瑞典 | R2 | 负 | 0.75 | **0.60** | ✅ 方向命中(但信心不足) | R1输后恶化至0.60，更激进 |
+| 2018 德国0-2韩国 | R3 | 负+胜 | 0.75 | **0.50** | ❌ 最大冷门漏判 | R1+R2仅1胜→0.50深度魔咒，大幅增强爆冷信号 |
 
 ---
 

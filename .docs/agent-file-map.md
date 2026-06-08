@@ -118,7 +118,7 @@ data/
 skills/
 ├── README.md                     # Skills 概览
 ├── group_stage_predict.md        # 小组赛预测 v2.1（8 步推理 + LLM 自主搜索实时数据 + 内嵌对阵表 + 比分概率，完全自包含）
-├── group_stage_round_strategy.md # 小组赛轮次策略预测 v1.0（派生自 v2.1，R1爆冷/大球 + R2稳定 + R3放水/默契球策略引导，2018+2022回测校准）
+├── group_stage_round_strategy.md # 小组赛轮次策略预测 v1.0（派生自 v2.1，R1爆冷/大球 + R2稳定 + R3放水/默契球策略引导，含平局爆冷分流+大胜后松懈+放水场景细分+卫冕冠军动态削弱，2018+2022回测校准）
 ├── group_stage_round_strategy-2018_backtest.md # 2018俄罗斯世界杯48场小组赛回测报告
 ├── group_stage_round_strategy-2022_backtest.md # 2022卡塔尔世界杯48场小组赛回测报告
 ├── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
