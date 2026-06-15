@@ -21,6 +21,10 @@
 - [ ] 比赛详情 AI 分析按钮功能实现 — @match-detail-dialog + ai-controller (2026-05-28)
   - 前端：MatchDetailDialog 增加"AI 分析"按钮 + Skill 选择，复用 SSE 流式管道（P5-06）
   - 回调接线 + 移动端适配 + i18n（P5-07）
+- [ ] 补充 G组、H组第1轮（6月15日）实际比赛结果 — @data/2026_FIFA_World_Cup_Group_Stage.md (2026-06-15)
+  - G组：比利时 vs 埃及、伊朗 vs 新西兰
+  - H组：西班牙 vs 佛得角、沙特阿拉伯 vs 乌拉圭
+  - 依据：截至 6/15 权威页面（Wikipedia）尚未录入完整比分，项目 R1 复盘范围仅为 6/11–6/14 共 12 场（见"已完成"区），此 4 场待官方结果确认后回填
 
 ---
 
@@ -31,6 +35,7 @@
 - 💡 [高] 新增"附加赛/资格赛淬炼"平局加成因子：附加赛晋级队触发额外 draw_boost。依据：2026 R1 B组波黑、卡塔尔两支附加赛队伍均逼平排名更高的对手（加拿大1-1、瑞士1-1），导致两场 HIGH 置信度强队胜翻车。@skills/group_stage_round_strategy.md (2026-06-15)
 - 💡 [中] CAF/AFC 球队"五大联赛球员占比高"时上调 TACTICAL_STRETCH 触发概率。依据：E_M2 科特迪瓦 1-0 厄瓜多尔爆冷未被预警。@skills/group_stage_round_strategy.md (2026-06-15)
 - 💡 [中] 大球信号对"实力有差距"场次上调进球量级预估。依据：D_M1 美国4-1、F_M2 瑞典5-1、E_M1 德国7-1 均大幅超出预期进球数。@skills/group_stage_round_strategy.md (2026-06-15)
+- 💡 [低] system_prompts.py 的 custom_analysis_intro 引导文本将"STEP 0 → STEP 6"措辞补为"STEP 0 → STEP 6（含 v1.1 STEP 3.5）"。依据：v1.1 新增 STEP 3.5 后引导文字未同步；但因该模板动态拼接 skill 全文，STEP 3.5 已自动包含，仅措辞优化，非功能性问题。@football-server/app/services/prompts/system_prompts.py (2026-06-15)
 
 ---
 
@@ -46,3 +51,7 @@
 - [x] P5-03 后端新增 POST /api/ai/match-analysis + GET /api/ai/skills 端点 — 完成于 2026-05-28
 - [x] 同步 2026 世界杯 R1 首轮（6/11–6/14 共12场）实际结果至预测报告，胜平负方向命中率 8/12=66.7% — 完成于 2026-06-15
   - 更新 `skills/group_stage_round_strategy-2026_r1_prediction.md`：顶部状态标注、3.1 预测vs实际对照表、新增第六章实际结果复盘（命中率分层 / 命中失败深度评价 / 信号有效性验证 / v1.1 校准建议）
+- [x] group_stage_round_strategy 升级至 v1.1：新增「名次价值×体力博弈」分析维度 — 完成于 2026-06-15
+  - 新增 STEP 3.5（名次价值 SV × 体力经济学 energy_factor）：将 urgency 由二元出线判断升级为 SEALED 四子态（SEED_MATTERS/SEED_SET/NEUTRAL/TANK），核心动机=已出线是否值得拼取决于该名次淘汰赛对手水平
+  - STEP 6 淘汰赛路径分析前置至 R2（R2 概率预估/R3 精确计算）为 STEP 3.5 提供 path_diff；STEP 5.2/5.3 合成联动子态（SEED_MATTERS 抑制爆冷，避免"锁定但认真争名次"被误判为放水）
+  - 同步 .docs/business-overview.md + agent-file-map.md 版本描述

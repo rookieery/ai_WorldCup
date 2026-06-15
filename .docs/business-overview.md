@@ -240,7 +240,7 @@ ws_schema.py
 Prompt 构建层 (`prompt_builder.py`) 管理以下 4 个预测技能（`_SKILL_REGISTRY`）：
 
 - **group_stage_predict**：小组赛单场预测（v2.1，中立综合模式）
-- **group_stage_round_strategy**：小组赛轮次策略预测（v1.0，R1爆冷/大球 + R2稳定正向 + R3放水/默契球 + 平局爆冷分流 + 大胜后松懈 + 放水场景细分 + 卫冕冠军动态削弱，2018+2022回测校准）
+- **group_stage_round_strategy**：小组赛轮次策略预测（v1.2，R1爆冷/大球 + R2稳定正向 + R3放水/默契球 + 平局爆冷分流 + 大胜后松懈 + 放水场景细分 + 卫冕冠军动态削弱 + v1.1名次价值×体力博弈/urgency三态化/STEP6前置R2 + v1.2数据源加载(STEP0.5,R2/R3前瞻读data md的已完赛比分/赛前积分)，2018+2022回测校准）
 - **knockout_stage_predict**：淘汰赛单场预测
 - **championship_predict**：冠亚军蒙特卡洛预测
 
