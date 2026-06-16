@@ -12,6 +12,11 @@
 - 文件 `football-server/scripts/monte_carlo_finals.py` 当前 716 行，超出 600 行硬限制
 - 需委派 refactor-expert 子智能体进行模块化拆分（模拟引擎 / 策略模型 / 结果输出）
 
+### [ISSUE-003] add-todo.sh 脚本静默失败：返回成功但不写入 todo.md (2026-06-16)
+- `bash .claude/scripts/add-todo.sh <type> ...` 两次执行（ISSUE-002 的 issue 记录 + done 记录）均返回 `[OK] ... recorded`，但 grep todo.md 无匹配——脚本静默失败，任务留痕丢失
+- 影响：违反 CLAUDE.md 第6节"即时记录原则"的可靠性，依赖该脚本的留痕（含 Stop Hook 兜底）可能静默失效
+- 待排查：脚本的写入逻辑（目标文件路径 / 权限 / ID 分配 / 区块定位），修复前改用手动 Edit `.docs/todo.md`
+
 ---
 
 ## 待办任务
@@ -55,3 +60,7 @@
   - 新增 STEP 3.5（名次价值 SV × 体力经济学 energy_factor）：将 urgency 由二元出线判断升级为 SEALED 四子态（SEED_MATTERS/SEED_SET/NEUTRAL/TANK），核心动机=已出线是否值得拼取决于该名次淘汰赛对手水平
   - STEP 6 淘汰赛路径分析前置至 R2（R2 概率预估/R3 精确计算）为 STEP 3.5 提供 path_diff；STEP 5.2/5.3 合成联动子态（SEED_MATTERS 抑制爆冷，避免"锁定但认真争名次"被误判为放水）
   - 同步 .docs/business-overview.md + agent-file-map.md 版本描述
+- [x] [ISSUE-002] 修复 round_strategy R2/R3 无法获取/推理真实淘汰赛对手 — 完成于 2026-06-16
+  - 背景：派生时丢失原模型 `knockout_bracket_snapshot` 入口，STEP 6 仅靠文字引用外部对阵表 + 概率裸估算，path_diff 不可靠污染 STEP 3.5.2 SV → SEALED 子态（TANK/SEED_MATTERS）误判
+  - v1.4 改造：①新增内嵌「2026 淘汰赛对阵结构参考」章节（半区速查/R32对阵/第三名约束/第三轮时间线，镜像权威源 `skills/冠亚军分析.md` 2.1-2.5）；②STEP 0.5 新增阶段三·跨组出线快照与 opponent_graph（聚合 data md 12组已完成行）；③STEP 6 重写为消费 opponent_graph 的结构化对手推理（DETERMINED/CANDIDATE_SET/THIRD_POOL 三态 + 正式 confidence 字段 + R3 info_clarity 折损）；④STEP 3.5.2 SV 阈值随 confidence 联动 + SEALED_TANK 触发收紧；⑤STEP 5.3 knockout_path_bias 按 confidence 折损
+  - 文件 `skills/group_stage_round_strategy.md`（v1.3→v1.4）
