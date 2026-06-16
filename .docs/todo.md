@@ -30,6 +30,9 @@
   - G组：比利时 vs 埃及、伊朗 vs 新西兰
   - H组：西班牙 vs 佛得角、沙特阿拉伯 vs 乌拉圭
   - 依据：截至 6/15 权威页面（Wikipedia）尚未录入完整比分，项目 R1 复盘范围仅为 6/11–6/14 共 12 场（见"已完成"区），此 4 场待官方结果确认后回填
+- [ ] 补充 I/J/K/L 组 R2 第二轮预测（6/22–6/23 共8场）— @skills/group_stage_round_strategy-2026_r2_prediction.md (2026-06-16)
+  - I组：法国vs伊拉克、挪威vs塞内加尔；J组：阿根廷vs奥地利、约旦vs阿尔及利亚；K组：葡萄牙vs乌兹别克斯坦、哥伦比亚vs刚果(金)；L组：英格兰vs加纳、巴拿马vs克罗地亚
+  - 依据：4组 R1（6/16–6/17）尚未完赛，R2 预测需基于 R1 实际结果（含卫冕冠军阿根廷动态削弱系数 R2 判定：R1 输/平→0.60，R1 胜→0.80），待 R1 公布后按 v1.4 推理链补充
 
 ---
 
@@ -64,3 +67,7 @@
   - 背景：派生时丢失原模型 `knockout_bracket_snapshot` 入口，STEP 6 仅靠文字引用外部对阵表 + 概率裸估算，path_diff 不可靠污染 STEP 3.5.2 SV → SEALED 子态（TANK/SEED_MATTERS）误判
   - v1.4 改造：①新增内嵌「2026 淘汰赛对阵结构参考」章节（半区速查/R32对阵/第三名约束/第三轮时间线，镜像权威源 `skills/冠亚军分析.md` 2.1-2.5）；②STEP 0.5 新增阶段三·跨组出线快照与 opponent_graph（聚合 data md 12组已完成行）；③STEP 6 重写为消费 opponent_graph 的结构化对手推理（DETERMINED/CANDIDATE_SET/THIRD_POOL 三态 + 正式 confidence 字段 + R3 info_clarity 折损）；④STEP 3.5.2 SV 阈值随 confidence 联动 + SEALED_TANK 触发收紧；⑤STEP 5.3 knockout_path_bias 按 confidence 折损
   - 文件 `skills/group_stage_round_strategy.md`（v1.3→v1.4）
+- [x] 生成 2026 世界杯小组赛 R2 第二轮预测报告（A–H组16场）— 完成于 2026-06-16
+  - 新增 `skills/group_stage_round_strategy-2026_r2_prediction.md`：基于 v1.4 推理链（STEP 0.5 FIFA排名+历史轮次+出线快照 / STEP 1-6 / 5.5）
+  - 仅对 R1 已完赛小组（A–H，data md 已录入 G/H 6/15 结果）做详细预测；I/J/K/L 组（R1 6/16–6/17 未完赛）仅记录标题待补充
+  - 16场方向分布：强队胜11 / 平3 / 爆冷2；HIGH置信度7场；3场头名之争（A_M3/D_M3/E_M3）标 HIGH_STABILITY 候选；排名虚假度修正命中4场（D_M4/E_M4/H_M3/H_M4）；B/G/H 三组四队同分迷雾组为平局/爆冷高发区
