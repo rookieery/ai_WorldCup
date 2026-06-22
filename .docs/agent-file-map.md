@@ -108,7 +108,7 @@ football-web/
 
 ```
 data/
-├── 2026_FIFA_World_Cup_Group_Stage.md  # 12 组 × 6 场（共 72 场），结果待定
+├── 2026_FIFA_World_Cup_Group_Stage.md  # 12 组 × 6 场（共 72 场），已完赛 40 场（第1轮全部 24 场 + A-H组第2轮 16 场，截至北京时间 6/22）
 └── 2022_FIFA_World_Cup_Results.md      # 卡塔尔 2022 结果（64 场，中文）
 ```
 
