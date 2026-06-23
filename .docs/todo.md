@@ -50,6 +50,11 @@
 
 <!-- 格式：- [x] 任务描述 — 完成于 YYYY-MM-DD -->
 
+- [x] group_stage_round_strategy 升级至 v1.5：重写 STEP 4 第3名出线为跨组实时排名对比 — 完成于 2026-06-23
+  - 背景：STEP 4 此前用固定门槛表（4分>95%/3分~50%/2分20-30%/1分<5%），无视本届实际第3名竞争态势——第3名出线是12组第3名的相对竞争（取前8），门槛表在低分扎堆格局下系统性失准。阶段三早已声明把 candidates_3nd 回灌 STEP 4，但方法论此前未兑现（v1.4 改造 STEP 6 时遗漏的同源问题）
+  - v1.5 改造：①STEP 4 重写为消费 group_standings_snapshot 的跨组实时第3名排名对比；②新增实时出线门槛 advancement_threshold_points（门槛表给不出的"本届几分能出线"）；③落第3情景枚举（9组合确定性推演本队是否落第3）；④第3名池排名对比替代查表；⑤confidence 分级联动 info_clarity（R2/迷雾组输出概率区间，R3透明组接近精确）；⑥impact_on_match 按 confidence 折损（HIGH=1.0/MEDIUM=0.6/LOW=0.3）
+  - 联动同步：meta 版本号、STEP 5.3 step4 消费注释、阶段三回灌措辞、输出 schema、权重表 R3、使用说明、末尾版本号；.docs/agent-file-map.md + business-overview.md 版本描述
+  - 文件 `skills/group_stage_round_strategy.md`（v1.4→v1.5）
 - [x] 更新 2026 小组赛 I/J组第2轮比赛结果（4场）— 完成于 2026-06-23
   - 第2轮：法国3-0伊拉克、挪威3-2塞内加尔、阿根廷2-0奥地利、约旦1-2阿尔及利亚
   - 同步补齐赛前积分/排名/热度/爆冷；4场均为强队/领先方取胜，无爆冷
