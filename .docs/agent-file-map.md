@@ -121,6 +121,7 @@ skills/
 ├── group_stage_round_strategy.md # 小组赛轮次策略预测 v1.5（派生自 v2.1，R1爆冷/大球 + R2稳定 + R3放水/默契球策略引导，含平局爆冷分流+大胜后松懈+放水场景细分+卫冕冠军动态削弱+v1.1名次价值×体力博弈(STEP3.5)+urgency三态化+STEP6前置R2+v1.2数据源加载(STEP0.5,R2/R3前瞻读data md)+v1.3 FIFA排名加载(阶段一全轮次)+v1.4淘汰赛对手推理链(内嵌对阵结构镜像冠亚军分析2.1-2.5/STEP0.5阶段三跨组出线快照opponent_graph/STEP6结构化对手推理DETERMINED,CANDIDATE_SET,THIRD_POOL+confidence字段+R3 info_clarity折损+SV阈值联动+TANK收紧)+v1.5第3名出线重写(STEP4从固定门槛表升级为消费group_standings_snapshot的跨组实时第3名排名对比+实时出线门槛advancement_threshold_points+落第3情景枚举+confidence分级联动info_clarity+impact按confidence折损)，2018+2022回测校准）
 ├── group_stage_round_strategy-2018_backtest.md # 2018俄罗斯世界杯48场小组赛回测报告
 ├── group_stage_round_strategy-2022_backtest.md # 2022卡塔尔世界杯48场小组赛回测报告
+├── group_stage_round_strategy-2026_r3_prediction.md # 2026世界杯小组赛R3预测报告（v2，6/25更新：A/B/C已完赛复盘+K/L新增预测+淘汰赛对手透明度驱动动机修正，基于 v1.5 策略）
 ├── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
 ├── 冠亚军分析.md                   # 冠亚军预测 v2.0（自包含：官方对阵表 + 7 大策略 + 5 步推理链 + 因子权重）
 └── worldcup-upset-analyst/       # 爆冷预测模块（4 模型量化框架 + 历史数据 + CLI 脚本）
