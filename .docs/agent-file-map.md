@@ -108,7 +108,7 @@ football-web/
 
 ```
 data/
-├── 2026_FIFA_World_Cup_Group_Stage.md   # 12 组 × 6 场（共 72 场），已完赛 54 场（第1轮全部 24 场 + 第2轮全部 24 场 + A/B/C 组第3轮 6 场，截至北京时间 6/25）
+├── 2026_FIFA_World_Cup_Group_Stage.md   # 12 组 × 6 场（共 72 场），已完赛 66 场（第1轮全部 24 场 + 第2轮全部 24 场 + A–I 组第3轮 18 场，截至北京时间 6/27）；仅剩 J/K/L 组第3轮 6 场（6/28）待定
 ├── 2026_FIFA_World_Cup_Round_of_32.md  # 1/16决赛（32强淘汰赛）赛程 16 场（Match 73–88），截至 6/27 已锁定 8 场对阵；含 1/8决赛对阵前瞻
 └── 2022_FIFA_World_Cup_Results.md       # 卡塔尔 2022 结果（64 场，中文）
 ```
@@ -122,7 +122,7 @@ skills/
 ├── group_stage_round_strategy.md # 小组赛轮次策略预测 v1.5（派生自 v2.1，R1爆冷/大球 + R2稳定 + R3放水/默契球策略引导，含平局爆冷分流+大胜后松懈+放水场景细分+卫冕冠军动态削弱+v1.1名次价值×体力博弈(STEP3.5)+urgency三态化+STEP6前置R2+v1.2数据源加载(STEP0.5,R2/R3前瞻读data md)+v1.3 FIFA排名加载(阶段一全轮次)+v1.4淘汰赛对手推理链(内嵌对阵结构镜像冠亚军分析2.1-2.5/STEP0.5阶段三跨组出线快照opponent_graph/STEP6结构化对手推理DETERMINED,CANDIDATE_SET,THIRD_POOL+confidence字段+R3 info_clarity折损+SV阈值联动+TANK收紧)+v1.5第3名出线重写(STEP4从固定门槛表升级为消费group_standings_snapshot的跨组实时第3名排名对比+实时出线门槛advancement_threshold_points+落第3情景枚举+confidence分级联动info_clarity+impact按confidence折损)，2018+2022回测校准）
 ├── group_stage_round_strategy-2018_backtest.md # 2018俄罗斯世界杯48场小组赛回测报告
 ├── group_stage_round_strategy-2022_backtest.md # 2022卡塔尔世界杯48场小组赛回测报告
-├── group_stage_round_strategy-2026_r3_prediction.md # 2026世界杯小组赛R3预测报告（v2，6/25更新：A/B/C已完赛复盘+K/L新增预测+淘汰赛对手透明度驱动动机修正，基于 v1.5 策略）
+├── group_stage_round_strategy-2026_r3_prediction.md # 2026世界杯小组赛R3预测报告（v3，6/27更新：A–I组R3全部完赛复盘18场[方向命中15/18=83.3%,含⭐H_M5透明度修正/E_M5放水爆冷/D_M6默契平局三大命中]+J/K/L 6场前瞻精修[淘汰赛对阵图揭晓:阿根廷vs佛得角/J2vs西班牙/第3名池9席确认门槛=3分]，基于 v1.5 策略）
 ├── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
 ├── knockout_stage_round_strategy.md # 淘汰赛阶段策略预测 v1.2（派生自 knockout_stage_predict v1.0，对齐 group_stage_round_strategy 范式；删除小组赛专属步骤(名次价值/第3名出线/路径选择)，聚焦"硬实力(FIFA)+当年小组赛表现(GSPI)"双支柱；6阶段猎手 R32碾压/R16特质/QF黑马(×1.3)/SF回归/3RD经验/FINAL心理；STEP1.5连续加时体能考+STEP4特质匹配+STEP5加时点球；2018+2022回测校准）
 ├── knockout_stage_round_strategy-2018_backtest.md # 2018俄罗斯世界杯16场淘汰赛回测（90min方向62.5%/晋级75%，连续加时体能考+双支柱势头覆盖）
