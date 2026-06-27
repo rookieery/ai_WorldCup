@@ -23,6 +23,11 @@
 
 <!-- 格式：- [ ] 任务描述 — @上下文 (日期) -->
 
+- [ ] 将 knockout_stage_round_strategy 注册到后端 _SKILL_REGISTRY — @football-server/app/services/prompt_builder.py (2026-06-27)
+  - 背景：新增的 `skills/knockout_stage_round_strategy.md`（v1.2）目前仅为方法论文件，尚未接入后端 `_SKILL_REGISTRY`（当前注册 4 个 skill：group_stage_predict / group_stage_round_strategy / knockout_stage_predict / championship_predict）
+  - 待办：在 `_SKILL_REGISTRY` 增加该 skill 条目（key + 文件路径 + 描述），同步更新 `.docs/business-overview.md` 第 240-245 行的技能清单（当前仅列 4 个）
+  - 验证：前端 MatchDetailDialog 的 Skill 选择器应能拉取到新 skill；与 knockout_stage_predict 的关系类比 group_stage_predict ↔ group_stage_round_strategy（基础模型 ↔ 阶段策略定制版）
+
 - [ ] 比赛详情 AI 分析按钮功能实现 — @match-detail-dialog + ai-controller (2026-05-28)
   - 前端：MatchDetailDialog 增加"AI 分析"按钮 + Skill 选择，复用 SSE 流式管道（P5-06）
   - 回调接线 + 移动端适配 + i18n（P5-07）
@@ -56,6 +61,13 @@
 
 <!-- 格式：- [x] 任务描述 — 完成于 YYYY-MM-DD -->
 
+- [x] 新增淘汰赛阶段策略 skill（knockout_stage_round_strategy v1.2）+ 2018/2022 双回测 — 完成于 2026-06-27
+  - 新增 `skills/knockout_stage_round_strategy.md`：派生自 `knockout_stage_predict` v1.0，对齐 `group_stage_round_strategy` 的"轮次策略定制版"范式。删除小组赛专属步骤（STEP 3.5 名次价值博弈 / STEP 4 第3名出线 / STEP 6 路径选择），聚焦"硬实力(FIFA排名) + 当年小组赛表现(GSPI)"双支柱。6 阶段猎手模式：R32碾压/R16特质/QF黑马(特质×1.3)/SF回归/3RD经验/FINAL心理
+  - 新增 `skills/knockout_stage_round_strategy-2022_backtest.md`（16场）：90min方向 14/16(87.5%)、晋级 15/16(93.75%)、爆冷预警 3/3、点球大战预测 5/5 全中。摩洛哥/克罗地亚防守型黑马标杆
+  - 新增 `skills/knockout_stage_round_strategy-2018_backtest.md`（16场）：90min方向 10/16(62.5%)、晋级 12/16(75%)。连续加时体能考在决赛的决定性价值（克罗地亚3场加时→法国方向胜出）、双支柱势头覆盖（法国胜阿根廷/乌拉圭胜葡萄牙）
+  - v1.2 反哺校准：①连续加时体能正式化为 STEP 1.5 路径消耗修正；②DEFENSIVE_DARK_HORSE 门槛 rank>15 放宽为 underdog+防守特质（修复2022克罗地亚rank12漏判）；③DUAL_ATTACK counter≥5 额外+0.04（跨届：2018巴比/2022英法）；④东道主累积+0.05/场；⑤rank_diff>40+对手东道主/点球专家→favored_win×0.85；⑥MOMENTUM_UNDERDOG +0.06→+0.08；⑦draw_base R16/SF 微调；⑧SF def_res≥4 +0.04
+  - 同步 `skills/README.md`：Skills 表新增行、数据流图新增淘汰赛策略分支、推理链架构更新为8步、数据源补 2018
+  - @skills/knockout_stage_round_strategy.md @skills/knockout_stage_round_strategy-2018_backtest.md @skills/knockout_stage_round_strategy-2022_backtest.md
 - [x] 新增 2026 世界杯 1/16决赛（32强淘汰赛）赛程数据文件 — 完成于 2026-06-27
   - 新增 `data/2026_FIFA_World_Cup_Round_of_32.md`：16 场（Match 73–88）完整赛程，含 FIFA 官方对阵模板、北京时间（UTC+8）开球、14 座场馆；附 1/8决赛（Match 89–96）对阵前瞻
   - 已锁定对阵 8 场（M73 南非vs加拿大 / M74 德国vs巴拉圭 / M75 荷兰vs摩洛哥 / M76 巴西vs日本 / M77 法国vs瑞典 / M78 科特迪瓦vs挪威 / M81 美国vs波黑 / M86 阿根廷vs佛得角）；其中 M74/M77/M81 涉及"最佳第3名"，经 Annex C 矩阵验证（所有仍可能的小组赛结果组合下对手不变）故可锁定

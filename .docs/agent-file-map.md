@@ -124,6 +124,9 @@ skills/
 ├── group_stage_round_strategy-2022_backtest.md # 2022卡塔尔世界杯48场小组赛回测报告
 ├── group_stage_round_strategy-2026_r3_prediction.md # 2026世界杯小组赛R3预测报告（v2，6/25更新：A/B/C已完赛复盘+K/L新增预测+淘汰赛对手透明度驱动动机修正，基于 v1.5 策略）
 ├── knockout_stage_predict.md     # 淘汰赛预测 5 步推理
+├── knockout_stage_round_strategy.md # 淘汰赛阶段策略预测 v1.2（派生自 knockout_stage_predict v1.0，对齐 group_stage_round_strategy 范式；删除小组赛专属步骤(名次价值/第3名出线/路径选择)，聚焦"硬实力(FIFA)+当年小组赛表现(GSPI)"双支柱；6阶段猎手 R32碾压/R16特质/QF黑马(×1.3)/SF回归/3RD经验/FINAL心理；STEP1.5连续加时体能考+STEP4特质匹配+STEP5加时点球；2018+2022回测校准）
+├── knockout_stage_round_strategy-2018_backtest.md # 2018俄罗斯世界杯16场淘汰赛回测（90min方向62.5%/晋级75%，连续加时体能考+双支柱势头覆盖）
+├── knockout_stage_round_strategy-2022_backtest.md # 2022卡塔尔世界杯16场淘汰赛回测（90min方向87.5%/晋级93.75%，防守型黑马标杆+点球大战5/5）
 ├── 冠亚军分析.md                   # 冠亚军预测 v2.0（自包含：官方对阵表 + 7 大策略 + 5 步推理链 + 因子权重）
 └── worldcup-upset-analyst/       # 爆冷预测模块（4 模型量化框架 + 历史数据 + CLI 脚本）
 ```
