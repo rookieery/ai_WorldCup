@@ -20,7 +20,8 @@
 | `CLAUDE.md` | 工程规范与编码标准 |
 | `football-web/REQUIREMENTS.md` | 前端 PRD（功能、数据模型、UI 规格） |
 | `football-server/scalable-beaming-riddle.md` | 后端架构方案 |
-| `data/2026_FIFA_World_Cup_Group_Stage.md` | 赛程原始数据 |
+| `data/2026_FIFA_World_Cup_Group_Stage.md` | 2026 小组赛赛程原始数据 |
+| `data/2026_FIFA_World_Cup_Round_of_32.md` | 2026 1/16决赛（32强淘汰赛）赛程（16场，截至6/27已锁定8场对阵） |
 | `data/2022_FIFA_World_Cup_Results.md` | 历史比赛结果 |
 | `skills/group_stage_predict.md` | AI 预测技能（小组赛） |
 | `skills/knockout_stage_predict.md` | AI 预测技能（淘汰赛） |
